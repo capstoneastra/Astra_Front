@@ -1,0 +1,88 @@
+.sim-lab { border: 1px solid var(--border-strong); border-radius: 16px; background: #101c2b; overflow: hidden; margin-bottom: 20px; }
+.sim-lab__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 26px; border-bottom: 1px solid var(--border); }
+.sim-lab__heading h2 { font-size: 21px; font-weight: 600; letter-spacing: -.6px; margin-top: 5px; }
+.sim-lab__heading p { font-size: 13px; color: var(--text-secondary); margin-top: 5px; }
+.sim-lab__badge { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #315963; border-radius: 6px; padding: 5px 10px; font-size: 11px; color: #89dbe0; white-space: nowrap; }
+.sim-lab__layout { display: grid; grid-template-columns: minmax(0, 1fr) 246px; }
+.sim-lab__main { min-width: 0; }
+.sim-viewport { position: relative; height: clamp(420px, 38vw, 560px); isolation: isolate; background: #0a1420; }
+.sim-canvas { position: absolute; inset: 0; touch-action: none; }
+.sim-canvas canvas { display: block; width: 100%; height: 100%; }
+.sim-viewport__title { position: absolute; left: 24px; top: 22px; z-index: 1; pointer-events: none; max-width: calc(100% - 40px); }
+.sim-status { display: inline-flex; align-items: center; gap: 6px; color: #83b1ba; font-size: 10px; letter-spacing: .5px; }
+.sim-status i { width: 5px; height: 5px; border-radius: 50%; background: #64cbbc; box-shadow: 0 0 9px #64cbbc66; }
+.sim-viewport__title h3 { font-size: 18px; margin-top: 5px; letter-spacing: -.3px; }
+.sim-viewport__title p { font-size: 11px; color: #8c9fb2; margin-top: 3px; }
+.sim-telemetry { position: absolute; bottom: 43px; left: 24px; min-width: 135px; padding: 10px 14px; border-left: 2px solid #5dc2cb; background: #0a1725d9; pointer-events: none; }
+.sim-telemetry > span { font-size: 10px; color: #95a8bb; }
+.sim-telemetry strong { display: block; color: #d5e7f2; font-size: 25px; font-variant-numeric: tabular-nums; font-weight: 500; line-height: 1.4; }
+.sim-telemetry small { font-size: 12px; color: #8bafbf; }
+.sim-telemetry p { font-size: 10px; color: #9daec0; }
+.sim-viewport__footer { position: absolute; left: 24px; right: 24px; bottom: 12px; display: flex; justify-content: space-between; gap: 10px; font-size: 9px; color: #8194a9; pointer-events: none; }
+.sim-camera-controls { position: absolute; display: flex; flex-direction: column; gap: 5px; right: 17px; bottom: 45px; }
+.sim-camera-controls button, .sim-playback__reset { display: grid; place-items: center; width: 33px; height: 33px; border: 1px solid #2d4053; border-radius: 6px; background: #142232d9; color: #a8bdce; }
+.sim-camera-controls button:hover, .sim-playback__reset:hover { color: #c0f2f5; background: #213b4a; }
+.sim-playback { display: flex; align-items: center; gap: 11px; padding: 14px 22px; border-top: 1px solid var(--border); background: #111e2c; }
+.sim-playback__play { display: grid; place-items: center; width: 35px; height: 35px; flex-shrink: 0; padding: 0; border: 1px solid #4e9caa; border-radius: 50%; background: #21424f; color: #a1ebec; }
+.sim-playback__reset { border: 0; background: transparent; width: 24px; }
+.sim-playback input[type=range] { flex: 1; min-width: 30px; width: 100%; padding: 0; accent-color: #69c8d0; cursor: pointer; height: 4px; }
+.sim-playback__position { font-size: 11px; font-variant-numeric: tabular-nums; color: #9baec0; min-width: 30px; text-align: right; }
+.sim-playback select { font-size: 11px; padding: 4px 5px; background: #162637; border-color: #2d4053; border-radius: 5px; }
+.sim-lab__note { color: #92a4b7; font-size: 11px; padding: 13px 22px 17px; border-top: 1px solid var(--border); line-height: 1.8; }
+.sim-options { min-width: 0; border-left: 1px solid var(--border); background: #132131; }
+.sim-options__group { padding: 23px 19px; border-bottom: 1px solid var(--border); }
+.sim-options__label { display: block; font-size: 10px; letter-spacing: 1px; color: #8296aa; margin-bottom: 10px; }
+.sim-options h3 { font-size: 13px; font-weight: 500; margin-bottom: 13px; }
+.sim-specimen { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; padding: 11px 10px; margin-top: 7px; border: 1px solid #2b3d50; border-radius: 7px; color: #8ba0b6; background: #142232; }
+.sim-specimen > span { flex: 1; min-width: 0; }
+.sim-specimen strong { display: block; font-size: 12px; color: #c1d0de; }
+.sim-specimen small { display: block; font-size: 9px; color: #8398ad; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.sim-specimen > i { width: 9px; height: 9px; border: 1px solid #61768a; border-radius: 50%; flex-shrink: 0; }
+.sim-specimen.is-selected { background: #1b3540; border-color: #46878e; color: #8dd9de; }
+.sim-specimen.is-selected > i { border: 2px solid #34616b; background: #8cdddf; box-shadow: 0 0 0 1px #7ac5cb; }
+.sim-specimen:hover { border-color: #5795a0; }
+.sim-upload { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 4px; border: 1px dashed #3a5267; border-radius: 7px; width: 100%; margin-top: 13px; background: transparent; font-size: 11px; color: #a5bbcd; }
+.sim-upload:hover { border-color: #7bc6d1; color: #b2e2e8; }
+.sim-options__hint { color: #91a4b7; font-size: 10px; line-height: 1.8; margin-top: 9px; }
+.sim-view-buttons { display: flex; gap: 5px; }
+.sim-view-buttons button { flex: 1; background: #192b3c; border: 1px solid #304357; border-radius: 5px; padding: 6px 0; font-size: 11px; color: #bfd0dd; }
+.sim-view-buttons button:hover { border-color: #7bc6d1; }
+.sim-rotate { display: flex; align-items: center; gap: 7px; width: 100%; margin-top: 11px; padding: 7px 0; font-size: 11px; color: #acbdd0; background: transparent; border: 0; }
+.sim-rotate span { margin-left: auto; font-size: 9px; color: #8ba0b7; border: 1px solid #3c5264; border-radius: 4px; padding: 0 5px; }
+.sim-rotate.is-selected span { color: #9de3d7; border-color: #519b8a; }
+.sim-options__context { padding: 17px 19px; }
+.sim-options__context > span { color: #889db1; font-size: 10px; }
+.sim-options__context strong { display: block; font-size: 11px; margin-top: 3px; color: #c0cfdd; overflow-wrap: anywhere; }
+.sim-options__context p { font-size: 10px; color: #92a5b9; line-height: 1.8; margin-top: 9px; }
+.sim-file-error { font-size: 11px; color: var(--red); margin-top: 8px; overflow-wrap: anywhere; }
+.sim-viewport__error { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; padding: 35px; text-align: center; background: #101e30f5; color: #c7d7e7; font-size: 13px; }
+.sim-viewport__error button { background: #1d3a48; border: 1px solid #4f8f9a; border-radius: 7px; padding: 8px 16px; color: #b6e7ed; }
+.sim-stage-loading { min-height: 300px; display: grid; place-items: center; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 14px; }
+@media (min-width: 1500px) { .sim-viewport { height: 580px; } }
+@media (max-width: 1000px) { .sim-lab__layout { grid-template-columns: minmax(0, 1fr) 210px; } .sim-options__group { padding: 20px 13px; } .sim-options__context { padding: 15px 13px; } }
+@media (max-width: 760px) {
+  .sim-lab__heading { padding: 19px 17px; align-items: flex-start; }
+  .sim-lab__heading h2 { font-size: 18px; }
+  .sim-lab__heading p { font-size: 11px; }
+  .sim-lab__badge { font-size: 10px; padding: 4px 6px; }
+  .sim-lab__layout { grid-template-columns: minmax(0, 1fr); }
+  .sim-options { border-left: 0; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; }
+  .sim-options__group { padding: 18px 15px; }
+  .sim-options__group + .sim-options__group { border-left: 1px solid var(--border); }
+  .sim-options__context { grid-column: 1 / -1; padding: 13px 16px; }
+  .sim-options__context p { margin-top: 4px; }
+  .sim-viewport { height: 420px; }
+  .sim-viewport__title { left: 17px; top: 16px; }
+  .sim-telemetry { left: 17px; bottom: 40px; }
+  .sim-viewport__footer { left: 17px; right: 17px; font-size: 8px; }
+  .sim-playback { gap: 8px; padding: 12px 15px; }
+  .sim-lab__note { padding: 11px 15px; font-size: 10px; }
+}
+@media (max-width: 400px) {
+  .sim-lab__heading { gap: 8px; }
+  .sim-lab__heading h2 { font-size: 16px; }
+  .sim-lab__badge svg { display: none; }
+  .sim-options { grid-template-columns: minmax(0, 1fr); }
+  .sim-options__group + .sim-options__group { border-left: 0; }
+  .sim-viewport { height: 380px; }
+}

@@ -1,122 +1,314 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useCallback, useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import Home from "./components/Home";
+import EquipmentSearch from "./components/EquipmentSearch";
+import Reservation from "./components/Reservation";
+import ReservationCheck from "./components/ReservationCheck";
+import EquipmentManager from "./components/EquipmentManager";
+import AppHeader from "./components/layout/AppHeader";
+import { AppContext } from "./context/AppContext";
+import type { LocalReservation } from "./context/AppContext";
+import type { Equipment } from "./services/equipmentService";
+import type { MatchRun, ResourceId } from "./services/contracts";
+import AuthProvider from "./auth/AuthProvider";
+import AuthGate from "./auth/AuthGate";
+import { useAuth } from "./auth/context";
+import { canAccessMenu } from "./auth/permissions";
+import { useApiQuery } from "./hooks/useApiQuery";
+import { equipmentService } from "./services/equipmentService";
+import { dashboardService } from "./services/dashboardService";
+import { apiConfig } from "./api/config";
+import { ApiError } from "./api/errors";
+import ApiState from "./components/ui/ApiState";
+import Matching from "./components/Matching";
+import EquipmentCompare from "./components/EquipmentCompare";
+import TestInformation from "./components/TestInformation";
+import DuplicateEquipment from "./components/DuplicateEquipment";
+import AiAssistant from "./components/assistant/AiAssistant";
+import Simulation from "./components/Simulation";
+import AdminManagement from "./components/AdminManagement";
+import Notifications from "./components/Notifications";
+import ReservationCalendar from "./components/ReservationCalendar";
+import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 
-function App() {
-  const [count, setCount] = useState(0)
+function Workspace() {
+  const { user } = useAuth();
+  const workspaceNavigation = useWorkspaceNavigation(`${user.id}:${user.role}:${user.organization?.id ?? ""}`);
+  const activeMenu = workspaceNavigation.route.menu;
+  const [requirementId, setRequirementId] = useState<number | null>(null);
+  const [chatSessionId, setChatSessionId] = useState<number | null>(null);
+  const [matchRun, setMatchRun] = useState<MatchRun | null>(null);
+  const [draftRequestId, setDraftRequestId] = useState<number | null>(null);
+  const [comparisonIds, setComparisonIds] = useState<number[]>([]);
+  const [testTypeCode, setTestTypeCode] = useState("VIBRATION");
+  const [simulationEquipmentId, setSimulationEquipmentId] = useState(48);
+  const [autoRunId, setAutoRunId] = useState<number | null>(null);
+  const [testCondition, setTestCondition] = useState("");
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [localCatalog, setLocalCatalog] = useState<Equipment[] | null>(null);
+  const [reservations, setReservations] = useState<LocalReservation[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantStarted, setAssistantStarted] = useState(false);
+  const [assistantMode, setAssistantMode] = useState("chatbot");
+  const [smallScreen, setSmallScreen] = useState(
+    () => window.matchMedia("(max-width: 700px)").matches,
+  );
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeAssistant = useCallback(() => setAssistantOpen(false), []);
+  useEffect(() => {
+    const onHistory = () => { closeAssistant(); closeMenu(); };
+    window.addEventListener("popstate", onHistory);
+    return () => window.removeEventListener("popstate", onHistory);
+  }, [closeAssistant, closeMenu]);
+  const catalogQuery = useApiQuery(
+    (signal) => equipmentService.catalog(signal),
+    `catalog:${user.id}:${user.role}`,
+  );
+  const summaryQuery = useApiQuery(
+    (signal) => dashboardService.summary(user.role, signal),
+    `summary:${user.id}:${user.role}`,
+  );
+  const isApiMode = !apiConfig.useMockCatalog;
+  const equipmentList =
+    !isApiMode && localCatalog !== null
+      ? localCatalog
+      : (catalogQuery.data ?? []);
+  const setEquipmentList = (value: Equipment[]) => {
+    if (!isApiMode) setLocalCatalog(value);
+  };
+  const resolveEquipment = (id: ResourceId, signal?: AbortSignal) =>
+    !isApiMode
+      ? Promise.resolve(equipmentList.find((item) => item.id === Number(id)))
+      : equipmentService.detail(id, signal);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const restoreDesktop = () => {
+      if (desktop.matches) closeMenu();
+    };
+    desktop.addEventListener("change", restoreDesktop);
+    return () => desktop.removeEventListener("change", restoreDesktop);
+  }, [closeMenu]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 700px)");
+    const update = () => setSmallScreen(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  const openAssistant = (mode?: string) => {
+    if (!canAccessMenu(user.role, mode ?? "assistant")) return;
+    if (mode) setAssistantMode(mode);
+    setAssistantStarted(true);
+    setAssistantOpen(true);
+    setMenuOpen(false);
+  };
+
+  const navigate = (menu: string) => {
+    if (
+      ["assistant", "chatbot", "autopilot"].includes(menu) &&
+      canAccessMenu(user.role, menu)
+    ) {
+      openAssistant(menu === "assistant" ? undefined : menu);
+      return;
+    }
+    workspaceNavigation.go(menu);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  const searchEquipment = (query: string, options: { institutionId?: number | null } = {}) => {
+    workspaceNavigation.go("search", { searchTerm: query, institutionId: options.institutionId ?? null });
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  const renderContent = () => {
+    if (!canAccessMenu(user.role, activeMenu))
+      return (
+        <ApiState
+          error={
+            new ApiError("현재 계정의 역할로는 이 기능을 이용할 수 없습니다.", {
+              status: 403,
+              code: "FORBIDDEN",
+            })
+          }
+        />
+      );
+    switch (activeMenu) {
+      case "home":
+        return <Home setActiveMenu={navigate} onSearch={searchEquipment} />;
+      case "search":
+        return (
+          <EquipmentSearch
+            key={workspaceNavigation.route.index}
+            initialView={workspaceNavigation.route.search}
+            initialSearchTerm={workspaceNavigation.route.search?.searchTerm ?? ""}
+            initialInstitutionId={workspaceNavigation.route.search?.institutionId ?? null}
+            onViewChange={workspaceNavigation.saveSearch}
+            setActiveMenu={navigate}
+          />
+        );
+      case "reservation":
+        return (
+          <Reservation key={draftRequestId ?? "new"} setActiveMenu={navigate} />
+        );
+      case "reservationCheck":
+        return <ReservationCheck setActiveMenu={navigate} />;
+      case "calendar":
+        return <ReservationCalendar />;
+      case "review":
+        return <ReservationCheck setActiveMenu={navigate} institutionView />;
+      case "matching":
+        return <Matching setActiveMenu={navigate} />;
+      case "compare":
+        return <EquipmentCompare />;
+      case "testInfo":
+        return <TestInformation setActiveMenu={navigate} />;
+      case "duplicates":
+        return <DuplicateEquipment setActiveMenu={navigate} />;
+      case "simulation":
+        return <Simulation />;
+      case "admin":
+        return <AdminManagement />;
+      case "notifications":
+        return <Notifications />;
+      case "manager":
+        return <EquipmentManager />;
+      default:
+        return (
+          <ApiState
+            error={
+              new ApiError("아직 연결되지 않은 화면입니다.", {
+                status: 404,
+                code: "NOT_FOUND",
+              })
+            }
+          />
+        );
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <AppContext.Provider
+      value={{
+        testCondition,
+        setTestCondition,
+        selectedEquipment,
+        setSelectedEquipment,
+        equipmentList,
+        setEquipmentList,
+        reservations,
+        setReservations,
+        catalogQuery,
+        summaryQuery,
+        user,
+        isApiMode,
+        resolveEquipment,
+        isMockMode: apiConfig.isMock,
+        requirementId,
+        setRequirementId,
+        chatSessionId,
+        setChatSessionId,
+        matchRun,
+        setMatchRun,
+        draftRequestId,
+        setDraftRequestId,
+        comparisonIds,
+        setComparisonIds,
+        testTypeCode,
+        setTestTypeCode,
+        simulationEquipmentId,
+        setSimulationEquipmentId,
+        autoRunId,
+        setAutoRunId,
+        openSimulation: (id) => {
+          setSimulationEquipmentId(id);
+          navigate("simulation");
+        },
+        openTestInfo: (code) => {
+          setTestTypeCode(code);
+          navigate("testInfo");
+        },
+      }}
+    >
+      <div className="app-shell">
+        <a className="skip-link" href="#main-content">
+          본문으로 건너뛰기
+        </a>
+        <Sidebar
+          activeMenu={assistantOpen ? "assistant" : activeMenu}
+          setActiveMenu={navigate}
+          open={menuOpen}
+          onClose={closeMenu}
+          blocked={assistantOpen && smallScreen}
+        />
+        <div
+          className="app-body"
+          inert={menuOpen || (assistantOpen && smallScreen) ? true : undefined}
         >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          <AppHeader
+            activeMenu={activeMenu}
+            onBack={() => { closeAssistant(); closeMenu(); workspaceNavigation.back(); }}
+            canGoBack={workspaceNavigation.canGoBack}
+            menuOpen={menuOpen}
+            onMenu={() => setMenuOpen(true)}
+            onSearch={searchEquipment}
+          />
+          <main id="main-content" className="main-content" tabIndex={-1}>
+            {renderContent()}
+          </main>
+          <footer className="app-footer">
+            <span>
+              ASTRA <i /> 우주항공 시험장비 공동활용 플랫폼
+            </span>
+            <span>
+              {apiConfig.isMock
+                ? "DEMO · MSW 시연 · 이 브라우저에 저장 · 실기관 미전송"
+                : isApiMode
+                  ? `${user.name} · 인증된 API · 최종 기관 확인 필요`
+                  : "개발 전용 Mock 장비 · 입력 내역 초기화"}
+            </span>
+          </footer>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {canAccessMenu(user.role, "assistant") && (
+          <AiAssistant
+            open={assistantOpen}
+            started={assistantStarted}
+            mode={assistantMode}
+            modal={smallScreen}
+            onOpen={() => openAssistant()}
+            onClose={closeAssistant}
+            onModeChange={setAssistantMode}
+            onNavigate={(menu) => {
+              closeAssistant();
+              navigate(menu);
+              requestAnimationFrame(() =>
+                document.getElementById("main-content")?.focus(),
+              );
+            }}
+          />
+        )}
+      </div>
+    </AppContext.Provider>
+  );
 }
 
-export default App
+function AuthenticatedWorkspace() {
+  const { user } = useAuth();
+  return (
+    <Workspace key={`${user.id}:${user.role}:${user.organization?.id ?? ""}`} />
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthGate>
+        <AuthenticatedWorkspace />
+      </AuthGate>
+    </AuthProvider>
+  );
+}
