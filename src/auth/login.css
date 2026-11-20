@@ -6,14 +6,14 @@
   --login-card-line: var(--login-line);
   --login-ink: var(--text);
   --login-muted: var(--text-secondary);
-  --login-accent: var(--cyan);
-  --login-action: #71dbea;
-  --login-action-hover: #a0e8f2;
-  --login-action-ink: #102e3b;
-  --login-orbit: #8eb1d9;
-  --login-orbit-dot: #b8cce0;
-  --login-orbit-circle: #8eb1d92b;
-  --login-orbit-circle-secondary: #8eb1d92b;
+  --login-accent: var(--blue);
+  --login-action: var(--blue);
+  --login-action-hover: var(--primary-hover);
+  --login-action-ink: var(--primary-ink);
+  --login-orbit: var(--blue);
+  --login-orbit-dot: color-mix(in srgb, var(--blue), var(--cyan));
+  --login-orbit-circle: color-mix(in srgb, var(--login-orbit) 15%, transparent);
+  --login-orbit-circle-secondary: color-mix(in srgb, var(--login-orbit) 12%, transparent);
   --login-shadow: 0 26px 76px #0005;
   --login-camera-time: 1150ms;
   --login-camera-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -30,13 +30,7 @@
   --login-surface: var(--panel-background);
   --login-input-bg: var(--surface);
   --login-card-line: var(--border);
-  --login-action: var(--cyan);
-  --login-action-hover: var(--primary-hover);
-  --login-action-ink: #fff;
-  --login-orbit: var(--blue);
-  --login-orbit-dot: var(--cyan);
   --login-orbit-circle: var(--border);
-  --login-orbit-circle-secondary: color-mix(in srgb, var(--blue) 12%, transparent);
   --login-shadow: var(--panel-shadow);
 }
 

@@ -83,7 +83,7 @@ function Distribution({ equipmentList, onSearch, loading, error, onRetry }: impo
       return acc;
     }, {}),
   );
-  const colors = ["#56d2e2", "#6e8fed", "#a38ae9", "#e6b36e", "#74cba9"];
+  const colors = ["var(--cyan)", "var(--blue)", "var(--violet)", "var(--amber)", "var(--green)"];
   let angle = 0;
   const stops = groups.map(([, count], i) => {
     const start = angle;

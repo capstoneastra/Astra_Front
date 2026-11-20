@@ -1,21 +1,31 @@
 :root {
   color-scheme: dark;
-  --bg: #080f1e;
-  --sidebar: #0a1322;
-  --surface: #101b2d;
-  --surface-raised: #152238;
-  --surface-glass: rgba(18, 31, 50, 0.82);
-  --border: rgba(147, 177, 211, 0.13);
-  --border-strong: rgba(147, 177, 211, 0.24);
-  --text: #eaf1fc;
-  --text-secondary: #a5b5cb;
-  --text-muted: #8194ae;
-  --cyan: #62d9e9;
-  --blue: #809ff4;
-  --violet: #b09bf3;
-  --amber: #edbf77;
-  --green: #68d5b1;
-  --red: #f299a4;
+  --bg: #171918;
+  --sidebar: #1c1f1e;
+  --surface: #222624;
+  --surface-raised: #2b302e;
+  --surface-sunken: #1b1e1d;
+  --surface-glass: rgba(32, 36, 35, 0.94);
+  --border: rgba(179, 190, 185, 0.15);
+  --border-strong: rgba(179, 190, 185, 0.27);
+  --text: #e5e9e6;
+  --text-secondary: #b6bfba;
+  --text-muted: #9ca7a1;
+  --cyan: #91b7b4;
+  --blue: #99b8df;
+  --violet: #b7a7ca;
+  --amber: #d3b88d;
+  --green: #8cb8a0;
+  --red: #d99da5;
+  --primary-hover: #afc9ea;
+  --primary-ink: #1b2738;
+  --panel-background: linear-gradient(140deg, var(--surface-raised), var(--surface));
+  --panel-shadow: 0 8px 30px #00000014;
+  --control-hover: color-mix(in srgb, var(--cyan) 7%, var(--surface-raised));
+  --accent-background: color-mix(in srgb, var(--cyan) 10%, var(--surface));
+  --accent-border: color-mix(in srgb, var(--cyan) 28%, transparent);
+  --blue-soft: color-mix(in srgb, var(--blue) 12%, var(--surface));
+  --blue-border: color-mix(in srgb, var(--blue) 32%, transparent);
   --font:
     "Pretendard Variable", Pretendard, "Noto Sans KR", "Apple SD Gothic Neo",
     "Malgun Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

@@ -9,12 +9,16 @@
   gap: 10px;
   min-height: 56px;
   padding: 12px 18px;
-  border: 1px solid rgba(117, 200, 231, 0.4);
+  border: 1px solid var(--blue-border);
   border-radius: 18px;
-  background: linear-gradient(125deg, #193e58, #25264c);
-  color: #dff8ff;
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--blue) 18%, var(--surface-raised)),
+    color-mix(in srgb, var(--violet) 14%, var(--surface-raised))
+  );
+  color: var(--text);
   box-shadow:
-    0 10px 36px rgba(0, 9, 24, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.22),
     inset 0 1px rgba(255, 255, 255, 0.07);
   font-size: 14px;
   font-weight: 600;
@@ -22,11 +26,12 @@
 }
 .ai-launcher:hover,
 .ai-launcher--open {
-  border-color: #76c9dc;
-  background: linear-gradient(125deg, #1c4a62, #302c5a);
-  box-shadow:
-    0 12px 40px rgba(0, 9, 24, 0.46),
-    0 0 20px rgba(84, 167, 204, 0.09);
+  border-color: var(--blue);
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--blue) 23%, var(--surface-raised)),
+    color-mix(in srgb, var(--violet) 19%, var(--surface-raised))
+  );
 }
 .ai-launcher:hover {
   transform: translateY(-2px);
@@ -47,7 +52,7 @@
   background: var(--surface-glass);
   backdrop-filter: blur(28px);
   box-shadow:
-    -12px 12px 70px rgba(0, 8, 23, 0.42),
+    -12px 12px 70px rgba(0, 0, 0, 0.32),
     inset 0 1px rgba(255, 255, 255, 0.03);
   animation: assistant-appear 0.2s ease-out;
 }
@@ -63,8 +68,8 @@
   border-bottom: 1px solid var(--border);
   background: linear-gradient(
     110deg,
-    rgba(69, 137, 174, 0.09),
-    rgba(125, 96, 190, 0.07)
+    color-mix(in srgb, var(--cyan) 8%, transparent),
+    color-mix(in srgb, var(--violet) 8%, transparent)
   );
 }
 .ai-assistant__mark {
@@ -75,7 +80,7 @@
   flex-shrink: 0;
   border: 1px solid var(--border-strong);
   border-radius: 13px;
-  background: rgba(82, 167, 210, 0.08);
+  background: var(--accent-background);
   color: var(--cyan);
 }
 .ai-assistant__header > div {
@@ -313,16 +318,10 @@
   text-align: center;
 }
 :root[data-theme="light"] .ai-assistant {
-  background: rgba(250, 253, 255, 0.96);
-  box-shadow: -12px 12px 55px rgba(28, 51, 85, 0.19);
+  box-shadow: -12px 12px 55px #25363229;
 }
 :root[data-theme="light"] .ai-launcher {
-  background: linear-gradient(125deg, #086d80, #4f479b);
-  color: #fff;
-  box-shadow: 0 8px 28px rgba(20, 76, 107, 0.23);
-}
-:root[data-theme="light"] .ai-launcher:hover {
-  background: linear-gradient(125deg, #075b70, #423b87);
+  box-shadow: 0 8px 28px #25363224;
 }
 @keyframes assistant-appear {
   from {
