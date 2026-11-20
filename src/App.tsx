@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect } from "react";
+import { useLocation, useNavigationType } from "react-router";
 import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import EquipmentSearch from "./components/EquipmentSearch";
@@ -31,9 +32,17 @@ import Notifications from "./components/Notifications";
 import ReservationCalendar from "./components/ReservationCalendar";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 
+const PreviewProvider = import.meta.env.DEV
+  ? lazy(() => import("./preview/PreviewProvider"))
+  : null;
+
 function Workspace() {
   const { user } = useAuth();
-  const workspaceNavigation = useWorkspaceNavigation(`${user.id}:${user.role}:${user.organization?.id ?? ""}`);
+  const workspacePath = apiConfig.preview?.path ?? "/";
+  const workspaceNavigation = useWorkspaceNavigation(
+    `${user.id}:${user.role}:${user.organization?.id ?? ""}`,
+    workspacePath,
+  );
   const activeMenu = workspaceNavigation.route.menu;
   const [requirementId, setRequirementId] = useState<number | null>(null);
   const [chatSessionId, setChatSessionId] = useState<number | null>(null);
@@ -56,11 +65,16 @@ function Workspace() {
   );
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const closeAssistant = useCallback(() => setAssistantOpen(false), []);
+  const { key: locationKey } = useLocation();
+  const navigationType = useNavigationType();
   useEffect(() => {
-    const onHistory = () => { closeAssistant(); closeMenu(); };
-    window.addEventListener("popstate", onHistory);
-    return () => window.removeEventListener("popstate", onHistory);
-  }, [closeAssistant, closeMenu]);
+    if (navigationType !== "POP") return;
+    const frame = requestAnimationFrame(() => {
+      closeAssistant();
+      closeMenu();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [locationKey, navigationType, closeAssistant, closeMenu]);
   const catalogQuery = useApiQuery(
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
@@ -235,7 +249,14 @@ function Workspace() {
       }}
     >
       <div className="app-shell">
-        <a className="skip-link" href="#main-content">
+        <a
+          className="skip-link"
+          href="#main-content"
+          onClick={(event) => {
+            event.preventDefault();
+            document.getElementById("main-content")?.focus();
+          }}
+        >
           본문으로 건너뛰기
         </a>
         <Sidebar
@@ -247,7 +268,9 @@ function Workspace() {
         />
         <div
           className="app-body"
-          inert={menuOpen || (assistantOpen && smallScreen) ? true : undefined}
+          ref={(node) => {
+            if (node) node.inert = menuOpen || (assistantOpen && smallScreen);
+          }}
         >
           <AppHeader
             activeMenu={activeMenu}
@@ -265,11 +288,13 @@ function Workspace() {
               ASTRA <i /> 우주항공 시험장비 공동활용 플랫폼
             </span>
             <span>
-              {apiConfig.isMock
-                ? "DEMO · MSW 시연 · 이 브라우저에 저장 · 실기관 미전송"
-                : isApiMode
-                  ? `${user.name} · 인증된 API · 최종 기관 확인 필요`
-                  : "개발 전용 Mock 장비 · 입력 내역 초기화"}
+              {apiConfig.isPreview
+                ? "DEMO · 개발용 미리보기 · 현재 화면에서만 유지"
+                : apiConfig.isMock
+                  ? "DEMO · MSW 시연 · 이 브라우저에 저장 · 실기관 미전송"
+                  : isApiMode
+                    ? `${user.name} · 인증된 API · 최종 기관 확인 필요`
+                    : "개발 전용 Mock 장비 · 입력 내역 초기화"}
             </span>
           </footer>
         </div>
@@ -304,6 +329,15 @@ function AuthenticatedWorkspace() {
 }
 
 export default function App() {
+  if (PreviewProvider && apiConfig.preview)
+    return (
+      <Suspense fallback={<ApiState loading />}>
+        <PreviewProvider account={apiConfig.preview.account}>
+          <AuthenticatedWorkspace />
+        </PreviewProvider>
+      </Suspense>
+    );
+
   return (
     <AuthProvider>
       <AuthGate>

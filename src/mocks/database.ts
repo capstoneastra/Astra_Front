@@ -1,90 +1,16 @@
 import catalog from "./data/catalog.json" with { type: "json" };
+import { apiConfig } from "../api/config";
 
-export const MOCK_PASSWORD = "AstraDemo!2026";
 export const MOCK_STORAGE_KEY = "astra.mock.database.v3";
 export const DEMO_WARNING =
   "가상 시연 모델입니다. 실제 장비 성능·시험 적합성을 의미하지 않습니다.";
 const clone = (value) => structuredClone(value);
-export const mockAccounts = [
-  {
-    id: 2,
-    email: "company@astra.demo",
-    name: "홍길동",
-    role: "COMPANY_USER",
-    status: "ACTIVE",
-    organizationId: 10,
-    label: "기업",
-  },
-  {
-    id: 3,
-    email: "manager1@astra.demo",
-    name: "김담당",
-    role: "INSTITUTION_MANAGER",
-    status: "ACTIVE",
-    organizationId: 2,
-    label: "기관 · 장비 48",
-  },
-  {
-    id: 4,
-    email: "manager2@astra.demo",
-    name: "박담당",
-    role: "INSTITUTION_MANAGER",
-    status: "ACTIVE",
-    organizationId: 6,
-    label: "다른 기관 · 장비 44",
-  },
-  {
-    id: 1,
-    email: "admin@astra.demo",
-    name: "플랫폼 관리자",
-    role: "ADMIN",
-    status: "ACTIVE",
-    organizationId: null,
-    label: "관리자",
-  },
-  {
-    id: 5,
-    email: "pending@astra.demo",
-    name: "승인 대기 시연",
-    role: "INSTITUTION_MANAGER",
-    status: "PENDING",
-    organizationId: 11,
-    label: "승인 대기",
-  },
-  {
-    id: 6,
-    email: "rejected@astra.demo",
-    name: "가입 거절 시연",
-    role: "COMPANY_USER",
-    status: "REJECTED",
-    organizationId: 12,
-    label: "거절",
-  },
-  {
-    id: 7,
-    email: "suspended@astra.demo",
-    name: "계정 정지 시연",
-    role: "COMPANY_USER",
-    status: "SUSPENDED",
-    organizationId: 13,
-    label: "정지",
-  },
-  {
-    id: 8,
-    email: "other@astra.demo",
-    name: "다른 기업 시연",
-    role: "COMPANY_USER",
-    status: "ACTIVE",
-    organizationId: 14,
-    label: "다른 기업",
-  },
-];
 
 export function seedDatabase() {
   const t = clone(catalog.tables);
   const organizations = t.organizations.map((o) => ({
     id: o.id,
-    orgType: "INSTITUTION",
+    orgType: [5, 7].includes(o.id) ? "UNIVERSITY" : o.org_type,
     name: o.name,
     region: o.region,
     isVerified: true,
@@ -93,9 +19,6 @@ export function seedDatabase() {
   organizations.push(
     ...[
       [10, "COMPANY", "가상 A기업", true],
-      [11, "INSTITUTION", "DEMO 승인 대기 기관", false],
-      [12, "COMPANY", "DEMO 가입 거절 기업", false],
-      [13, "COMPANY", "DEMO 이용 정지 기업", true],
       [14, "COMPANY", "DEMO 다른 기업", true],
     ].map(([id, orgType, name, isVerified]) => ({
       id,
@@ -175,14 +98,6 @@ export function seedDatabase() {
     models: t.simulation_models,
     presets: t.simulation_presets,
     equipmentTestTypes: t.equipment_test_types,
-    users: mockAccounts.map(({ label: _label, ...user }) => ({
-      ...user,
-      phone: null,
-      createdAt: null,
-      lastLoginAt: null,
-      rejectReason: user.status === "REJECTED" ? "DEMO 소속 확인 불가" : null,
-    })),
-    sessions: [],
     chats: [],
     requirements: [],
     matchRuns: [],
@@ -207,8 +122,6 @@ export function createMockDatabase(storage) {
           [
             "requests",
             "equipment",
-            "users",
-            "sessions",
             "organizations",
             "rules",
             "requirements",
@@ -238,19 +151,11 @@ export function createMockDatabase(storage) {
         /* Memory-only Mock session. */
       }
     },
-    reset() {
-      state = seedDatabase();
-      try {
-        storage?.removeItem(MOCK_STORAGE_KEY);
-      } catch {
-        /* Already reset in memory. */
-      }
-    },
   };
 }
 let storage;
 try {
-  if (typeof window !== "undefined") storage = window.localStorage;
+  if (typeof window !== "undefined" && !apiConfig.isPreview) storage = window.localStorage;
 } catch {
   /* Optional. */
 }

@@ -101,37 +101,8 @@ export const dashboardRoutes: MockRoute[] = [
       }
       if (ctx.user.role === "ADMIN")
         Object.assign(summary, {
-          pendingUsers: ctx.state.users.filter((u) => u.status === "PENDING")
-            .length,
-          pendingInstitutions: ctx.state.organizations.filter(
-            (o) => o.orgType === "INSTITUTION" && !o.isVerified,
-          ).length,
-          institutionVerification: ctx.state.organizations
-            .filter((o) => o.orgType === "INSTITUTION")
-            .map((o) => ({
-              id: o.id,
-              name: o.name,
-              region: o.region,
-              equipmentCount: equipment.filter((e) => e.institution.id === o.id)
-                .length,
-              verifiedCount: equipment.filter(
-                (e) =>
-                  e.institution.id === o.id &&
-                  e.verificationStatus === "INSTITUTION_VERIFIED",
-              ).length,
-              verificationRate: (() => {
-                const own = equipment.filter((e) => e.institution.id === o.id);
-                return own.length
-                  ? Math.round(
-                      (own.filter(
-                        (e) => e.verificationStatus === "INSTITUTION_VERIFIED",
-                      ).length /
-                        own.length) *
-                        1000,
-                    ) / 10
-                  : 0;
-              })(),
-            })),
+          pendingUsers: 0,
+          pendingInstitutions: ctx.state.organizations.filter((organization) => !organization.isVerified).length,
         });
       return ok(summary);
     },
@@ -152,7 +123,7 @@ export const dashboardRoutes: MockRoute[] = [
             .length,
         })),
         institutions: ctx.state.organizations
-          .filter((o) => o.orgType === "INSTITUTION")
+          .filter((o) => ["INSTITUTION", "UNIVERSITY"].includes(o.orgType))
           .map((o) => ({
             id: o.id,
             name: o.name,

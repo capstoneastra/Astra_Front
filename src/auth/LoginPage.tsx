@@ -1,20 +1,20 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { LockKeyhole, Orbit } from "lucide-react";
+import { Link, useLocation } from "react-router";
 import { useAuth } from "./context";
 import { Button, FormField, PageHeader, Panel } from "../components/ui";
-import { apiConfig } from "../api/config";
 import ThemeToggle from "../components/ui/ThemeToggle";
-const MockAccountPanel = import.meta.env.DEV
-  ? lazy(() => import("../mocks/MockAccountPanel"))
-  : null;
+import InternalPreviewLinks from "./InternalPreviewLinks";
 
 export default function LoginPage() {
   const { login, error } = useAuth();
+  const signupPending = useLocation().state?.signupPending === true;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [validation, setValidation] = useState("");
-  const submit = async (event) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy) return;
     if (!email.trim() || !password) {
@@ -31,7 +31,7 @@ export default function LoginPage() {
     }
   };
   const account = error?.code === "ACCOUNT_NOT_ACTIVE" ? error.details : null;
-  const statusText = {
+  const statusText: Record<string, string> = {
     PENDING: "관리자 승인 대기 중입니다.",
     REJECTED: "가입이 반려되었습니다.",
     SUSPENDED: "이용이 정지된 계정입니다.",
@@ -56,17 +56,10 @@ export default function LoginPage() {
               <p>기업·기관 담당자·관리자 권한은 서버에서 확인합니다.</p>
             </div>
           </div>
-          {apiConfig.isMock && MockAccountPanel && (
-            <Suspense fallback={null}>
-              <MockAccountPanel
-                disabled={busy}
-                onSelect={(nextEmail, nextPassword) => {
-                  setEmail(nextEmail);
-                  setPassword(nextPassword);
-                  setValidation("");
-                }}
-              />
-            </Suspense>
+          {signupPending && (
+            <div className="content-note" role="status">
+              가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.
+            </div>
           )}
           <form onSubmit={submit} aria-busy={busy}>
             <div className="form-grid">
@@ -105,34 +98,24 @@ export default function LoginPage() {
               <div className="content-note" role="alert">
                 <LockKeyhole size={16} />
                 <span>
-                  {validation || error.message}
-                  {account && (
+                  {validation || (account ? statusText[account.status] ?? error?.message : error?.message)}
+                  {account?.rejectReason && (
                     <>
                       <br />
-                      {statusText[account.status] ??
-                        "계정 상태를 확인해주세요."}
-                      {account.rejectReason && (
-                        <>
-                          <br />
-                          {account.rejectReason}
-                        </>
-                      )}
+                      {account.rejectReason}
                     </>
                   )}
                 </span>
               </div>
             )}
             <div className="form-actions">
-              <p>
-                {apiConfig.isMock
-                  ? "위 시연 계정을 선택한 뒤 로그인하세요. 승인 대기 계정은 관리자 화면에서 승인할 수 있습니다."
-                  : "이메일 인증·회원가입·계정 승인은 백엔드 담당자에게 문의해주세요."}
-              </p>
+              <Link className="text-link" to="/auth/signup">회원가입</Link>
               <Button type="submit" icon={LockKeyhole} disabled={busy}>
                 {busy ? "로그인 확인 중…" : "로그인"}
               </Button>
             </div>
           </form>
+          <InternalPreviewLinks />
         </Panel>
       </div>
     </main>

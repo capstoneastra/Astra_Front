@@ -1,5 +1,27 @@
 import { apiConfig } from "./config";
+
+function removeLegacyMockAccounts() {
+  try {
+    const key = "astra.mock.database.v3";
+    const saved = JSON.parse(window.localStorage.getItem(key) ?? "null");
+    if (saved?.schemaVersion !== 3 || (!Object.hasOwn(saved, "users") && !Object.hasOwn(saved, "sessions"))) return;
+    delete saved.users;
+    delete saved.sessions;
+    if (Array.isArray(saved.organizations))
+      saved.organizations = saved.organizations.filter((organization) => ![11, 12, 13].includes(organization?.id));
+    window.localStorage.setItem(key, JSON.stringify(saved));
+  } catch {
+    /* Local browser storage is optional. */
+  }
+}
+
 export async function initializeApi() {
+  if (import.meta.env.DEV && apiConfig.preview) {
+    const { initializePreviewApi } = await import("../preview/api");
+    initializePreviewApi(apiConfig.preview.account);
+    return;
+  }
+  removeLegacyMockAccounts();
   if (import.meta.env?.DEV && apiConfig.isMock) {
     const { worker } = await import("../mocks/browser");
     await worker.start({

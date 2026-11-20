@@ -18,13 +18,9 @@ export default function Automation({ setActiveMenu, embedded = false }) {
       (signal) => automationService.get(autoRunId, signal),
       `auto-run:${autoRunId}`,
       Boolean(autoRunId),
+      (data) => data?.status === "RUNNING" ? 1200 : false,
     ),
     run = query.data;
-  useEffect(() => {
-    if (run?.status !== "RUNNING") return;
-    const timer = setTimeout(query.reload, 1200);
-    return () => clearTimeout(timer);
-  }, [run, query.reload]);
   useEffect(() => {
     if (run?.status === "SUCCEEDED" && completed.current !== run.id) {
       completed.current = run.id;

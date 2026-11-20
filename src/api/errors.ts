@@ -1,6 +1,9 @@
 export interface ApiErrorDetails {
   status?: string;
   rejectReason?: string | null;
+  remainingAttempts?: number;
+  retryAfter?: number;
+  fieldErrors?: Record<string, string>;
 }
 
 interface ApiErrorOptions {
@@ -10,7 +13,7 @@ interface ApiErrorOptions {
 }
 
 interface ErrorEnvelope {
-  error?: { code?: unknown; message?: unknown; details?: ApiErrorDetails };
+  error?: { code?: unknown; message?: unknown; details?: Record<string, unknown> | null };
 }
 
 interface ResponseEnvelope<T> extends ErrorEnvelope {
@@ -40,6 +43,12 @@ const messages: Record<string, string> = {
   TOKEN_EXPIRED: "로그인이 만료되었습니다. 다시 로그인해주세요.",
   INVALID_CREDENTIALS: "이메일 또는 비밀번호를 확인해주세요.",
   ACCOUNT_NOT_ACTIVE: "아직 이용할 수 없는 계정입니다.",
+  EMAIL_NOT_VERIFIED: "이메일 인증이 만료되었거나 사용할 수 없습니다. 인증 코드를 다시 받으세요.",
+  EMAIL_ALREADY_EXISTS: "이미 가입된 이메일입니다.",
+  ORGANIZATION_ALREADY_EXISTS: "같은 이름의 조직이 이미 등록되어 있습니다.",
+  VERIFICATION_CODE_INVALID: "인증 코드가 일치하지 않습니다.",
+  VERIFICATION_CODE_EXPIRED: "인증 코드를 더 이상 사용할 수 없습니다. 코드를 다시 받으세요.",
+  TOO_MANY_REQUESTS: "요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.",
   FORBIDDEN: "이 기능에 접근할 권한이 없습니다.",
   EQUIPMENT_NOT_FOUND: "장비가 없거나 비활성화되었습니다.",
   NOT_FOUND: "요청한 정보를 찾을 수 없습니다.",
@@ -66,17 +75,28 @@ export function errorFromEnvelope(body: ErrorEnvelope | null | undefined, status
       : (messages[code] ??
         (typeof item?.message === "string" ? item.message : fallback));
   // Do not retain Axios config, request bodies or response objects containing tokens.
-  return new ApiError(message, {
-    status,
-    code,
-    details:
-      code === "ACCOUNT_NOT_ACTIVE"
-        ? {
-            status: item?.details?.status,
-            rejectReason: item?.details?.rejectReason,
-          }
-        : null,
-  });
+  const source = item?.details;
+  let details: ApiErrorDetails | null = null;
+  if (code === "ACCOUNT_NOT_ACTIVE")
+    details = {
+      status: typeof source?.status === "string" ? source.status : undefined,
+      rejectReason: typeof source?.rejectReason === "string" ? source.rejectReason : undefined,
+    };
+  if (code === "VERIFICATION_CODE_INVALID" && typeof source?.remainingAttempts === "number" &&
+      Number.isSafeInteger(source.remainingAttempts) && source.remainingAttempts >= 0)
+    details = { remainingAttempts: source.remainingAttempts };
+  if (code === "TOO_MANY_REQUESTS" && typeof source?.retryAfter === "number" &&
+      Number.isSafeInteger(source.retryAfter) && source.retryAfter >= 0)
+    details = { retryAfter: source.retryAfter };
+  if (code === "VALIDATION_FAILED" && source) {
+    const fields = source.fieldErrors ?? source;
+    if (fields && typeof fields === "object" && !Array.isArray(fields)) {
+      const errors = Object.entries(fields)
+        .filter((entry): entry is [string, string] => typeof entry[1] === "string" && Boolean(entry[1].trim()));
+      if (errors.length) details = { fieldErrors: Object.fromEntries(errors) };
+    }
+  }
+  return new ApiError(message, { status, code, details });
 }
 
 export function validateEnvelope<T>(body: unknown, status = 200) {

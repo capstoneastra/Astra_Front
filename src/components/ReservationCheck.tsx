@@ -46,7 +46,7 @@ export default function ReservationCheck({
         <Info size={16} />
         <span>
           {apiConfig.isMock
-            ? "DEMO · 이 브라우저의 시연 의뢰입니다. 계정을 바꿔도 진행 상태가 유지됩니다."
+            ? "DEMO · 시연용 시험 의뢰를 조회합니다."
             : "소속 기업·기관의 의뢰만 조회합니다."}{" "}
           제출·검토·보완·예약은 각각 별도 상태로 관리합니다.
         </span>

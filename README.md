@@ -11,8 +11,8 @@ npm i
 npm run dev
 ```
 
-개발 서버는 기본적으로 저장소에 포함된 Mock API로 ASTRA 로그인 화면을 엽니다. Mock Service Worker 스크립트는 Vite에서 제공합니다.
+개발 서버는 기본적으로 실제 API를 사용합니다. 기본 경로는 같은 출처의 `/api/v1`입니다. 백엔드를 별도 주소에서 실행하면 `.env.local`의 `VITE_API_BASE_URL`에 백엔드 주소와 `/api/v1` 경로를 설정하세요.
 
-실제 백엔드를 연결할 때는 `.env.local`에 `VITE_API_MODE=api`와 `VITE_API_BASE_URL`을 설정하세요.
+개발 중 업무 화면을 시연할 때는 `VITE_API_MODE=mock`으로 MSW를 활성화할 수 있습니다. 이 모드에서도 로그인, 회원가입, 계정 관리는 설정한 백엔드에서 처리합니다.
 
 `npm run build`는 타입 검사와 프로덕션 번들을 실행합니다. `npm run lint`는 소스와 설정을 검사합니다.

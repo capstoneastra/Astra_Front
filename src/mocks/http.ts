@@ -1,3 +1,11 @@
+import type { UserRole } from "../auth/session";
+
+export interface MockParticipant {
+  id: number;
+  role: UserRole;
+  organizationId: number | null;
+}
+
 export class MockApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -68,24 +76,9 @@ export const summaryEquipment = ({
   isActive: _a,
   ...item
 }) => item;
-export function userView(state, user) {
-  const organization =
-    state.organizations.find((o) => o.id === user.organizationId) ?? null;
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    phone: user.phone,
-    role: user.role,
-    status: user.status,
-    organization,
-    createdAt: user.createdAt,
-    lastLoginAt: user.lastLoginAt,
-    rejectReason: user.rejectReason,
-  };
-}
 export function contextFor(state, request, clock) {
   const now = clock().toISOString();
+  const participants: ReadonlyMap<number, MockParticipant> = request.participants;
   const ctx = { state, ...request, now, nextId: () => ++state.sequence };
   ctx.role = (...roles) => {
     if (ctx.user?.role !== "ADMIN" && !roles.includes(ctx.user?.role))
@@ -166,7 +159,7 @@ export function contextFor(state, request, clock) {
       createdAt: now,
     });
   ctx.notifyInstitution = (item, type, message) =>
-    state.users
+    Array.from(participants.values())
       .filter(
         (u) =>
           u.role === "INSTITUTION_MANAGER" &&

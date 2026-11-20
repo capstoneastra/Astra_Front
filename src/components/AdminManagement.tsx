@@ -7,6 +7,13 @@ import { adminService } from "../services/adminService";
 import { DemoNotice, Feedback } from "./workflow/Feedback";
 import { accountStatusLabels, roleLabels } from "../domain/constants";
 import ApiState from "./ui/ApiState";
+
+const organizationTypeLabels = {
+  COMPANY: "기업",
+  INSTITUTION: "기관",
+  UNIVERSITY: "대학",
+};
+
 export default function AdminManagement() {
   const { user } = useAuth(),
     [status, setStatus] = useState(""),
@@ -177,10 +184,10 @@ export default function AdminManagement() {
                 {organizations.data?.content.map((org) => (
                   <tr key={org.id}>
                     <td>{org.name}</td>
-                    <td>{org.orgType === "INSTITUTION" ? "기관" : "기업"}</td>
+                    <td>{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
                     <td>{org.isVerified ? "승인" : "확인 필요"}</td>
                     <td>
-                      {org.orgType === "INSTITUTION" && !org.isVerified ? (
+                      {["INSTITUTION", "UNIVERSITY"].includes(org.orgType) && !org.isVerified ? (
                         <Button
                           disabled={action.busy}
                           onClick={() =>

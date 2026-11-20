@@ -1,26 +1,21 @@
-import { useEffect } from "react";
+import type { ReactNode } from "react";
+import { Navigate, Route, Routes } from "react-router";
 import { useAuth } from "./context";
 import LoginPage from "./LoginPage";
+import SignupPage from "./SignupPage";
 import ApiState from "../components/ui/ApiState";
 import { Button, Panel } from "../components/ui";
 
-export default function AuthGate({ children }) {
+export default function AuthGate({ children }: { children: ReactNode }) {
   const { status, error, checkSession, logout } = useAuth();
-  useEffect(() => {
-    const syncPath = () => {
-      if (status === "anonymous" && window.location.pathname !== "/auth/login")
-        window.history.replaceState(null, "", "/auth/login");
-      if (
-        status === "authenticated" &&
-        window.location.pathname.startsWith("/auth/")
-      )
-        window.history.replaceState(null, "", "/");
-    };
-    syncPath();
-    window.addEventListener("popstate", syncPath);
-    return () => window.removeEventListener("popstate", syncPath);
-  }, [status]);
-  if (status === "anonymous") return <LoginPage />;
+  if (status === "anonymous")
+    return (
+      <Routes>
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/signup" element={<SignupPage />} />
+        <Route path="*" element={<Navigate to="/auth/login" replace />} />
+      </Routes>
+    );
   if (status !== "authenticated")
     return (
       <main className="main-content">
@@ -40,5 +35,10 @@ export default function AuthGate({ children }) {
         </div>
       </main>
     );
-  return children;
+  return (
+    <Routes>
+      <Route path="/" element={children} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }

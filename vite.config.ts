@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
@@ -23,5 +24,5 @@ function serveMockWorker(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), serveMockWorker()],
+  plugins: [react(), tailwindcss(), serveMockWorker()],
 })

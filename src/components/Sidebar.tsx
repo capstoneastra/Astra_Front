@@ -12,7 +12,7 @@ export default function Sidebar({
   onClose,
   blocked = false,
 }) {
-  const sidebar = useRef(null);
+  const sidebar = useRef<HTMLElement>(null);
   const { user } = useAuth();
   const visibleNavigation = navigation
     .map((group) => ({
@@ -29,7 +29,7 @@ export default function Sidebar({
       if (event.key === "Escape") onClose();
       if (event.key !== "Tab") return;
       const items = [
-        ...element.querySelectorAll("button:not(:disabled)"),
+        ...element.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
       ].filter((item) => item.getClientRects().length);
       const first = items[0];
       const last = items.at(-1);
@@ -66,13 +66,15 @@ export default function Sidebar({
         />
       )}
       <aside
-        ref={sidebar}
+        ref={(node) => {
+          sidebar.current = node;
+          if (node) node.inert = blocked;
+        }}
         id="primary-navigation"
         className={`sidebar ${open ? "sidebar--open" : ""}`}
         aria-label="주 메뉴"
         role={open ? "dialog" : undefined}
         aria-modal={open ? true : undefined}
-        inert={blocked ? true : undefined}
       >
         <div className="sidebar__brand-row">
           <button

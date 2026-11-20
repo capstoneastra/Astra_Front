@@ -4,7 +4,8 @@ import type { AuthState } from "./context";
 import type { ReactNode } from "react";
 import { tokenStore } from "./tokenStore";
 import { authService } from "../services/authService";
-import { ApiError, toApiError } from "../api/errors";
+import { ApiError, contractError, toApiError } from "../api/errors";
+import { queryClient } from "../api/cache";
 import type { User } from "../services/authService";
 
 function activeUser(user: User) {
@@ -58,6 +59,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       tokenStore.subscribe((reason) => {
         operation.current += 1;
         request.current?.abort();
+        queryClient.clear();
         setState({
           status: "anonymous",
           user: null,
@@ -108,6 +110,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       const user = activeUser(await authService.me(controller.signal));
       if (sequence !== operation.current || controller.signal.aborted)
         return false;
+      if (user.id !== session.user.id)
+        throw contractError("로그인 응답과 현재 사용자 정보가 일치하지 않습니다.");
       setState({ status: "authenticated", user, error: null });
       return true;
     } catch (error) {
@@ -120,8 +124,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = tokenStore.getRefreshToken();
-    const pending = refreshToken ? authService.logout(refreshToken) : null;
+    const pending = authService.logout();
     tokenStore.clear("logout");
     try {
       await pending;
