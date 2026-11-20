@@ -23,6 +23,9 @@
   --amber: #986013;
   --green: #087855;
   --red: #b93b56;
+  --panel-background: linear-gradient(135deg, #fff, #f8fbff);
+  --panel-shadow: 0 6px 24px rgba(37, 64, 104, 0.045);
+  --primary-hover: #075c70;
 }
 
 :root[data-theme="light"] ::selection {
@@ -46,8 +49,8 @@
   background: rgba(250, 253, 255, 0.94);
 }
 :root[data-theme="light"] :is(.panel, .metric-card, .dashboard-search) {
-  background: linear-gradient(135deg, #fff, #f8fbff);
-  box-shadow: 0 6px 24px rgba(37, 64, 104, 0.045);
+  background: var(--panel-background);
+  box-shadow: var(--panel-shadow);
 }
 :root[data-theme="light"] button.metric-card:hover {
   background: #f0f8fc;
@@ -217,12 +220,12 @@
   border-color: rgba(112, 80, 180, 0.25);
 }
 :root[data-theme="light"] .button--primary {
-  background: #086d80;
-  border-color: #086d80;
+  background: var(--cyan);
+  border-color: var(--cyan);
   color: #fff;
 }
 :root[data-theme="light"] .button--primary:not(:disabled):hover {
-  background: #075c70;
+  background: var(--primary-hover);
   color: #fff;
 }
 :root[data-theme="light"]

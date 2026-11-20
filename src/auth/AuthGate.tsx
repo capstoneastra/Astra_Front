@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { useAuth } from "./context";
+import AuthLayout from "./AuthLayout";
 import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
 import ApiState from "../components/ui/ApiState";
@@ -11,8 +12,10 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   if (status === "anonymous")
     return (
       <Routes>
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/signup" element={<SignupPage />} />
+        <Route element={<AuthLayout />}>
+          <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/signup" element={<SignupPage />} />
+        </Route>
         <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Routes>
     );

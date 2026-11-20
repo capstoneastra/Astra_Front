@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { ApiError, toApiError } from "../api/errors";
-import { Button, FormField, PageHeader, Panel } from "../components/ui";
+import { Button, FormField } from "../components/ui";
 import ApiState from "../components/ui/ApiState";
-import ThemeToggle from "../components/ui/ThemeToggle";
 import { useAction } from "../hooks/useAction";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { authService } from "../services/authService";
 import type { InstitutionType, SignupRequest } from "../services/authService";
+import AuthCardLink from "./AuthCardLink";
 import InternalPreviewLinks from "./InternalPreviewLinks";
 
 const noVerification = { codeExpiresAt: 0, resendAt: 0, token: "", tokenExpiresAt: 0 };
@@ -194,120 +194,117 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="main-content">
-      <div className="content-page content-page--narrow page-enter">
-        <PageHeader title="ASTRA 회원가입" description="이메일을 인증하고 가입을 신청하세요. 관리자 승인 후 로그인할 수 있습니다.">
-          <ThemeToggle />
-        </PageHeader>
-        <Panel className="form-panel">
-          <form onSubmit={submit} aria-busy={action.busy}>
-            <fieldset disabled={action.busy} className="tw:m-0 tw:min-w-0 tw:border-0 tw:p-0">
-              <div className="form-grid">
-                <FormField id="signup-email" label="이메일" className="form-field--full">
-                  <input id="signup-email" ref={emailInput} type="email" autoComplete="username" required value={email} onChange={(event) => updateEmail(event.target.value)} />
-                  {!verified && (
-                    <Button variant="secondary" onClick={sendCode} disabled={!email.trim() || resendSeconds > 0}>
-                      {resendSeconds > 0 ? `${resendSeconds}초 후 다시 발송` : codeSeconds > 0 ? "인증 코드 다시 받기" : "인증 코드 받기"}
-                    </Button>
-                  )}
+    <div className="login-card login-card--signup">
+      <h1 id="auth-card-heading" tabIndex={-1}>회원가입</h1>
+      <p className="login-card__intro">
+        이메일을 인증하고 가입을 신청하세요. 관리자 승인 후 로그인할 수 있습니다.
+      </p>
+      <form onSubmit={submit} aria-busy={action.busy}>
+        <fieldset disabled={action.busy} className="tw:m-0 tw:min-w-0 tw:border-0 tw:p-0">
+          <div className="form-grid">
+            <FormField id="signup-email" label="이메일" className="form-field--full">
+              <input id="signup-email" ref={emailInput} type="email" autoComplete="username" required value={email} onChange={(event) => updateEmail(event.target.value)} />
+              {!verified && (
+                <Button variant="secondary" onClick={sendCode} disabled={!email.trim() || resendSeconds > 0}>
+                  {resendSeconds > 0 ? `${resendSeconds}초 후 다시 발송` : codeSeconds > 0 ? "인증 코드 다시 받기" : "인증 코드 받기"}
+                </Button>
+              )}
+            </FormField>
+            {verified && <p className="content-note form-field--full" role="status">이메일 인증을 완료했습니다.</p>}
+            {!verified && codeSeconds > 0 && (
+              <FormField id="signup-code" label="이메일 인증 코드" className="form-field--full"
+                hint={`유효 시간 ${Math.floor(codeSeconds / 60)}분 ${codeSeconds % 60}초`}>
+                <input id="signup-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/[^0-9]/g, ""))} />
+                <Button variant="secondary" onClick={confirmCode} disabled={!sixDigits.test(code)}>인증 코드 확인</Button>
+              </FormField>
+            )}
+            {!verified && (verification.codeExpiresAt > 0 || verification.tokenExpiresAt > 0) && codeSeconds === 0 && (
+              <p className="content-note form-field--full" role="status">이메일 인증 시간이 지났습니다. 인증 코드를 다시 받으세요.</p>
+            )}
+            <FormField id="signup-name" label="이름">
+              <input id="signup-name" name="name" autoComplete="name" required />
+            </FormField>
+            <FormField id="signup-phone" label="개인 연락처 (선택)">
+              <input id="signup-phone" name="phone" type="tel" autoComplete="tel" />
+            </FormField>
+            <FormField id="signup-password" label="비밀번호">
+              <input id="signup-password" name="password" type="password" autoComplete="new-password" required />
+            </FormField>
+            <FormField id="signup-role" label="가입 유형">
+              <select id="signup-role" value={role} onChange={(event) => setRole(event.target.value === "INSTITUTION_MANAGER" ? "INSTITUTION_MANAGER" : "COMPANY_USER")}>
+                <option value="COMPANY_USER">기업</option>
+                <option value="INSTITUTION_MANAGER">기관·대학 담당자</option>
+              </select>
+            </FormField>
+            {role === "COMPANY_USER" ? (
+              <>
+                <FormField id="signup-company" label="회사명">
+                  <input id="signup-company" name="companyName" required />
                 </FormField>
-                {verified && <p className="content-note form-field--full" role="status">이메일 인증을 완료했습니다.</p>}
-                {!verified && codeSeconds > 0 && (
-                  <FormField id="signup-code" label="이메일 인증 코드" className="form-field--full"
-                    hint={`유효 시간 ${Math.floor(codeSeconds / 60)}분 ${codeSeconds % 60}초`}>
-                    <input id="signup-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/[^0-9]/g, ""))} />
-                    <Button variant="secondary" onClick={confirmCode} disabled={!sixDigits.test(code)}>인증 코드 확인</Button>
-                  </FormField>
-                )}
-                {!verified && (verification.codeExpiresAt > 0 || verification.tokenExpiresAt > 0) && codeSeconds === 0 && (
-                  <p className="content-note form-field--full" role="status">이메일 인증 시간이 지났습니다. 인증 코드를 다시 받으세요.</p>
-                )}
-                <FormField id="signup-name" label="이름">
-                  <input id="signup-name" name="name" autoComplete="name" required />
+                <FormField id="signup-business" label="사업자등록번호" hint="숫자 10자리 · 하이픈 입력 가능">
+                  <input id="signup-business" name="businessRegNo" inputMode="numeric" required />
                 </FormField>
-                <FormField id="signup-phone" label="개인 연락처 (선택)">
-                  <input id="signup-phone" name="phone" type="tel" autoComplete="tel" />
-                </FormField>
-                <FormField id="signup-password" label="비밀번호">
-                  <input id="signup-password" name="password" type="password" autoComplete="new-password" required />
-                </FormField>
-                <FormField id="signup-role" label="가입 유형">
-                  <select id="signup-role" value={role} onChange={(event) => setRole(event.target.value === "INSTITUTION_MANAGER" ? "INSTITUTION_MANAGER" : "COMPANY_USER")}>
-                    <option value="COMPANY_USER">기업</option>
-                    <option value="INSTITUTION_MANAGER">기관·대학 담당자</option>
+              </>
+            ) : (
+              <>
+                <FormField id="signup-affiliation" label="소속 등록 방식" className="form-field--full">
+                  <select id="signup-affiliation" value={existing ? "existing" : "new"} onChange={(event) => setExisting(event.target.value === "existing")}>
+                    <option value="existing">등록된 기관·대학 선택</option>
+                    <option value="new">미등록 기관·대학 신청</option>
                   </select>
                 </FormField>
-                {role === "COMPANY_USER" ? (
-                  <>
-                    <FormField id="signup-company" label="회사명">
-                      <input id="signup-company" name="companyName" required />
-                    </FormField>
-                    <FormField id="signup-business" label="사업자등록번호" hint="숫자 10자리 · 하이픈 입력 가능">
-                      <input id="signup-business" name="businessRegNo" inputMode="numeric" required />
-                    </FormField>
-                  </>
+                {existing ? (
+                  <FormField id="signup-institution" label="소속 기관·대학" className="form-field--full"
+                    hint={institutions.data?.length === 0 ? "등록된 기관·대학이 없습니다. 소속 등록 방식을 변경할 수 있습니다." : undefined}>
+                    <select id="signup-institution" name="organizationId" defaultValue="" required disabled={!institutions.data?.length}>
+                      <option value="" disabled>{institutions.loading ? "불러오는 중…" : "기관·대학 선택"}</option>
+                      {institutions.data?.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({item.orgType === "UNIVERSITY" ? "대학" : "기관"}{item.region ? ` · ${item.region}` : ""})
+                        </option>
+                      ))}
+                    </select>
+                    {institutions.error && <ApiState error={institutions.error} onRetry={institutions.reload} />}
+                  </FormField>
                 ) : (
                   <>
-                    <FormField id="signup-affiliation" label="소속 등록 방식" className="form-field--full">
-                      <select id="signup-affiliation" value={existing ? "existing" : "new"} onChange={(event) => setExisting(event.target.value === "existing")}>
-                        <option value="existing">등록된 기관·대학 선택</option>
-                        <option value="new">미등록 기관·대학 신청</option>
-                      </select>
+                    <FormField id="signup-org-type" label="조직 유형">
+                      <select id="signup-org-type" name="orgType"><option value="INSTITUTION">기관</option><option value="UNIVERSITY">대학</option></select>
                     </FormField>
-                    {existing ? (
-                      <FormField id="signup-institution" label="소속 기관·대학" className="form-field--full"
-                        hint={institutions.data?.length === 0 ? "등록된 기관·대학이 없습니다. 소속 등록 방식을 변경할 수 있습니다." : undefined}>
-                        <select id="signup-institution" name="organizationId" defaultValue="" required disabled={!institutions.data?.length}>
-                          <option value="" disabled>{institutions.loading ? "불러오는 중…" : "기관·대학 선택"}</option>
-                          {institutions.data?.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name} ({item.orgType === "UNIVERSITY" ? "대학" : "기관"}{item.region ? ` · ${item.region}` : ""})
-                            </option>
-                          ))}
-                        </select>
-                        {institutions.error && <ApiState error={institutions.error} onRetry={institutions.reload} />}
-                      </FormField>
-                    ) : (
-                      <>
-                        <FormField id="signup-org-type" label="조직 유형">
-                          <select id="signup-org-type" name="orgType"><option value="INSTITUTION">기관</option><option value="UNIVERSITY">대학</option></select>
-                        </FormField>
-                        <FormField id="signup-org-name" label="기관·대학 이름">
-                          <input id="signup-org-name" name="organizationName" required />
-                        </FormField>
-                        <FormField id="signup-org-address" label="소속 조직 주소">
-                          <input id="signup-org-address" name="address" required />
-                        </FormField>
-                        <FormField id="signup-org-phone" label="소속 조직 연락처">
-                          <input id="signup-org-phone" name="organizationPhone" type="tel" required />
-                        </FormField>
-                      </>
-                    )}
+                    <FormField id="signup-org-name" label="기관·대학 이름">
+                      <input id="signup-org-name" name="organizationName" required />
+                    </FormField>
+                    <FormField id="signup-org-address" label="소속 조직 주소">
+                      <input id="signup-org-address" name="address" required />
+                    </FormField>
+                    <FormField id="signup-org-phone" label="소속 조직 연락처">
+                      <input id="signup-org-phone" name="organizationPhone" type="tel" required />
+                    </FormField>
                   </>
                 )}
-              </div>
-            </fieldset>
-            {action.error && (
-              <div className="content-note" role="alert">
-                <div>
-                  {action.error.message}
-                  {action.error.details?.remainingAttempts > 0 && ` 남은 시도 ${action.error.details.remainingAttempts}회.`}
-                  {Object.entries(action.error.details?.fieldErrors ?? {}).map(([field, message]) =>
-                    Object.hasOwn(fieldLabels, field) && <p key={field}>{fieldLabels[field]} · {message}</p>
-                  )}
-                </div>
-              </div>
+              </>
             )}
-            <div className="form-actions">
-              <Link className="text-link" to="/auth/login">로그인으로 돌아가기</Link>
-              <Button type="submit" disabled={!verified || action.busy || (selectInstitution && !institutions.data?.length)}>
-                가입 신청
-              </Button>
+          </div>
+        </fieldset>
+        {action.error && (
+          <div className="content-note" role="alert">
+            <div>
+              {action.error.message}
+              {action.error.details?.remainingAttempts > 0 && ` 남은 시도 ${action.error.details.remainingAttempts}회.`}
+              {Object.entries(action.error.details?.fieldErrors ?? {}).map(([field, message]) =>
+                Object.hasOwn(fieldLabels, field) && <p key={field}>{fieldLabels[field]} · {message}</p>
+              )}
             </div>
-          </form>
-          <InternalPreviewLinks />
-        </Panel>
-      </div>
-    </main>
+          </div>
+        )}
+        <div className="form-actions">
+          <AuthCardLink className="login-signup-link" to="/auth/login">로그인으로 돌아가기</AuthCardLink>
+          <Button type="submit" disabled={!verified || action.busy || (selectInstitution && !institutions.data?.length)}>
+            가입 신청
+          </Button>
+        </div>
+      </form>
+      <div className="login-card__previews"><InternalPreviewLinks /></div>
+    </div>
   );
 }

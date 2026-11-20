@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from "react";
-import { apiConfig } from "../api/config";
 
 const key = "astra.theme.v1";
 const event = "astra:theme-change";
@@ -14,12 +13,20 @@ function applyTheme(value) {
   window.dispatchEvent(new Event(event));
 }
 
+export function initializeTheme() {
+  try {
+    applyTheme(window.localStorage.getItem(key));
+  } catch {
+    applyTheme("dark");
+  }
+}
+
 function subscribe(listener) {
   const storage = (change) => {
     if (change.key === key || change.key === null) applyTheme(change.newValue);
   };
   window.addEventListener(event, listener);
-  if (!apiConfig.isPreview) window.addEventListener("storage", storage);
+  window.addEventListener("storage", storage);
   return () => {
     window.removeEventListener(event, listener);
     window.removeEventListener("storage", storage);
@@ -33,7 +40,7 @@ export function useTheme() {
     toggleTheme() {
       const next = snapshot() === "dark" ? "light" : "dark";
       try {
-        if (!apiConfig.isPreview) localStorage.setItem(key, next);
+        window.localStorage.setItem(key, next);
       } catch {
         // Keep the selected theme for this page even without persistent storage.
       }

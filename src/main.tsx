@@ -11,9 +11,11 @@ import { initializeApi } from "./api/bootstrap";
 import { queryClient } from "./api/cache";
 import ApiState from "./components/ui/ApiState";
 import { Panel } from "./components/ui/index";
+import { initializeTheme } from "./theme/useTheme";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("ASTRA를 연결할 루트 요소가 없습니다.");
+initializeTheme();
 const root = createRoot(container);
 initializeApi()
   .then(() =>
