@@ -1,8 +1,6 @@
 import { apiConfig } from "../api/config";
 import type { ApiError } from "../api/errors";
-const STORAGE_KEY = apiConfig.isMock
-  ? "astra.mock.access-session.v1"
-  : "astra.access-session.v1";
+const STORAGE_KEY = "astra.access-session.v1";
 
 type ClearReason = string | { type: "account_inactive"; error: ApiError };
 type SessionListener = (reason: ClearReason) => void;
@@ -13,6 +11,7 @@ export function createTokenStore(storage?: Pick<Storage, "getItem" | "setItem" |
   let version = 0;
   const listeners = new Set<SessionListener>();
   try {
+    storage?.removeItem("astra.mock.access-session.v1");
     const saved = JSON.parse(storage?.getItem(STORAGE_KEY) ?? "null");
     if (typeof saved?.accessToken === "string" && saved.accessToken)
       accessToken = saved.accessToken;
@@ -22,25 +21,26 @@ export function createTokenStore(storage?: Pick<Storage, "getItem" | "setItem" |
     /* Storage is optional; never substitute a role or authenticated user. */
   }
 
+  function save(token: string, refresh: string | null) {
+    accessToken = token;
+    refreshToken = refresh;
+    try {
+      storage?.setItem(STORAGE_KEY, JSON.stringify({ accessToken, refreshToken }));
+    } catch {
+      /* Memory-only session until reload. */
+    }
+  }
+
   return {
     getToken: () => accessToken,
     getRefreshToken: () => refreshToken,
     getVersion: () => version,
     set(token: string, refresh: string | null = null) {
-      accessToken = token;
-      refreshToken = refresh;
       version += 1;
-      try {
-        storage?.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            accessToken,
-            ...(refreshToken ? { refreshToken } : {}),
-          }),
-        );
-      } catch {
-        /* Memory-only session until reload. */
-      }
+      save(token, refresh);
+    },
+    rotate(token: string, refresh: string, sessionVersion: number) {
+      if (version === sessionVersion) save(token, refresh);
     },
     clear(reason: ClearReason = "logout") {
       accessToken = null;
@@ -62,7 +62,7 @@ export function createTokenStore(storage?: Pick<Storage, "getItem" | "setItem" |
 
 let storage: Storage | undefined;
 try {
-  if (typeof window !== "undefined") storage = window.sessionStorage;
+  if (typeof window !== "undefined" && !apiConfig.isPreview) storage = window.sessionStorage;
 } catch {
   /* Restricted browser storage. */
 }

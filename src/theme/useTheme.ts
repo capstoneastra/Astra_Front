@@ -13,6 +13,14 @@ function applyTheme(value) {
   window.dispatchEvent(new Event(event));
 }
 
+export function initializeTheme() {
+  try {
+    applyTheme(window.localStorage.getItem(key));
+  } catch {
+    applyTheme("dark");
+  }
+}
+
 function subscribe(listener) {
   const storage = (change) => {
     if (change.key === key || change.key === null) applyTheme(change.newValue);
@@ -32,7 +40,7 @@ export function useTheme() {
     toggleTheme() {
       const next = snapshot() === "dark" ? "light" : "dark";
       try {
-        localStorage.setItem(key, next);
+        window.localStorage.setItem(key, next);
       } catch {
         // Keep the selected theme for this page even without persistent storage.
       }

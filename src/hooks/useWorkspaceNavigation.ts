@@ -1,57 +1,65 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { menuPermissions } from "../auth/permissions";
 
-const isPage = (menu) => Object.hasOwn(menuPermissions, menu) &&
-  !["assistant", "chatbot", "autopilot"].includes(menu);
-const urlFor = (menu) => menu === "home" ? "/" : `/#/${menu}`;
-const menuFromUrl = () => {
-  const menu = window.location.hash.slice(2);
-  return isPage(menu) ? menu : "home";
-};
-const readRoute = (scope) => {
-  const saved = window.history.state?.astraWorkspace;
-  return saved?.scope === scope && isPage(saved.menu)
-    ? saved
-    : { scope, menu: saved && saved.scope !== scope ? "home" : menuFromUrl(), index: 0, search: null };
-};
+interface SearchView {
+  searchTerm: string;
+  institutionId: number | null;
+  filterType?: string;
+  page?: number;
+  region?: string;
+  testType?: string;
+}
 
-export function useWorkspaceNavigation(scope) {
-  const [route, setRoute] = useState(() => readRoute(scope));
-  const current = useRef(route);
-  const persist = useCallback((next, push = false) => {
-    current.current = next;
-    window.history[push ? "pushState" : "replaceState"](
-      { ...window.history.state, astraWorkspace: next }, "", urlFor(next.menu),
-    );
-    setRoute(next);
-  }, []);
+interface WorkspaceRoute {
+  scope: string;
+  menu: string;
+  index: number;
+  search: SearchView | null;
+}
+
+const isPage = (menu: string) =>
+  Object.hasOwn(menuPermissions, menu) &&
+  !["assistant", "chatbot", "autopilot"].includes(menu);
+const hashFor = (menu: string) => (menu === "home" ? "" : `#/${menu}`);
+export function useWorkspaceNavigation(scope: string, workspacePath = "/") {
+  const { pathname, hash, state } = useLocation();
+  const navigate = useNavigate();
+  const saved: WorkspaceRoute | undefined = state?.astraWorkspace;
+  const sameAccount = saved?.scope === scope;
+  const hashMenu = hash.startsWith("#/") && isPage(hash.slice(2)) ? hash.slice(2) : "home";
+  const menu = saved && !sameAccount ? "home" : hashMenu;
+  const restore = sameAccount && saved.menu === menu;
+  const route = useMemo<WorkspaceRoute>(
+    () => restore ? saved : { scope, menu, index: 0, search: null },
+    [restore, saved, scope, menu],
+  );
+
+  const persist = useCallback((next: WorkspaceRoute, replace: boolean) => {
+    navigate(`${workspacePath}${hashFor(next.menu)}`, { replace, state: { astraWorkspace: next } });
+  }, [navigate, workspacePath]);
+
   useEffect(() => {
-    // Replace the login entry; do not leave an authenticated screen under /auth.
-    window.history.replaceState({ ...window.history.state, astraWorkspace: current.current }, "", urlFor(current.current.menu));
-    const pop = () => {
-      const saved = window.history.state?.astraWorkspace;
-      // Entries from a different account never restore its workspace state.
-      const next = saved?.scope === scope && isPage(saved.menu)
-        ? saved : { scope, menu: saved && saved.scope !== scope ? "home" : menuFromUrl(), index: 0, search: null };
-      persist(next);
-    };
-    window.addEventListener("popstate", pop);
-    return () => window.removeEventListener("popstate", pop);
-  }, [scope, persist]);
-  const go = useCallback((menu, search = null) => {
-    if (!isPage(menu)) return;
-    const previous = current.current;
-    if (previous.menu === menu && JSON.stringify(previous.search) === JSON.stringify(search)) return;
-    persist({ scope, menu, search, index: previous.index + 1 }, true);
+    if (pathname !== workspacePath || hash !== hashFor(menu) || (!restore && menu === "home"))
+      persist(route, true);
+  }, [pathname, hash, menu, restore, route, persist, workspacePath]);
+
+  const go = useCallback((nextMenu: string, search: SearchView | null = null) => {
+    if (!isPage(nextMenu)) return;
+    if (route.menu === nextMenu && JSON.stringify(route.search) === JSON.stringify(search)) return;
+    persist({ scope, menu: nextMenu, search, index: route.index + 1 }, false);
     window.scrollTo({ top: 0, behavior: "instant" });
-  }, [scope, persist]);
-  const saveSearch = useCallback((search) => {
-    if (current.current.menu !== "search" || JSON.stringify(current.current.search) === JSON.stringify(search)) return;
-    persist({ ...current.current, search });
-  }, [persist]);
+  }, [persist, route, scope]);
+
+  const saveSearch = useCallback((search: SearchView) => {
+    if (route.menu === "search" && JSON.stringify(route.search) !== JSON.stringify(search))
+      persist({ ...route, search }, true);
+  }, [persist, route]);
+
   const back = useCallback(() => {
-    if (current.current.index > 0) window.history.back();
+    if (route.index > 0) navigate(-1);
     else go("home");
-  }, [go]);
+  }, [go, navigate, route.index]);
+
   return { route, go, back, saveSearch, canGoBack: route.index > 0 || route.menu !== "home" };
 }

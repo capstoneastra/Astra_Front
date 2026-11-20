@@ -181,7 +181,7 @@ export default function EquipmentSearch({
       >
         <Badge tone="cyan" dot>
           {apiConfig.isMock
-            ? "DEMO · MSW 장비 조회"
+            ? "DEMO · 시연 장비 조회"
             : isApiMode
               ? "인증된 API 조회"
               : "개발 전용 Mock 목록"}

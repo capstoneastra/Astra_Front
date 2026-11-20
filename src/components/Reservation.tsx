@@ -91,7 +91,7 @@ export default function Reservation({ setActiveMenu }) {
         <Info size={16} />
         <span>
           {apiConfig.isMock
-            ? "DEMO 의뢰는 이 브라우저에 저장되며 실제 기관에 전송되지 않습니다."
+            ? "DEMO · 시연용 시험 의뢰입니다."
             : "입력한 정보를 확인하고 직접 제출해주세요."}{" "}
           초안 저장은 접수가 아니며, 예약은 기관 검토 이후 별도로 협의합니다.
         </span>

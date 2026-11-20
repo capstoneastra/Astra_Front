@@ -1,140 +1,161 @@
-import { lazy, Suspense, useState } from "react";
-import { LockKeyhole, Orbit } from "lucide-react";
+import { useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { useLocation } from "react-router";
+import AuthCardLink from "./AuthCardLink";
 import { useAuth } from "./context";
-import { Button, FormField, PageHeader, Panel } from "../components/ui";
-import { apiConfig } from "../api/config";
-import ThemeToggle from "../components/ui/ThemeToggle";
-const MockAccountPanel = import.meta.env.DEV
-  ? lazy(() => import("../mocks/MockAccountPanel"))
-  : null;
+import InternalPreviewLinks from "./InternalPreviewLinks";
+
+const rememberedEmailKey = "astra.auth.remembered-email";
+const accountStatus: Record<string, string> = {
+  PENDING: "관리자 승인 대기 중입니다.",
+  REJECTED: "가입이 반려되었습니다.",
+  SUSPENDED: "이용이 정지된 계정입니다.",
+};
+
+function readRememberedEmail() {
+  try {
+    return window.localStorage.getItem(rememberedEmailKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function rememberEmail(email: string) {
+  try {
+    if (email) window.localStorage.setItem(rememberedEmailKey, email);
+    else window.localStorage.removeItem(rememberedEmailKey);
+  } catch {
+    // Remembering an email address is optional.
+  }
+}
 
 export default function LoginPage() {
   const { login, error } = useAuth();
-  const [email, setEmail] = useState("");
+  const signupPending = useLocation().state?.signupPending === true;
+  const emailInput = useRef<HTMLInputElement>(null);
+  const passwordInput = useRef<HTMLInputElement>(null);
+  const [email, setEmail] = useState(readRememberedEmail);
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(Boolean(email));
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [validation, setValidation] = useState("");
-  const submit = async (event) => {
+  const [validation, setValidation] = useState<{ field: "email" | "password"; message: string } | null>(null);
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy) return;
-    if (!email.trim() || !password) {
-      setValidation("이메일과 비밀번호를 입력해주세요.");
+    const address = email.trim();
+    if (!address || emailInput.current?.validity.typeMismatch) {
+      setValidation({
+        field: "email",
+        message: address ? "이메일 형식을 확인해 주세요." : "이메일을 입력해 주세요.",
+      });
+      emailInput.current?.focus();
       return;
     }
-    setValidation("");
+    if (!password) {
+      setValidation({ field: "password", message: "비밀번호를 입력해 주세요." });
+      passwordInput.current?.focus();
+      return;
+    }
+    setValidation(null);
     setBusy(true);
     try {
-      await login(email.trim(), password);
+      if (await login(address, password)) rememberEmail(remember ? address : "");
     } finally {
       setBusy(false);
       setPassword("");
+      setShowPassword(false);
     }
   };
+
   const account = error?.code === "ACCOUNT_NOT_ACTIVE" ? error.details : null;
-  const statusText = {
-    PENDING: "관리자 승인 대기 중입니다.",
-    REJECTED: "가입이 반려되었습니다.",
-    SUSPENDED: "이용이 정지된 계정입니다.",
-  };
+  const message = validation?.message ?? (account && accountStatus[account.status]) ?? error?.message;
+
   return (
-    <main className="main-content">
-      <div className="content-page content-page--narrow page-enter">
-        <PageHeader
-          eyebrow="ASTRA · MEMBER WORKSPACE"
-          title="ASTRA 로그인"
-          description="인증된 회원만 우주항공 시험장비 공동활용 서비스를 이용할 수 있습니다."
-        >
-          <ThemeToggle />
-        </PageHeader>
-        <Panel className="form-panel">
-          <div className="form-section-heading">
-            <span>
-              <Orbit size={20} />
-            </span>
-            <div>
-              <h2>회원 로그인</h2>
-              <p>기업·기관 담당자·관리자 권한은 서버에서 확인합니다.</p>
-            </div>
-          </div>
-          {apiConfig.isMock && MockAccountPanel && (
-            <Suspense fallback={null}>
-              <MockAccountPanel
-                disabled={busy}
-                onSelect={(nextEmail, nextPassword) => {
-                  setEmail(nextEmail);
-                  setPassword(nextPassword);
-                  setValidation("");
-                }}
-              />
-            </Suspense>
-          )}
-          <form onSubmit={submit} aria-busy={busy}>
-            <div className="form-grid">
-              <FormField
-                id="login-email"
-                label="이메일"
-                className="form-field--full"
-              >
-                <input
-                  id="login-email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={busy}
-                />
-              </FormField>
-              <FormField
-                id="login-password"
-                label="비밀번호"
-                className="form-field--full"
-              >
-                <input
-                  id="login-password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={busy}
-                />
-              </FormField>
-            </div>
-            {(error || validation) && (
-              <div className="content-note" role="alert">
-                <LockKeyhole size={16} />
-                <span>
-                  {validation || error.message}
-                  {account && (
-                    <>
-                      <br />
-                      {statusText[account.status] ??
-                        "계정 상태를 확인해주세요."}
-                      {account.rejectReason && (
-                        <>
-                          <br />
-                          {account.rejectReason}
-                        </>
-                      )}
-                    </>
-                  )}
-                </span>
-              </div>
-            )}
-            <div className="form-actions">
-              <p>
-                {apiConfig.isMock
-                  ? "위 시연 계정을 선택한 뒤 로그인하세요. 승인 대기 계정은 관리자 화면에서 승인할 수 있습니다."
-                  : "이메일 인증·회원가입·계정 승인은 백엔드 담당자에게 문의해주세요."}
-              </p>
-              <Button type="submit" icon={LockKeyhole} disabled={busy}>
-                {busy ? "로그인 확인 중…" : "로그인"}
-              </Button>
-            </div>
-          </form>
-        </Panel>
-      </div>
-    </main>
+    <div className="login-card">
+      <h1 id="auth-card-heading" tabIndex={-1}>로그인</h1>
+      <p className="login-card__intro">등록한 이메일로 로그인해 주세요.</p>
+      {signupPending && (
+        <p className="login-feedback login-feedback--success" role="status">
+          가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.
+        </p>
+      )}
+      <form noValidate onSubmit={submit} aria-busy={busy}>
+        <label className="login-card__label" htmlFor="login-email">이메일</label>
+        <div className="login-input" data-invalid={validation?.field === "email"}>
+          <Mail size={17} aria-hidden="true" />
+          <input
+            ref={emailInput}
+            id="login-email"
+            name="email"
+            type="email"
+            placeholder="name@company.com"
+            autoComplete="username"
+            required
+            value={email}
+            disabled={busy}
+            aria-invalid={validation?.field === "email" || undefined}
+            aria-describedby={validation?.field === "email" ? "login-message" : undefined}
+            onChange={(event) => { setEmail(event.target.value); setValidation(null); }}
+          />
+        </div>
+        <label className="login-card__label login-card__label--password" htmlFor="login-password">비밀번호</label>
+        <div className="login-input" data-invalid={validation?.field === "password"}>
+          <LockKeyhole size={17} aria-hidden="true" />
+          <input
+            ref={passwordInput}
+            id="login-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="비밀번호를 입력하세요"
+            autoComplete="current-password"
+            required
+            value={password}
+            disabled={busy}
+            aria-invalid={validation?.field === "password" || undefined}
+            aria-describedby={validation?.field === "password" ? "login-message" : undefined}
+            onChange={(event) => { setPassword(event.target.value); setValidation(null); }}
+          />
+          <button
+            type="button"
+            className="login-password-toggle"
+            aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
+            aria-pressed={showPassword}
+            disabled={busy}
+            onClick={() => setShowPassword((visible) => !visible)}
+          >
+            {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+          </button>
+        </div>
+        <div className="login-card__options">
+          <label className="login-remember">
+            <input
+              type="checkbox"
+              checked={remember}
+              disabled={busy}
+              onChange={(event) => {
+                setRemember(event.target.checked);
+                if (!event.target.checked) rememberEmail("");
+              }}
+            />
+            이메일 기억하기
+          </label>
+          <AuthCardLink className="login-signup-link" to="/auth/signup">회원가입</AuthCardLink>
+        </div>
+        <button className="login-submit" type="submit" disabled={busy}>
+          {busy ? "로그인 확인 중…" : "로그인"}
+          <ArrowRight size={18} aria-hidden="true" />
+        </button>
+        {message && (
+          <p id="login-message" className="login-feedback" role="alert">
+            {message}
+            {!validation && account?.rejectReason && <><br />{account.rejectReason}</>}
+          </p>
+        )}
+      </form>
+      <div className="login-card__previews"><InternalPreviewLinks /></div>
+      <p className="login-card__note">신규 계정은 관리자 승인 후 이용할 수 있습니다.</p>
+    </div>
   );
 }

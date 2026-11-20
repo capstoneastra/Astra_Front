@@ -25,7 +25,7 @@ export function DemoNotice({ children }: { children?: ReactNode }) {
       <Info size={16} />
       <span>
         {apiConfig.isMock
-          ? "DEMO · MSW 시연 데이터입니다. 실제 기관으로 전송되지 않습니다."
+          ? "DEMO · 시연 데이터입니다. 실기관 전송 없이 이 화면에서 업무를 체험할 수 있습니다."
           : "실제 API 모드 · 최종 시험 가능 여부와 일정은 기관이 확인합니다."}
         {children && (
           <>

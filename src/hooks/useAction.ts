@@ -12,6 +12,9 @@ export function useAction() {
   const [state, setState] = useState<ActionState>({ busy: false, error: null, message: "" });
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
+  const clearFeedback = useCallback(() => {
+    setState((previous) => ({ ...previous, error: null, message: "" }));
+  }, []);
   const run = useCallback(async <T>(task: (signal: AbortSignal) => T | Promise<T>, message = "") => {
     if (controller.current && !controller.current.signal.aborted) return;
     const current = new AbortController();
@@ -30,5 +33,5 @@ export function useAction() {
       if (controller.current === current) controller.current = null;
     }
   }, []);
-  return { ...state, run };
+  return { ...state, run, clearFeedback };
 }

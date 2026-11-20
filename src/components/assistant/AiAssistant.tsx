@@ -29,7 +29,7 @@ export default function AiAssistant({
   onModeChange,
   onNavigate,
 }) {
-  const panel = useRef(null);
+  const panel = useRef<HTMLElement>(null);
   const launcher = useRef(null);
   const tabs = useRef({});
   const currentMode = useRef(mode);
@@ -68,13 +68,13 @@ export default function AiAssistant({
     const trapFocus = (event) => {
       if (event.key !== "Tab") return;
       const items = [
-        ...panel.current.querySelectorAll(
+        ...panel.current.querySelectorAll<HTMLElement>(
           "button,input,select,textarea,a[href],[tabindex]",
         ),
       ].filter(
         (node) =>
           node.tabIndex >= 0 &&
-          !node.disabled &&
+          !node.matches(":disabled") &&
           node.getClientRects().length &&
           !node.closest("[inert]"),
       );
@@ -128,11 +128,13 @@ export default function AiAssistant({
         <span>ASTRA AI</span>
       </button>
       <aside
-        ref={panel}
+        ref={(node) => {
+          panel.current = node;
+          if (node) node.inert = !open;
+        }}
         id="astra-ai-assistant"
         className={`ai-assistant ${open ? "ai-assistant--open" : ""}`}
         hidden={!open}
-        inert={!open ? true : undefined}
         role={modal ? "dialog" : "complementary"}
         aria-modal={modal && open ? true : undefined}
         aria-labelledby="ai-assistant-title"
@@ -196,7 +198,9 @@ export default function AiAssistant({
                 role="tabpanel"
                 aria-labelledby={`ai-tab-${id}`}
                 hidden={mode !== id}
-                inert={!open || mode !== id ? true : undefined}
+                ref={(node) => {
+                  if (node) node.inert = !open || mode !== id;
+                }}
               >
                 {id === "chatbot" ? (
                   <Chatbot setActiveMenu={onNavigate} />

@@ -301,7 +301,7 @@ export const catalogRoutes: MockRoute[] = [
     (ctx) =>
       ok(
         ctx.state.organizations
-          .filter((o) => o.orgType === "INSTITUTION" && o.isVerified)
+          .filter((o) => ["INSTITUTION", "UNIVERSITY"].includes(o.orgType) && o.isVerified)
           .map((o) => ({
             ...o,
             equipmentCount: ctx.state.equipment.filter(
@@ -350,7 +350,7 @@ export const catalogRoutes: MockRoute[] = [
           : ctx.user.organizationId;
       const org =
         ctx.state.organizations.find(
-          (o) => o.id === institutionId && o.orgType === "INSTITUTION",
+          (o) => o.id === institutionId && ["INSTITUTION", "UNIVERSITY"].includes(o.orgType),
         ) ?? reject(400, "VALIDATION_FAILED", "기관을 선택해주세요.");
       const name = textRequired(ctx.body.name, "장비명", 200),
         id = ctx.nextId();

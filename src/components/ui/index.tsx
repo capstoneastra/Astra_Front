@@ -88,7 +88,11 @@ export function PageHeader({
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
-      {children && <div className="page-header__actions">{children}</div>}
+      {children && (
+        <div className="page-header__actions tw:flex tw:items-center tw:gap-[9px]">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

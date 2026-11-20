@@ -8,6 +8,7 @@ import ThemeToggle from "../ui/ThemeToggle";
 
 export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack }) {
   const { user, logout } = useAuth();
+  const exitLabel = apiConfig.isPreview ? "미리보기 종료" : "로그아웃";
   const searchDialog = useRef(null);
   const infoDialog = useRef(null);
   const [query, setQuery] = useState("");
@@ -52,7 +53,9 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
         >
           <Menu size={21} />
         </button>
-        <span className="app-header__workspace">워크스페이스</span>
+        <span className="app-header__workspace">
+          {apiConfig.preview ? `미리보기 · ${apiConfig.preview.label}` : "워크스페이스"}
+        </span>
         <span className="breadcrumb-separator">/</span>
         <span>{menuLabels[activeMenu]}</span>
       </div>
@@ -80,8 +83,8 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
         <button
           type="button"
           className="user-avatar"
-          aria-label="로그아웃"
-          title={`${user.name} · ${user.role} · 로그아웃`}
+          aria-label={exitLabel}
+          title={`${user.name} · ${user.role} · ${exitLabel}`}
           onClick={logout}
         >
           {user.name?.slice(0, 1) || "A"}
@@ -154,14 +157,16 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
           </button>
         </div>
         <Badge tone="cyan" dot>
-          {apiConfig.isMock ? "개발 전용 Mock · DEMO" : "API 연동 환경"}
+          {apiConfig.isPreview ? "개발용 미리보기" : apiConfig.isMock ? "개발 전용 Mock · DEMO" : "API 연동 환경"}
         </Badge>
         <h2 id="info-dialog-title">함께 쓰는 장비, 더 넓어지는 가능성</h2>
         <p>
-          {apiConfig.isMock
-            ? "백엔드 서버 없이 시연하는 MSW 환경입니다. 계정·상담·의뢰·예약 상태는 이 브라우저의 시연 데이터입니다."
-            : "실제 API 환경입니다. 서버에서 인증된 역할과 소속을 기준으로 업무를 처리합니다."}{" "}
-          로그아웃해도 저장된 의뢰 이력은 삭제하지 않습니다.
+          {apiConfig.isPreview
+            ? "장비와 업무 화면을 시연 데이터로 둘러볼 수 있습니다. 입력은 미리보기 페이지의 메모리에 저장됩니다."
+            : apiConfig.isMock
+              ? "서버 계정으로 로그인하는 MSW 시연 환경입니다. 시연 상담·의뢰·예약은 이 브라우저에 저장됩니다."
+              : "실제 API 환경입니다. 서버에서 인증된 역할과 소속을 기준으로 업무를 처리합니다."}
+          {!apiConfig.isPreview && " 로그아웃해도 저장된 의뢰 이력은 삭제하지 않습니다."}
         </p>
         <ul className="info-list">
           <li>
