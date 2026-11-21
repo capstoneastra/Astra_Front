@@ -1,0 +1,17 @@
+.ui-example {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--amber) 38%, var(--border));
+}
+.ui-example__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
+.ui-example__icon { flex-shrink: 0; color: var(--amber); margin-top: 2px; }
+.ui-example__body { display: grid; gap: 5px; min-width: 0; }
+.ui-example__heading { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.ui-example__body strong { color: var(--text); font-size: 14px; }
+.ui-example__body > span { color: var(--text-secondary); font-size: 13px; }
+.ui-example__body > p { color: var(--text-muted); font-size: 12px; margin: 0; }

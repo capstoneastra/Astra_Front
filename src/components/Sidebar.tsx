@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { ArrowUpRight, Orbit, X } from "lucide-react";
-import { navigation } from "../data/navigation";
+import { Orbit, X } from "lucide-react";
+import { navigation, parentMenu } from "../data/navigation";
 import { useAuth } from "../auth/context";
 import { canAccessMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
@@ -14,6 +14,7 @@ export default function Sidebar({
 }) {
   const sidebar = useRef<HTMLElement>(null);
   const { user } = useAuth();
+  const highlighted = parentMenu[activeMenu] ?? activeMenu;
   const visibleNavigation = navigation
     .map((group) => ({
       ...group,
@@ -113,9 +114,9 @@ export default function Sidebar({
                   key={id}
                   disabled={upcoming}
                   onClick={() => setActiveMenu(id)}
-                  className={`nav-item ${activeMenu === id ? "nav-item--active" : ""}`}
+                  className={`nav-item ${highlighted === id ? "nav-item--active" : ""}`}
                   aria-current={
-                    activeMenu === id && id !== "assistant" ? "page" : undefined
+                    highlighted === id && id !== "assistant" ? "page" : undefined
                   }
                   aria-expanded={
                     id === "assistant" ? activeMenu === id : undefined
@@ -138,19 +139,6 @@ export default function Sidebar({
           ))}
         </nav>
         <div className="sidebar__bottom">
-          {canAccessMenu(user.role, "assistant") && (
-            <button
-              className="sidebar-assistant"
-              onClick={() => setActiveMenu("assistant")}
-            >
-              <span>
-                <Orbit size={19} />
-                ASTRA AI 열기
-              </span>
-              <p>시험 상담 · 자동 추진</p>
-              <ArrowUpRight size={15} className="sidebar-assistant__arrow" />
-            </button>
-          )}
           <div className="sidebar__footer">
             <span className="status-dot" />
             {roleLabels[user.role] ?? user.role}

@@ -72,6 +72,8 @@ export interface ReservationRecord extends TimeInterval {
   createdAt?: string;
 }
 
+export type RequestBox = "SENT" | "RECEIVED";
+
 export interface RequestSummary {
   id: number;
   requestNo: string;

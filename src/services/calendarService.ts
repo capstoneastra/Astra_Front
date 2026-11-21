@@ -1,15 +1,15 @@
 import { requestService } from "./requestService";
 import { contractError } from "../api/errors";
 import { schedulesFromRequests } from "../domain/calendar";
-import type { RequestDetail, RequestSummary } from "./contracts";
+import type { RequestBox, RequestDetail, RequestSummary } from "./contracts";
 
 // No calendar endpoint exists in v3. Only fetch IDs returned by the scoped list.
-export async function loadCalendar(signal?: AbortSignal, service = requestService) {
+export async function loadCalendar(signal?: AbortSignal, box?: RequestBox, service = requestService) {
   const listed: RequestSummary[] = [];
   let page = 0, totalPages;
   do {
     signal?.throwIfAborted();
-    const response = await service.list({ page, size: 100 }, signal);
+    const response = await service.list({ ...(box && { box }), page, size: 100 }, signal);
     if (!Array.isArray(response?.content) || !Number.isInteger(response.totalPages) || response.totalPages < 0)
       throw contractError("의뢰 목록의 페이지 정보가 명세와 다릅니다.");
     totalPages = response.totalPages;

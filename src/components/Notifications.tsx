@@ -5,6 +5,7 @@ import { notificationService } from "../services/notificationService";
 import { DemoNotice, Feedback } from "./workflow/Feedback";
 import { formatDate } from "../domain/constants";
 import ApiState from "./ui/ApiState";
+import UiExample from "./ui/UiExample";
 export default function Notifications() {
   const query = useApiQuery(
       (signal) => notificationService.list(signal),
@@ -57,6 +58,7 @@ export default function Notifications() {
           <p>새로운 업무 알림이 없습니다.</p>
         </Panel>
       )}
+      <UiExample kind="notification" hasData={Boolean(query.data?.content.length)} loading={query.loading} error={query.error} />
     </div>
   );
 }

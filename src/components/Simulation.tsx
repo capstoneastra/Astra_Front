@@ -8,6 +8,7 @@ import type { SimulationInput, SimulationResult } from "../services/simulationSe
 import { DemoNotice, Feedback } from "./workflow/Feedback";
 import SimulationChart from "./workflow/SimulationChart";
 import ApiState from "./ui/ApiState";
+import UiExample from "./ui/UiExample";
 import SimulationExports from "./workflow/SimulationExports";
 const SimulationStage = lazy(() => import("./workflow/SimulationStage"));
 const labels = {
@@ -278,6 +279,7 @@ export default function Simulation() {
           )}
         </Panel>
       )}
+      <UiExample kind="simulationResult" hasData={Boolean(result)} loading={models.loading || action.busy} error={models.error ?? action.error} />
       <Panel className="form-panel" title="내 시뮬레이션 실행 이력">
         {history.loading || history.error ? (
           <ApiState
@@ -324,6 +326,7 @@ export default function Simulation() {
         ) : (
           <p>아직 실행한 가상 시뮬레이션이 없습니다.</p>
         )}
+        <UiExample kind="simulation" hasData={Boolean(history.data?.content.length)} loading={history.loading} error={history.error} />
       </Panel>
     </div>
   );

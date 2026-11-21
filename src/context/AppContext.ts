@@ -2,7 +2,6 @@ import { createContext, useContext } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { User } from "../services/authService";
 import type { Equipment } from "../services/equipmentService";
-import type { dashboardService } from "../services/dashboardService";
 import type { useApiQuery } from "../hooks/useApiQuery";
 import type { MatchRun, ResourceId } from "../services/contracts";
 
@@ -25,7 +24,6 @@ interface WorkspaceContext {
   reservations: LocalReservation[];
   setReservations: Setter<LocalReservation[]>;
   catalogQuery: ReturnType<typeof useApiQuery<Equipment[]>>;
-  summaryQuery: ReturnType<typeof useApiQuery<Awaited<ReturnType<typeof dashboardService.summary>>>>;
   user: User;
   isApiMode: boolean;
   resolveEquipment: (id: ResourceId, signal?: AbortSignal) => Promise<Equipment | undefined>;

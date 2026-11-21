@@ -3,6 +3,7 @@ import { Box, Database, Info, Plus, Trash2 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, EmptyState, FormField, PageHeader, Panel } from "./ui";
 import ApiState from "./ui/ApiState";
+import UiExample from "./ui/UiExample";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
@@ -10,7 +11,7 @@ import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
 import { apiConfig } from "../api/config";
 
-export default function EquipmentManager() {
+export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
   const { equipmentList, user, catalogQuery } = useWorkspace();
   const managedEquipment =
     user.role === "INSTITUTION_MANAGER"
@@ -78,9 +79,10 @@ export default function EquipmentManager() {
     <div className="content-page page-enter">
       <PageHeader
         eyebrow="INFRASTRUCTURE DATA"
-        title="장비 데이터 관리"
+        title="보유 장비 관리"
         description="공동활용 장비의 정보를 등록하고 목록을 관리하세요."
       >
+        <Button variant="secondary" onClick={() => setActiveMenu("duplicates")}>중복·유사 장비 조회</Button>
         <Badge tone="cyan">
           현재 {catalogQuery.status === "ready" ? managedEquipment.length : "—"}
           대
@@ -295,6 +297,7 @@ export default function EquipmentManager() {
           </Panel>
         )}
       </div>
+      <UiExample kind="managedEquipment" hasData={managedEquipment.length > 0} loading={catalogQuery.loading} error={catalogQuery.error} />
       {editing && (
         <EquipmentEditDialog
           key={editing}

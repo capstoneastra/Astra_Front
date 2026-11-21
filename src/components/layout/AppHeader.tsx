@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Command, Info, Menu, Orbit, Search, X } from "lucide-react";
+import { ArrowLeft, Bell, Command, Info, Menu, Orbit, Search, X } from "lucide-react";
 import { menuLabels } from "../../data/navigation";
 import { Badge, Button } from "../ui";
 import { useAuth } from "../../auth/context";
 import { apiConfig } from "../../api/config";
 import ThemeToggle from "../ui/ThemeToggle";
+import { useApiQuery } from "../../hooks/useApiQuery";
+import { notificationService } from "../../services/notificationService";
 
-export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack }) {
+export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications }) {
   const { user, logout } = useAuth();
+  const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
   const exitLabel = apiConfig.isPreview ? "미리보기 종료" : "로그아웃";
   const searchDialog = useRef(null);
   const infoDialog = useRef(null);
@@ -72,6 +75,17 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
         </button>
         <span className="header-date">{date}</span>
         <span className="header-divider" />
+        <button
+          type="button"
+          className="icon-button header-notifications"
+          aria-label={unreadCount > 0 ? `업무 알림, 읽지 않은 알림 ${unreadCount}건` : "업무 알림"}
+          aria-current={activeMenu === "notifications" ? "page" : undefined}
+          title="업무 알림"
+          onClick={onNotifications}
+        >
+          <Bell size={18} aria-hidden="true" />
+          {unreadCount > 0 && <span aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+        </button>
         <ThemeToggle />
         <button
           className="icon-button"

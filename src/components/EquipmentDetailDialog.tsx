@@ -153,7 +153,8 @@ export default function EquipmentDetailDialog({
           </dl>
           <Button
             icon={FilePlus2}
-            disabled={!canAccessMenu(user.role, "reservation")}
+            disabled={!canAccessMenu(user.role, "reservation") ||
+              (user.organization?.id != null && data.institutionId === user.organization.id)}
             onClick={() => {
               onSelect(data);
               dialog.current.close();

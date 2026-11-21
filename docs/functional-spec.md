@@ -34,13 +34,13 @@ type Page<T> = { content: T[]; page: number; size: number;
 | 대상 | 최신 명세의 접근 범위 | 현재 프론트 대조 |
 |---|---|---|
 | 비회원 | 인증 화면 외 업무 페이지·API 불가 | 기존 AuthGate/메뉴 보호 유지. 이번에 변경하지 않음 |
-| COMPANY_USER | 조회 + 본인 의뢰자 기능 + 소속 조직 장비 보유자 기능 | AI/의뢰 메뉴는 허용, 장비 관리·기관 검토 메뉴는 현재 제한됨 |
-| INSTITUTION_MANAGER(기관·대학) | 조회 + 본인 의뢰자 기능 + 소속 조직 장비 보유자 기능 | 기관 업무 메뉴는 허용, AI/의뢰 생성 메뉴는 현재 제한됨 |
+| COMPANY_USER | 조회 + 본인 의뢰자 기능 + 소속 조직 장비 보유자 기능 | AI·의뢰 및 보낸/받은 의뢰함을 사용. 보유 장비 관리 메뉴는 서버 권한 확인 대기 |
+| INSTITUTION_MANAGER(기관·대학) | 조회 + 본인 의뢰자 기능 + 소속 조직 장비 보유자 기능 | AI·의뢰, 보낸/받은 의뢰함 및 보유 장비 관리 사용 |
 | ADMIN | 전체 업무 및 운영 관리 | 기존 관리자 메뉴·보호 유지 |
 
 의뢰자는 본인 상담·조건·의뢰·시뮬레이션만, 보유자는 `user.organization_id == equipment.institution_id` 또는 의뢰의 institution_id인 범위만 관리한다. 역할명만으로 소유권을 판정할 수 없으며 최종 검사는 서버 책임이다. 자기 조직 장비 의뢰는 400 VALIDATION_FAILED이고 매칭 후보에서도 제외한다.
 
-**명세 내부 확인 필요:** API 명세 §0-4와 §2-1 표는 기업도 자기 조직 장비 관리 가능이라고 하지만 §2-1의 후속 설명에는 기업 403이라는 이전 문장이 남아 있다. 아래는 최신 공통 정책을 기준으로 작성했으며 최종 서버 정책은 [인수인계](backend-handoff.md)에서 확인 요청한다. 권한 파일은 이번에 수정하지 않았다.
+**명세 내부 확인 필요:** API 명세 §0-4와 §2-1 표는 기업도 자기 조직 장비 관리가 가능하다고 설명하지만 §2-1의 후속 설명에는 기업 403이라는 문장이 남아 있다. 기업 장비 관리 메뉴의 범위는 [인수인계](backend-handoff.md)의 서버 정책 확인이 필요하다.
 
 ### 공통 화면 상태
 
@@ -61,6 +61,8 @@ type Page<T> = { content: T[]; page: number; size: number;
 
 React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이지는 `/#/search` 같은 기존 해시 경로이며 장비 상세·의뢰 상세는 별도 신규 URL이 아닌 다이얼로그다. AI 상담과 자동 추진은 기존 플로팅 AI 어시스턴트의 두 탭에서 실행한다. 뒤로가기와 검색 조건 복원은 기존 내비게이션을 사용한다.
 
+사이드바에서 대시보드, 장비 검색, 시험 의뢰 관리, 예약 캘린더, AI 어시스턴트에 접근한다. 보유 장비 관리와 회원·기관 승인은 권한에 따라 표시한다. 매칭·비교·시험 정보는 장비 검색이나 관련 상세에서 열고, 중복·유사 장비 조회는 장비 관리 또는 장비 검색에서 연다. 시뮬레이션은 지원 장비 상세에서 열 수 있고, 검색 결과가 비어 있을 때는 장비 검색의 도구 모음에서 실행 화면으로 이동할 수 있다. 새 의뢰는 대시보드·의뢰 관리·장비 상세에서 시작한다. 업무 알림은 헤더의 종 아이콘으로 연다. 빈 화면의 표시용 예시와 제거 방법은 [업무 화면 예시 데이터](ui-examples.md)를 참조한다.
+
 ## 1. 장비 통합 DB 검색
 
 - **목적·흐름:** 로그인 → 검색 → 시험유형·기관·지역 등 조건 조합 → 페이지 이동 → 장비 상세/의뢰로 이동한다.
@@ -75,7 +77,7 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 
 ## 2. 장비 상세 정보
 
-- **목적·흐름:** 검색/대시보드 장비 선택 → 사양·이용조건·출처·갱신일 확인 → 시험 정보/가상 시뮬레이션/의뢰 선택.
+- **목적·흐름:** 검색에서 장비 선택 → 사양·이용조건·출처·갱신일 확인 → 시험 정보/가상 시뮬레이션/의뢰 선택.
 - **화면·컴포넌트:** `EquipmentDetailDialog`, 사양 표, 이용조건 목록, 상태·DEMO 배지, 닫기/의뢰 버튼. 기존 모달 레이아웃 유지.
 - **API·요청:** `GET /equipment/{id}`. 최신 확장 조회는 `GET /equipment/spec-definitions`, `GET /equipment/{id}/availability?from=&to=`이며 현재 상세 서비스에는 후자의 연결이 없다.
 - **응답:** 목록 항목 + manufacturer/category/description, usage{accessScope,feeText,feeAmount,feeUnit,durationText,utilizationRate,availability,...}, specs[{key,label,value|min/max|valueText,unit,originalUnit,sourceType,verificationStatus,usageScope}], source, simulation{capability,presetIds}. 가용성은 equipmentId/from/to/availability/available/needsConfirmation/leadTimeDays/intervals다.
@@ -166,8 +168,8 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 - **권한:** 본인 보낸 의뢰(SENT), 소속 조직 장비로 받은 제출 의뢰(RECEIVED), 관리자 전체. 다른 기업 의뢰 ID 직접 조회는 서버 403. box 생략 시 기관 담당자는 RECEIVED, 다른 일반 회원은 SENT.
 - **상태 처리:** 생성/저장/제출 중 상태, 400 missingItems, 자기 조직 장비 금지, 409 version 재조회, 정상 빈 의뢰 목록, 서버 오류를 별도로 다룬다.
 - **버튼·이동:** 저장 후 사용자 확인 → submit → `/#/reservationCheck`, 행 클릭 → 의뢰 상세, 일정 보기 → `/#/calendar`, 작성 중 의뢰 → 기존 draft 편집.
-- **현재 구현:** 작성·저장·직접 제출·목록·상세·상태 이력 서비스/UI 존재. 목록 UI는 box 선택 없이 역할 기본값 사용, 최초 100개 위주. actualUser/accounting 등 최신 필수 필드 폼·타입이 누락되어 실제 제출 완료를 보장할 수 없음. 가짜 의뢰 DB 제거.
-- **후속 연동:** 위 필수 필드/오류 매핑, 보낸/받은 함 구분과 페이지, 결과/예상료/첨부 업로드·다운로드 API(§5) UI 연동. 이 작업에서 새로 구현하지 않음. **백엔드 미배포로 테스트 불가**.
+- **현재 구현:** 작성·저장·직접 제출·목록·상세·상태 이력 서비스/UI 존재. 시험 의뢰 관리에서 보낸/받은 의뢰에 `box=SENT`/`RECEIVED`를 전달하고, 관리자는 전체 조회도 사용한다. 목록은 최초 100개 위주다. actualUser/accounting 등 최신 필수 필드 폼·타입이 누락되어 실제 제출 완료를 보장할 수 없음. 가짜 의뢰 DB 제거.
+- **후속 연동:** 위 필수 필드/오류 매핑, 보낸/받은 의뢰함 조회 범위 검증과 페이지 처리, 결과/예상료/첨부 업로드·다운로드 API(§5) UI 연동. **백엔드 미배포로 테스트 불가**.
 
 ## 10. 기관 검토 및 정보 보완
 
@@ -178,14 +180,14 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 - **권한:** 보유 조직/관리자는 검토·요청·통과·반려·완료, 의뢰자/관리자는 자기 의뢰 보완 응답. 역할명만의 버튼 판단은 현재 코드의 제한 사항이다.
 - **상태 처리:** 아래 전이표 적용. 열린 요청 중복은 409 SUPPLEMENT_ALREADY_OPEN, 동시 수정·잘못된 단계도 409. 이력 없음/로딩/에러를 구분한다.
 - **버튼·이동:** 검토 시작 → UNDER_REVIEW, 보완 요청 → SUPPLEMENT_REQUESTED, 보완 제출 → RESUBMITTED, 재검토 → UNDER_REVIEW, 통과 → 일정 협의. 최신 상태 재조회 후 버튼 갱신.
-- **현재 구현:** 기본 보완/응답/검토/완료 버튼과 이력 존재. ADDITIONAL_INFO 종류 및 최신 필수 정보·결과 등록·특정 제출본 diff UI는 미연결. 기존 complete 버튼만으로 결과 등록을 대체할 수 없음. 가짜 보완/전이 생성 제거.
+- **현재 구현:** 받은 의뢰함에서 소속 조직이 보유한 장비의 의뢰를 검토하고, 기본 보완·응답·완료 버튼과 이력을 확인할 수 있다. ADDITIONAL_INFO 종류 및 최신 필수 정보·결과 등록·특정 제출본 diff UI는 미연결. 가짜 보완/전이 생성 제거.
 - **후속 연동:** 보유 조직 판단, 추가정보 폼, 결과 선등록 후 완료, 동시 보완/버전 충돌, 승인·반려 권한 검증. **백엔드 미배포로 테스트 불가**.
 
 ## 11. 시험 예약 검토 및 연계
 
 - **목적·흐름:** 검토 통과(SCHEDULING) → 확정 점유 구간 조회 → 일정 제안/대안 → 보유 조직 확정 → 캘린더·상세 갱신.
 - **화면·컴포넌트:** `ReservationCalendar`, `Calendar`, `ScheduleCard`, `ScheduleDetail`, `ReservationControls`, 의뢰 상세. 월 이동/오늘/필터/당일 상세/다가오는 일정 유지.
-- **API·요청:** `GET /test-requests` → 허용된 id의 `GET /test-requests/{id}`로 캘린더 구성. `GET /test-requests/{id}/reservations`는 명세에 있으나 현재 서비스에서 별도 사용하지 않음. `GET /equipment/{id}/reservations?from=&to=`, `POST /test-requests/{id}/reservations {version?,startAt,endAt,note?}`, `POST /reservations/{id}/counter {version?,startAt,endAt,note?}`, `POST /reservations/{id}/confirm|cancel {version,...}`. version 필수 위치는 서버 확인 대상.
+- **API·요청:** 보낸/받은 의뢰 범위를 `GET /test-requests?box=SENT` 또는 `box=RECEIVED`로 조회하고, 응답의 ID로 `GET /test-requests/{id}`를 요청해 캘린더를 구성한다. 관리자는 `box` 없이 전체를 조회한다. `GET /test-requests/{id}/reservations`는 명세에 있으나 현재 별도로 호출하지 않는다. `GET /equipment/{id}/reservations?from=&to=`, `POST /test-requests/{id}/reservations {version?,startAt,endAt,note?}`, `POST /reservations/{id}/counter {version?,startAt,endAt,note?}`, `POST /reservations/{id}/confirm|cancel {version,...}`. version 필수 위치는 서버 확인 대상.
 - **응답:** 의뢰 상세의 reservations[]를 기존 캘린더 모델로 투영한다. 현재 타입은 {id,status,version,startAt,endAt,note?,createdAt?}; 최신 명세의 proposedBySide/externalSystem/externalRef 등 전체 DTO는 서버 협의. 장비 점유 조회는 개인 정보 없는 [{startAt,endAt}]. 전체 캘린더 API를 새로 가정하지 않는다.
 - **권한:** 본인 신청/소속 조직 접수/관리자 전체의 조회 범위. 확정은 장비 보유 조직/관리자. 기업·기관 유형과 proposedBySide의 COMPANY/INSTITUTION은 같은 뜻이 아니다.
 - **상태 처리:** PROPOSED 노랑, CONFIRMED 시안, COUNTER_PROPOSED 보라, CANCELED 회색 + 텍스트. 미확정을 완료로 표시하지 않는다. 기간은 Asia/Seoul, [시작,끝). 확정·정비 겹침은 409 RESERVATION_OVERLAP, 동일 의뢰 이중 확정은 RESERVATION_ALREADY_CONFIRMED. 충돌 뒤 점유/상세 다시 조회.
@@ -220,14 +222,13 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 ## 14. 메인 대시보드
 
 - **목적·흐름:** 로그인 후 자신의 업무 요약 → 장비 검색/보완·신규 의뢰/운영 관리로 이동.
-- **화면·컴포넌트:** `Home`, `MetricCard`, 장비 분포·보유기관 패널(`InstitutionNetwork`), 요약 의뢰 표, 최신 장비, 역할별 바로가기, 업무 알림.
-- **API·요청:** `GET /dashboard/summary?view=REQUESTER|PROVIDER`, 관리자 ADMIN 고정. `GET /dashboard/equipment-stats`, `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/{id}/read`, `POST /notifications/read-all`. 현재 장비 분포는 실제 catalog 조회 데이터로 계산하고 equipment-stats 전용 API는 미연결.
+- **화면·컴포넌트:** `Home`, `MetricCard`와 업무 범위별 바로가기. 의뢰자는 보완·작성 중·예약 확정, 최근 상담과 장비 검색을 본다. 장비 운영 담당자는 신규·재제출 검토, 일정 협의·예정 예약과 갱신 필요 장비를 본다. 대학 담당자는 예정 예약을 검토 대기 목록보다 먼저 본다. 플랫폼 관리자는 회원·기관 승인 대기와 기관별 장비 검증 현황을 본다.
+- **API·요청:** `GET /dashboard/summary?view=REQUESTER|PROVIDER`, 관리자는 `view` 생략. 헤더 알림은 `GET /notifications?unreadOnly=true`를 사용한다. `GET /dashboard/equipment-stats`, `GET /notifications/unread-count` 전용 경로는 미연결이다.
 - **응답:** 공통 role/view, 10개 requestCounts, equipmentStats, dataAvailable. REQUESTER는 actionRequired/recentChats; PROVIDER는 institution/pendingReview/upcomingReservations/equipmentNeedsUpdate; ADMIN은 pendingUsers/pendingInstitutions/institutionVerification. 알림 DTO의 전체 필드는 UI 서비스와 서버 대조 필요.
-- **권한:** 모두 로그인 필수. 최신 명세는 역할이 아닌 view로 의뢰자/보유자 화면 구분. 현재 프론트는 역할 기준 화면/검증이라 차이가 있음.
-- **상태 처리:** dataAvailable.requests=false는 준비 중이며 확정 0건과 다름. 서버 오류 시 KPI를 가짜 숫자로 채우지 않음. 장비 목록 없음과 요약 조회 실패 분리. 서버가 미배포여도 API 모드라는 이유로 연동 완료를 주장하지 않는다.
-- **버튼·이동:** 검색 → search, AI → 기존 어시스턴트, 신규/보완 의뢰 → 의뢰 관리/검토, 보유기관 → 기관 필터 검색, 장비 → 상세, 알림 → 기존 알림 화면.
-- **현재 구현:** 역할별 요약/장비 분포/메뉴/알림 서비스 존재, 10개 상태 검증 및 dataAvailable 처리. view 파라미터·DTO와 최신 provider 장비 갱신 집계 미연결. 가짜 통계/알림 생성 제거.
-- **후속 연동:** REQUESTER/PROVIDER 선택 및 조직 권한, 집계 DTO, 역할별 준비 중/미확인, 알림 타입·읽음·갱신 시점 검증. **백엔드 미배포로 테스트 불가**.
+- **권한:** 기업의 기본은 의뢰자, 기관·대학의 기본은 장비 운영이다. 소속 사용자는 의뢰자와 장비 운영을 전환할 수 있다. 관리자는 관리자 요약을 본다. 선택한 view와 운영 조직 ID로 응답을 확인하고 조회 캐시도 범위별로 구분한다.
+- **상태 처리:** `dataAvailable.requests`·`dataAvailable.chats`가 false이면 준비 중을 표시한다. 실제 0건은 그대로 표시한다. 오류와 재시도는 유지하며 빈 목록의 [화면 예시](ui-examples.md)는 집계나 업무 요청에 사용하지 않는다.
+- **버튼·이동:** 보완·작성 중·검토 대기·일정 협의 KPI는 해당 의뢰함과 상태를 열고, 개별 의뢰나 예약은 건별 상세로 연결한다. 의뢰자는 확정 건수에서 보낸 의뢰의 캘린더를 연다. 최근 상담은 해당 대화를 열며, 관리자 승인 KPI는 승인 대기 목록을 연다. 기관 검증 행에서 해당 기관으로 검색을 좁힐 수 있다.
+- **후속 연동:** 실제 조직 계정의 view 전환과 응답 범위, 승인·예약·최근 상담 이동, 알림 유형·읽음 갱신을 테스트 서버에서 검증한다.
 
 ## 15. 가상 시뮬레이션
 

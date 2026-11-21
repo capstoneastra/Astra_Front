@@ -8,7 +8,7 @@ export const previewUsers: Record<PreviewAccount, User> = {
     status: "ACTIVE",
     name: "기업 미리보기",
     email: "company-preview@example.invalid",
-    organization: { id: 10, name: "가상 A기업", isVerified: true },
+    organization: { id: 10, name: "가상 A기업", isVerified: true, orgType: "COMPANY" },
   },
   institution: {
     id: 3,
@@ -16,7 +16,7 @@ export const previewUsers: Record<PreviewAccount, User> = {
     status: "ACTIVE",
     name: "기관 미리보기",
     email: "institution-preview@example.invalid",
-    organization: { id: 2, name: "대전테크노파크 우주·양자산업센터", isVerified: true },
+    organization: { id: 2, name: "대전테크노파크 우주·양자산업센터", isVerified: true, orgType: "INSTITUTION" },
   },
   university: {
     id: 4,
@@ -24,7 +24,7 @@ export const previewUsers: Record<PreviewAccount, User> = {
     status: "ACTIVE",
     name: "대학 미리보기",
     email: "university-preview@example.invalid",
-    organization: { id: 5, name: "경상국립대학교 첨단소재분석지원센터", isVerified: true },
+    organization: { id: 5, name: "경상국립대학교 첨단소재분석지원센터", isVerified: true, orgType: "UNIVERSITY" },
   },
   admin: {
     id: 1,

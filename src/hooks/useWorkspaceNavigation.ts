@@ -11,7 +11,14 @@ interface SearchView {
   testType?: string;
 }
 
-interface WorkspaceRoute {
+export type ApprovalFocus = "members" | "organizations";
+
+interface WorkspaceDestination {
+  requestStatus?: string;
+  approvalFocus?: ApprovalFocus;
+}
+
+interface WorkspaceRoute extends WorkspaceDestination {
   scope: string;
   menu: string;
   index: number;
@@ -44,10 +51,11 @@ export function useWorkspaceNavigation(scope: string, workspacePath = "/") {
       persist(route, true);
   }, [pathname, hash, menu, restore, route, persist, workspacePath]);
 
-  const go = useCallback((nextMenu: string, search: SearchView | null = null) => {
+  const go = useCallback((nextMenu: string, search: SearchView | null = null, destination: WorkspaceDestination = {}) => {
     if (!isPage(nextMenu)) return;
-    if (route.menu === nextMenu && JSON.stringify(route.search) === JSON.stringify(search)) return;
-    persist({ scope, menu: nextMenu, search, index: route.index + 1 }, false);
+    if (route.menu === nextMenu && JSON.stringify(route.search) === JSON.stringify(search) &&
+      route.requestStatus === destination.requestStatus && route.approvalFocus === destination.approvalFocus) return;
+    persist({ scope, menu: nextMenu, search, index: route.index + 1, ...destination }, false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [persist, route, scope]);
 

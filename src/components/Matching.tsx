@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import ApiState from "./ui/ApiState";
+import UiExample from "./ui/UiExample";
 import { DemoNotice, Feedback } from "./workflow/Feedback";
 import RequirementWorkbench from "./workflow/RequirementWorkbench";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -276,6 +277,7 @@ export default function Matching({ setActiveMenu }) {
           )}
         </>
       )}
+      <UiExample kind="matching" hasData={Boolean(matchRun?.results.length)} loading={types.loading || action.busy} error={action.error ?? types.error} />
     </div>
   );
 }

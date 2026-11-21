@@ -10,14 +10,14 @@ import AppHeader from "./components/layout/AppHeader";
 import { AppContext } from "./context/AppContext";
 import type { LocalReservation } from "./context/AppContext";
 import type { Equipment } from "./services/equipmentService";
-import type { MatchRun, ResourceId } from "./services/contracts";
+import type { MatchRun, RequestBox, ResourceId } from "./services/contracts";
 import AuthProvider from "./auth/AuthProvider";
 import AuthGate from "./auth/AuthGate";
 import { useAuth } from "./auth/context";
 import { canAccessMenu } from "./auth/permissions";
 import { useApiQuery } from "./hooks/useApiQuery";
 import { equipmentService } from "./services/equipmentService";
-import { dashboardService } from "./services/dashboardService";
+import { defaultDashboardView } from "./services/dashboardService";
 import { apiConfig } from "./api/config";
 import { ApiError } from "./api/errors";
 import ApiState from "./components/ui/ApiState";
@@ -46,6 +46,7 @@ function Workspace() {
   const activeMenu = workspaceNavigation.route.menu;
   const [requirementId, setRequirementId] = useState<number | null>(null);
   const [chatSessionId, setChatSessionId] = useState<number | null>(null);
+  const [chatPanelKey, setChatPanelKey] = useState(0);
   const [matchRun, setMatchRun] = useState<MatchRun | null>(null);
   const [draftRequestId, setDraftRequestId] = useState<number | null>(null);
   const [comparisonIds, setComparisonIds] = useState<number[]>([]);
@@ -57,6 +58,8 @@ function Workspace() {
   const [localCatalog, setLocalCatalog] = useState<Equipment[] | null>(null);
   const [reservations, setReservations] = useState<LocalReservation[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [calendarBox, setCalendarBox] = useState<RequestBox>();
+  const [dashboardView, setDashboardView] = useState(() => defaultDashboardView(user.role));
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantStarted, setAssistantStarted] = useState(false);
   const [assistantMode, setAssistantMode] = useState("chatbot");
@@ -78,10 +81,7 @@ function Workspace() {
   const catalogQuery = useApiQuery(
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
-  );
-  const summaryQuery = useApiQuery(
-    (signal) => dashboardService.summary(user.role, signal),
-    `summary:${user.id}:${user.role}`,
+    activeMenu !== "home" || assistantOpen,
   );
   const isApiMode = !apiConfig.useMockCatalog;
   const equipmentList =
@@ -139,6 +139,22 @@ function Workspace() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
+  const openCalendar = (box?: RequestBox) => {
+    setCalendarBox(box);
+    navigate("calendar");
+  };
+
+  const openChat = (id: number) => {
+    if (chatSessionId !== id) {
+      setChatSessionId(id);
+      setChatPanelKey((key) => key + 1);
+      setTestCondition("");
+      setRequirementId(null);
+      setMatchRun(null);
+    }
+    openAssistant("chatbot");
+  };
+
   const renderContent = () => {
     if (!canAccessMenu(user.role, activeMenu))
       return (
@@ -153,7 +169,10 @@ function Workspace() {
       );
     switch (activeMenu) {
       case "home":
-        return <Home setActiveMenu={navigate} onSearch={searchEquipment} />;
+        return <Home key={dashboardView} view={dashboardView} onViewChange={setDashboardView} setActiveMenu={navigate} onSearch={searchEquipment}
+          openRequests={(box, status) => workspaceNavigation.go(box === "RECEIVED" ? "review" : "reservationCheck", null, { requestStatus: status })}
+          openCalendar={openCalendar} openChat={openChat}
+          openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} />;
       case "search":
         return (
           <EquipmentSearch
@@ -170,11 +189,11 @@ function Workspace() {
           <Reservation key={draftRequestId ?? "new"} setActiveMenu={navigate} />
         );
       case "reservationCheck":
-        return <ReservationCheck setActiveMenu={navigate} />;
-      case "calendar":
-        return <ReservationCalendar />;
       case "review":
-        return <ReservationCheck setActiveMenu={navigate} institutionView />;
+        return <ReservationCheck key={`${activeMenu}:${workspaceNavigation.route.index}`} setActiveMenu={navigate} institutionView={activeMenu === "review"}
+          initialStatus={workspaceNavigation.route.requestStatus} openCalendar={openCalendar} />;
+      case "calendar":
+        return <ReservationCalendar requestBox={calendarBox} onBoxChange={setCalendarBox} />;
       case "matching":
         return <Matching setActiveMenu={navigate} />;
       case "compare":
@@ -186,11 +205,11 @@ function Workspace() {
       case "simulation":
         return <Simulation />;
       case "admin":
-        return <AdminManagement />;
+        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus} />;
       case "notifications":
         return <Notifications />;
       case "manager":
-        return <EquipmentManager />;
+        return <EquipmentManager setActiveMenu={navigate} />;
       default:
         return (
           <ApiState
@@ -217,7 +236,6 @@ function Workspace() {
         reservations,
         setReservations,
         catalogQuery,
-        summaryQuery,
         user,
         isApiMode,
         resolveEquipment,
@@ -279,6 +297,7 @@ function Workspace() {
             menuOpen={menuOpen}
             onMenu={() => setMenuOpen(true)}
             onSearch={searchEquipment}
+            onNotifications={() => navigate("notifications")}
           />
           <main id="main-content" className="main-content" tabIndex={-1}>
             {renderContent()}
@@ -300,6 +319,7 @@ function Workspace() {
         </div>
         {canAccessMenu(user.role, "assistant") && (
           <AiAssistant
+            chatPanelKey={chatPanelKey}
             open={assistantOpen}
             started={assistantStarted}
             mode={assistantMode}
