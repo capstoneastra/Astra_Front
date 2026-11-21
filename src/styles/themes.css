@@ -1,4 +1,3 @@
-/* Existing tokens and index.css remain the canonical dark appearance. */
 .theme-toggle {
   flex-shrink: 0;
   min-width: 36px;
@@ -7,71 +6,37 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #eef3fa;
-  --sidebar: #f8fbff;
-  --surface: #ffffff;
-  --surface-raised: #e8f0fa;
-  --surface-glass: rgba(255, 255, 255, 0.9);
-  --border: rgba(43, 70, 106, 0.15);
-  --border-strong: rgba(43, 70, 106, 0.28);
-  --text: #18304c;
-  --text-secondary: #52647c;
-  --text-muted: #61728a;
-  --cyan: #086d80;
-  --blue: #335fc4;
-  --violet: #7050b4;
-  --amber: #986013;
-  --green: #087855;
-  --red: #b93b56;
-  --panel-background: linear-gradient(135deg, #fff, #f8fbff);
-  --panel-shadow: 0 6px 24px rgba(37, 64, 104, 0.045);
-  --primary-hover: #075c70;
+  --bg: #f1f2ef;
+  --sidebar: #f7f8f5;
+  --surface: #fcfdfb;
+  --surface-raised: #e9ede9;
+  --surface-sunken: #f8faf7;
+  --surface-glass: rgba(248, 249, 246, 0.94);
+  --border: rgba(50, 63, 58, 0.16);
+  --border-strong: rgba(50, 63, 58, 0.28);
+  --text: #2d3735;
+  --text-secondary: #4e5b56;
+  --text-muted: #626d67;
+  --cyan: #3d6661;
+  --blue: #41648e;
+  --violet: #67557c;
+  --amber: #815d31;
+  --green: #376950;
+  --red: #934b56;
+  --panel-background: linear-gradient(135deg, var(--surface), #f6f8f5);
+  --panel-shadow: 0 6px 24px #2536320c;
+  --primary-hover: #325579;
+  --primary-ink: #fff;
 }
 
-:root[data-theme="light"] ::selection {
-  color: #fff;
-  background: #126d89;
-}
-:root[data-theme="light"] .skip-link {
-  color: #fff;
-}
-
-:root[data-theme="light"] :is(input, select, textarea, option) {
-  background: #fff;
-}
-:root[data-theme="light"] input:disabled {
-  background: var(--surface-raised);
-}
-:root[data-theme="light"] .sidebar {
-  background: linear-gradient(160deg, #fcfdff, #edf3fb 80%);
-}
-:root[data-theme="light"] .app-header {
-  background: rgba(250, 253, 255, 0.94);
-}
-:root[data-theme="light"] :is(.panel, .metric-card, .dashboard-search) {
-  background: var(--panel-background);
+:root[data-theme="light"] :is(.metric-card, .dashboard-search) {
   box-shadow: var(--panel-shadow);
 }
-:root[data-theme="light"] button.metric-card:hover {
-  background: #f0f8fc;
-  border-color: rgba(8, 109, 128, 0.35);
-}
-:root[data-theme="light"] .network-panel {
-  background: radial-gradient(ellipse at 55% 55%, #edf7fc, #fbfdff 70%);
-}
-:root[data-theme="light"] .ai-panel {
-  background:
-    radial-gradient(ellipse at 95% 3%, #e8e6ff, transparent 65%),
-    linear-gradient(135deg, #f7f5ff, #fff);
-  border-color: rgba(112, 80, 180, 0.2);
-}
 :root[data-theme="light"] .dialog {
-  background: linear-gradient(135deg, #fff, #f1f6fd);
-  border-color: var(--border-strong);
-  box-shadow: 0 30px 110px rgba(24, 48, 76, 0.24);
+  box-shadow: 0 30px 110px #25363238;
 }
 :root[data-theme="light"] .dialog::backdrop {
-  background: rgba(23, 43, 69, 0.44);
+  background: #21292370;
 }
 
 /* Secondary copy uses one readable ink color across all existing screens. */
@@ -79,7 +44,6 @@
   :is(
     .brand__text > span,
     .nav-group__label,
-    .nav-item,
     .nav-item small,
     .sidebar-assistant p,
     .sidebar-assistant__arrow,
@@ -154,8 +118,6 @@
 :root[data-theme="light"]
   :is(
     .workspace-label__icon,
-    .search-orbit,
-    .text-link,
     .institution-icon,
     .institution-callout > svg,
     .next-action__icon,
@@ -167,32 +129,24 @@
     .condition-ready > span
   ) {
   color: var(--cyan);
-  background-color: #e6f3f6;
-  border-color: rgba(8, 109, 128, 0.2);
-}
-:root[data-theme="light"] .text-link {
-  background: transparent;
+  background-color: var(--accent-background);
+  border-color: var(--accent-border);
 }
 :root[data-theme="light"]
   :is(.ai-label, .ai-orbit, .chat-avatar, .next-action__icon--violet) {
   color: var(--violet);
 }
 :root[data-theme="light"] :is(.workspace-label, .content-note, .demo-notice) {
-  background: rgba(224, 239, 249, 0.55);
+  background: var(--surface-sunken);
   border-color: var(--border);
 }
 :root[data-theme="light"] .sidebar-assistant {
-  background: linear-gradient(120deg, #f1edfc, #eef4fd);
-  border-color: rgba(112, 80, 180, 0.22);
-}
-:root[data-theme="light"] .user-avatar {
-  background: linear-gradient(135deg, #dceff7, #e6edfc);
-  color: var(--cyan);
-  border-color: rgba(8, 109, 128, 0.25);
+  background: color-mix(in srgb, var(--violet) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--violet) 25%, transparent);
 }
 :root[data-theme="light"]
   :is(.dashboard-search form, .search-field, .chat-form) {
-  background: #fff;
+  background: var(--surface);
   border-color: var(--border-strong);
 }
 :root[data-theme="light"]
@@ -200,37 +154,18 @@
   background: transparent;
 }
 :root[data-theme="light"]
-  :is(
-    .icon-button:hover,
-    .button--ghost:hover,
-    .nav-item:not(:disabled):hover
-  ) {
-  background: #e2edf7;
+  :is(.icon-button:hover, .button--ghost:hover) {
+  background: var(--control-hover);
   color: var(--text);
-}
-:root[data-theme="light"] .nav-item--active,
-:root[data-theme="light"] .nav-item--active:not(:disabled):hover {
-  background: linear-gradient(95deg, #d9eef5, #e8f2fb);
-  color: #075f75;
-  border-color: rgba(8, 109, 128, 0.24);
 }
 :root[data-theme="light"] .nav-item .nav-item__ai {
   color: var(--violet);
-  background: #eee8fa;
-  border-color: rgba(112, 80, 180, 0.25);
-}
-:root[data-theme="light"] .button--primary {
-  background: var(--cyan);
-  border-color: var(--cyan);
-  color: #fff;
-}
-:root[data-theme="light"] .button--primary:not(:disabled):hover {
-  background: var(--primary-hover);
-  color: #fff;
+  background: color-mix(in srgb, var(--violet) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--violet) 25%, transparent);
 }
 :root[data-theme="light"]
   :is(.button--secondary, .dashboard-search form > button) {
-  background: #eaf2fa;
+  background: var(--surface-raised);
   color: var(--text);
   border-color: var(--border-strong);
 }
@@ -239,122 +174,76 @@
     .button--secondary:not(:disabled):hover,
     .dashboard-search form > button:hover
   ) {
-  background: #dcebf5;
-  border-color: rgba(8, 109, 128, 0.4);
+  background: var(--control-hover);
+  border-color: var(--accent-border);
 }
-:root[data-theme="light"] .button--danger {
-  color: var(--red);
-  background: #fff0f3;
-}
-:root[data-theme="light"] .button--danger:not(:disabled):hover {
-  background: #fbe0e8;
-}
-:root[data-theme="light"] .badge {
-  color: var(--text-secondary);
-  background: #edf2f9;
-}
-:root[data-theme="light"] :is(.badge--cyan, .demo-notice .badge) {
+:root[data-theme="light"] .demo-notice .badge {
   color: var(--cyan);
-  background: #e6f3f6;
-  border-color: rgba(8, 109, 128, 0.22);
-}
-:root[data-theme="light"] .badge--violet {
-  color: var(--violet);
-  background: #f0eafb;
-  border-color: rgba(112, 80, 180, 0.22);
-}
-:root[data-theme="light"] .badge--amber {
-  color: var(--amber);
-  background: #fff2dd;
-  border-color: rgba(152, 96, 19, 0.23);
-}
-:root[data-theme="light"] .badge--green {
-  color: var(--green);
-  background: #e6f5ed;
-  border-color: rgba(8, 120, 85, 0.22);
+  background: var(--accent-background);
+  border-color: var(--accent-border);
 }
 :root[data-theme="light"] .segmented-control {
-  background: #e7eef7;
+  background: var(--surface-raised);
 }
 :root[data-theme="light"] .segmented-control button {
   color: var(--text-secondary);
 }
 :root[data-theme="light"] .segmented-control button[aria-pressed="true"] {
-  background: #fff;
-  border-color: rgba(8, 109, 128, 0.3);
+  background: var(--surface);
+  border-color: var(--accent-border);
   color: var(--cyan);
 }
 :root[data-theme="light"] .segmented-control button:hover {
   color: var(--cyan);
 }
 :root[data-theme="light"] :is(.institution-callout, .institution-list__item) {
-  background: #eef5fc;
+  background: var(--surface-sunken);
   border-color: var(--border-strong);
 }
 :root[data-theme="light"]
   :is(.institution-callout:hover, .institution-list__item.is-selected) {
-  background: #e1f0f7;
-  border-color: rgba(8, 109, 128, 0.4);
-}
-:root[data-theme="light"] .ai-panel__button {
-  background: #eee7fa;
-  color: #61419c;
-  border-color: rgba(112, 80, 180, 0.3);
-}
-:root[data-theme="light"] .ai-panel__button:hover {
-  background: #e2d7f5;
+  background: var(--control-hover);
+  border-color: var(--accent-border);
 }
 :root[data-theme="light"] :is(.next-action:hover, .equipment-row:hover) {
-  background: #edf4fb;
+  background: var(--control-hover);
 }
 :root[data-theme="light"] .equipment-glyph {
-  background: #e6f1f6;
+  background: var(--accent-background);
 }
 :root[data-theme="light"] .equipment-glyph--1 {
-  background: #e8eefb;
+  background: color-mix(in srgb, var(--blue) 10%, var(--surface));
   color: var(--blue);
 }
 :root[data-theme="light"] .equipment-glyph--2 {
-  background: #f1eafa;
+  background: color-mix(in srgb, var(--violet) 10%, var(--surface));
   color: var(--violet);
 }
-:root[data-theme="light"] .donut > div {
-  background: #fbfdff;
-  border-color: #fbfdff;
-}
 :root[data-theme="light"] th {
-  background: #eaf1fa;
+  background: var(--surface-raised);
 }
 :root[data-theme="light"]
   :is(.equipment-description, .request-card__condition, .message__bubble) {
-  background: #eef3fa;
+  background: var(--surface-sunken);
   border-color: var(--border);
 }
 :root[data-theme="light"] .message--user .message__bubble {
-  background: #e0f1f5;
-  color: #185568;
-  border-color: rgba(8, 109, 128, 0.2);
+  background: var(--accent-background);
+  color: var(--cyan);
+  border-color: var(--accent-border);
 }
 :root[data-theme="light"] .condition-ready {
-  background: #e6f3f6;
-  color: #185568;
+  background: var(--accent-background);
+  color: var(--cyan);
 }
 :root[data-theme="light"] .chat-examples button {
-  background: #eff4fa;
+  background: var(--surface-sunken);
 }
 :root[data-theme="light"] .chat-examples button:hover {
   color: var(--cyan);
 }
-/* The existing orbital visualization stays a dark scientific canvas in either theme. */
-:root[data-theme="light"] :is(.globe, .domestic-map) {
-  background: radial-gradient(ellipse at 55% 55%, #102a3f, #101a2c 85%);
-}
-:root[data-theme="light"] .globe .icon-button:hover {
-  color: #d5e5f2;
-  background: #163047;
-}
 :root[data-theme="light"] .sidebar-backdrop {
-  background: rgba(23, 43, 69, 0.38);
+  background: #21292361;
 }
 @media (max-width: 600px) {
   .theme-toggle {

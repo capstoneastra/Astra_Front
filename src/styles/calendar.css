@@ -49,11 +49,11 @@
 .calendar-day:hover { background: color-mix(in srgb, var(--cyan) 3%, transparent); }
 .calendar-day--outside { background: color-mix(in srgb, var(--bg) 48%, transparent); }
 .calendar-day--outside .calendar-day__select { color: var(--text-muted); }
-.calendar-day--selected { background: color-mix(in srgb, var(--cyan) 5%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cyan) 40%, transparent); }
+.calendar-day--selected { background: color-mix(in srgb, var(--blue) 8%, transparent); box-shadow: inset 0 0 0 1px var(--blue-border); }
 .calendar-day__select { display: flex; align-items: center; justify-content: space-between; width: 100%; background: transparent; border: 0; padding: 0 3px 6px; color: var(--text); text-align: left; min-height: 34px; }
 .calendar-day__select > span { width: 27px; height: 27px; display: grid; place-items: center; font-size: 14px; font-weight: 600; border-radius: 9px; font-variant-numeric: tabular-nums; }
 .calendar-day__select small { font-size: 11px; color: var(--text-muted); padding-right: 2px; }
-.calendar-day--today .calendar-day__select > span { background: var(--cyan); color: var(--bg); box-shadow: 0 0 17px color-mix(in srgb, var(--cyan) 18%, transparent); }
+.calendar-day--today .calendar-day__select > span { background: var(--blue); color: var(--primary-ink); box-shadow: 0 0 17px color-mix(in srgb, var(--blue) 18%, transparent); }
 .calendar-day__events { display: grid; gap: 5px; }
 .schedule-card { --event-accent: var(--text-muted); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; width: 100%; min-width: 0; padding: 15px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--event-accent) 20%, transparent); border-left: 3px solid var(--event-accent); background: color-mix(in srgb, var(--event-accent) 6%, var(--surface)); color: var(--text); transition: background .18s, transform .18s, box-shadow .18s; }
 .schedule-card--amber { --event-accent: var(--amber); }
@@ -93,7 +93,7 @@
 .schedule-detail__layout { display: grid; grid-template-columns: 265px minmax(0, 1fr); }
 .schedule-detail__list { padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 9px; align-items: stretch; }
 .schedule-detail__list > button { padding: 14px; border-radius: 10px; border: 1px solid var(--border); text-align: left; color: var(--text-secondary); display: flex; flex-direction: column; align-items: flex-start; gap: 5px; background: var(--surface-raised); }
-.schedule-detail__list > button[aria-pressed="true"] { border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 7%, var(--surface)); }
+.schedule-detail__list > button[aria-pressed="true"] { border-color: var(--blue-border); background: var(--blue-soft); }
 .schedule-detail__list strong { font-size: 14px; color: var(--text); }
 .schedule-detail__list > button > span:not(.schedule-status) { font-size: 13px; }
 .schedule-detail__list small { display: flex; align-items: center; gap: 5px; font-size: 12px; }
@@ -115,7 +115,7 @@
 .schedule-detail__eligible > div { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid var(--border); }
 .schedule-detail__eligible strong, .schedule-detail__eligible small { display: block; }
 .schedule-detail__eligible small { color: var(--text-muted); font-size: 12px; }
-.reservation-calendar button:focus-visible, .schedule-detail button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.reservation-calendar button:focus-visible, .schedule-detail button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 .schedule-detail[open] { animation: schedule-reveal .2s ease-out; }
 @keyframes schedule-reveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @media (min-width: 1650px) { .schedule-workspace { grid-template-columns: minmax(0, 1fr) 280px; }.schedule-upcoming__list { grid-template-columns: minmax(0, 1fr); } }

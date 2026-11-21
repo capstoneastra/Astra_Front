@@ -162,8 +162,9 @@ interface SimulationSceneOptions {
 
 export function createSimulationScene(host: HTMLElement, { kind, specimen, imported, getState, onProgress, onError, onReady }: SimulationSceneOptions) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a1420);
-  scene.fog = new THREE.Fog(0x0a1420, 12, 26);
+  const background = 0x1b211f;
+  scene.background = new THREE.Color(background);
+  scene.fog = new THREE.Fog(background, 12, 26);
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.shadowMap.enabled = true;
@@ -191,7 +192,7 @@ export function createSimulationScene(host: HTMLElement, { kind, specimen, impor
   scene.environment = envMap.texture;
   environment.dispose();
   pmrem.dispose();
-  scene.add(new THREE.HemisphereLight(0xc6e7ff, 0x253548, 2.5));
+  scene.add(new THREE.HemisphereLight(0xe1ebe7, 0x303834, 2.5));
   const light = new THREE.DirectionalLight(0xf3f4e9, 4.5);
   light.position.set(3, 8, 4);
   light.castShadow = true;
@@ -200,7 +201,7 @@ export function createSimulationScene(host: HTMLElement, { kind, specimen, impor
   light.shadow.bias = -0.0006;
   light.shadow.normalBias = 0.025;
   scene.add(light);
-  const rim = new THREE.DirectionalLight(0x5ecbe0, 3);
+  const rim = new THREE.DirectionalLight(0xa1bcb6, 3);
   rim.position.set(-5, 4, -3); scene.add(rim);
 
   const steel = new THREE.MeshStandardMaterial({ color: 0x7c8c9a, metalness: 0.8, roughness: 0.38 });
@@ -218,9 +219,9 @@ export function createSimulationScene(host: HTMLElement, { kind, specimen, impor
     parent.add(mesh); return mesh;
   };
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x0c1825, roughness: 0.9, metalness: 0.2 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x1e2824, roughness: 0.9, metalness: 0.2 }));
   floor.rotation.x = -Math.PI / 2; floor.position.y = -0.04; floor.receiveShadow = true; scene.add(floor);
-  const grid = new THREE.GridHelper(30, 60, 0x254153, 0x172b3b);
+  const grid = new THREE.GridHelper(30, 60, 0x485953, 0x303e38);
   grid.material.transparent = true; grid.material.opacity = 0.45; scene.add(grid);
   const rig = new THREE.Group(); scene.add(rig);
   const platform = new THREE.Group(); rig.add(platform);
