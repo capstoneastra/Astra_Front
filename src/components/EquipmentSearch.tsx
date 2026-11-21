@@ -29,7 +29,6 @@ import { apiConfig } from "../api/config";
 import { canAccessMenu } from "../auth/permissions";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 
 export default function EquipmentSearch({
   setActiveMenu,
@@ -65,7 +64,7 @@ export default function EquipmentSearch({
     (signal) => catalogService.testTypes(signal),
     "test-types",
   );
-  const [preview, setPreview] = useState(null);
+  const [detailEquipment, setDetailEquipment] = useState(null);
   const [selecting, setSelecting] = useState(null);
   const [selectionError, setSelectionError] = useState(null);
   const selectionRequest = useRef(null);
@@ -410,7 +409,7 @@ export default function EquipmentSearch({
                   비교에 담기
                 </label>
                 <div className="equipment-card__footer">
-                  <TextLink onClick={() => setPreview(equip)}>
+                  <TextLink onClick={() => setDetailEquipment(equip)}>
                     상세보기
                   </TextLink>
                   <Button
@@ -453,7 +452,6 @@ export default function EquipmentSearch({
           </EmptyState>
         </Panel>
       )}
-      <UiExample kind="equipment" hasData={filteredEquipment.length > 0} loading={waiting} error={state.error} />
       {!waiting && !state.error && totalPages > 1 && (
         <div className="form-actions">
           <Button
@@ -477,8 +475,8 @@ export default function EquipmentSearch({
       )}
       {selectionError && <ApiState error={selectionError} />}
       <EquipmentDetailDialog
-        item={preview}
-        onClose={() => setPreview(null)}
+        item={detailEquipment}
+        onClose={() => setDetailEquipment(null)}
         onSelect={handleSelect}
       />
     </div>

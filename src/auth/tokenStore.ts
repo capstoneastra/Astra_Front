@@ -1,4 +1,3 @@
-import { apiConfig } from "../api/config";
 import type { ApiError } from "../api/errors";
 const STORAGE_KEY = "astra.access-session.v1";
 
@@ -62,7 +61,7 @@ export function createTokenStore(storage?: Pick<Storage, "getItem" | "setItem" |
 
 let storage: Storage | undefined;
 try {
-  if (typeof window !== "undefined" && !apiConfig.isPreview) storage = window.sessionStorage;
+  if (typeof window !== "undefined") storage = window.sessionStorage;
 } catch {
   /* Restricted browser storage. */
 }

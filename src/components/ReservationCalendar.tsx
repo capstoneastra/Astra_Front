@@ -9,7 +9,6 @@ import { inMonth, monthOf, onDay, reservationStatuses, seoulDate } from "../doma
 import type { RequestBox, RequestSummary } from "../services/contracts";
 import { Badge, Button, EmptyState, PageHeader, Panel } from "./ui/index";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import Calendar from "./calendar/Calendar";
 import ScheduleCard from "./calendar/ScheduleCard";
 import ScheduleDetail from "./calendar/ScheduleDetail";
@@ -96,10 +95,9 @@ export default function ReservationCalendar({ requestBox, onBoxChange }: {
     </Panel>
     {types.error && <p className="field-hint" role="status">시험 종류 이름을 불러오지 못해 코드로 표시합니다. <button type="button" className="text-link" onClick={types.reload}>다시 조회</button></p>}
     {filters.equipment && <div className="schedule-busy-note">{busy.error ? <ApiState error={busy.error} onRetry={busy.reload} /> : <span role="status">{busy.loading || busy.refreshing ? "선택 장비의 확정 점유 구간 조회 중…" : "선택 장비의 확정 점유 구간을 함께 표시합니다. 다른 기업의 의뢰 정보는 공개하지 않으며 월별 예약 건수에 포함하지 않습니다."}</span>}</div>}
-    {query.loading || query.error ? <>
+    {query.loading || query.error ? (
       <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>
-      <UiExample kind="schedule" loading={query.loading} error={query.error} />
-    </> : <>
+    ) : <>
       <div className="schedule-legend" aria-label="예약 상태 범례">{Object.entries(reservationStatuses).map(([key, item]) => <span key={key} className={`schedule-status schedule-status--${item.tone}`}>{item.label}</span>)}<span className="schedule-legend__note" role="status">{query.refreshing ? "최신 예약 상태 확인 중…" : "조회한 의뢰 기준 · 한국 표준시"}</span></div>
       <div className="schedule-workspace">
         <div className="schedule-workspace__main"><Calendar month={month} today={today} selected={selection?.date ?? today} events={filtered} busy={anonymousBusy} testName={testName} onMonth={setMonth} onToday={() => { setMonth(monthOf(today)); setSelection(null); }} onDaySelect={(date) => chooseDate(date)} onEventSelect={(event, date) => chooseDate(date, event.id)} />
@@ -107,7 +105,6 @@ export default function ReservationCalendar({ requestBox, onBoxChange }: {
         </div>
         <aside className="panel schedule-upcoming"><header><span className="eyebrow">UP NEXT</span><h2>다가오는 시험</h2><p>진행 중인 일정부터 다음 예약까지</p></header>
           <div className="schedule-upcoming__list">{upcoming.length ? upcoming.map((event) => <ScheduleCard key={event.id} event={event} date={seoulDate(event.startAt) < today ? today : undefined} testName={testName(event.testType)} onSelect={(item, date) => chooseDate(date, item.id)} />) : <EmptyState icon={Clock3} title="예정된 시험이 없습니다" description="예약 제안과 확정 일정이 여기에 표시됩니다." />}</div>
-          <UiExample kind="schedule" hasData={upcoming.length > 0} />
           <div className="schedule-upcoming__note"><strong>일정 협의 가능 {eligible.length}건</strong><p>검토가 완료된 의뢰는 날짜 선택 후 일정을 제안할 수 있습니다.</p></div>
         </aside>
       </div>

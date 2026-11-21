@@ -11,10 +11,10 @@
 | 같은 출처 경로 | 프록시가 없으면 Vite HTML/404 등이 반환될 수 있음 | 현재 vite.config에 백엔드 프록시 없음. 프록시/리버스 프록시 또는 실제 API 주소 필요 |
 | CORS | 기존 axios는 withCredentials=false | 프론트 개발·배포 origin을 서버 CORS_ALLOWED_ORIGINS에 등록, Authorization 허용, 오류 응답에도 CORS 적용 |
 | 기능 Mock | 제거. VITE_API_MODE/VITE_DATA_SOURCE의 mock 값은 무시 | MSW나 프론트 응답 대체를 켜는 작업 불필요 |
-| 서버 DEMO 데이터 | `VITE_INCLUDE_MOCK_DATA=false`면 기존 장비 목록 서비스가 includeMock=false 전달 | 서버 isMock/sourceType 등 출처는 유지·표시. 전체 기능의 모든 API에 적용되는 전역 필터가 아님 |
+| 서버 DEMO 데이터 | 장비 목록은 기본 `includeMock=false`. `VITE_INCLUDE_MOCK_DATA=true`를 명시하면 포함 | 서버 isMock/sourceType 등 출처는 유지·표시. 전체 기능의 모든 API에 적용되는 전역 필터가 아님 |
 | 인증 | 기존 토큰·재발급·세션·로그인/가입 코드 유지 | 이 문서는 인증 API 변경 요청이 아님. 업무 API별 소유권 검사가 필요 |
 
-개발용 `/preview/*` 화면의 기존 계정·Provider는 인증 관련 작업 제외 조건에 따라 보존했다. **업무 데이터를 생성하던 preview axios adapter는 제거**했다. 미리보기는 실제 서버 인증이나 권한 검증을 증명하지 않으며, 프로덕션 인증 우회 기능으로 사용하면 안 된다. 기존 프로덕션 코드에서 DEV 전용으로 분리된 구조를 유지한다.
+실제 업무 화면은 일반 인증 흐름을 통해 접속한다. 로컬 개발 환경에서는 로그인 화면의 역할별 버튼으로 `/`의 레이아웃을 확인할 수 있으며, 이 모드에서는 업무 API 호출을 차단한다.
 
 ## 우선 확인 요청
 

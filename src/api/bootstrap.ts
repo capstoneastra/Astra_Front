@@ -1,4 +1,3 @@
-import { apiConfig } from "./config";
 import { removeLegacyBusinessData } from "./legacyBusinessData";
 
 function removeLegacyMockAccounts() {
@@ -17,8 +16,7 @@ function removeLegacyMockAccounts() {
 }
 
 export async function initializeApi() {
-  // Preserve the existing account cleanup behavior outside development previews.
-  if (!apiConfig.preview) removeLegacyMockAccounts();
+  removeLegacyMockAccounts();
   try {
     removeLegacyBusinessData(window.localStorage);
   } catch {

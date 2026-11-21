@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import ThemeToggle from "../components/ui/ThemeToggle";
+import AstraBrand from "../components/ui/AstraBrand";
 import LoginGuide from "./LoginGuide";
 import LoginOrbit from "./LoginOrbit";
 import "./login.css";
@@ -52,14 +53,7 @@ export default function AuthLayout() {
           state={pathname === "/auth/login" ? state : undefined}
           aria-label="ASTRA 로그인"
         >
-          <svg viewBox="0 0 40 40" aria-hidden="true">
-            <circle cx="20" cy="20" r="9" />
-            <ellipse cx="20" cy="20" rx="19" ry="6" transform="rotate(-30 20 20)" />
-          </svg>
-          <span>
-            ASTRA
-            <small>우주항공 시험장비 공동활용 플랫폼</small>
-          </span>
+          <AstraBrand />
         </Link>
         <div className="login-topbar__actions">
           <ThemeToggle />

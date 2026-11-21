@@ -7,7 +7,6 @@ import { adminService } from "../services/adminService";
 import { DemoNotice, Feedback } from "./workflow/Feedback";
 import { accountStatusLabels, roleLabels } from "../domain/constants";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
 
 const organizationTypeLabels = {
@@ -177,7 +176,6 @@ export default function AdminManagement({ approvalFocus }: { approvalFocus?: App
         {members.data?.totalElements === 0 && (
           <p>해당 상태의 회원이 없습니다.</p>
         )}
-        <UiExample kind="memberApproval" hasData={Boolean(members.data?.content.length)} loading={members.loading} error={members.error} />
       </Panel>
       <Panel id="organization-approvals" tabIndex={-1} className="form-panel" title="기관 승인 현황"
         action={<label className="equipment-card__compare"><input type="checkbox" checked={unverifiedOnly}
@@ -229,7 +227,6 @@ export default function AdminManagement({ approvalFocus }: { approvalFocus?: App
           </div>
         )}
         {!organizations.loading && !organizations.error && !organizationRows.length && <p>조회된 기관이 없습니다.</p>}
-        <UiExample kind="organizationApproval" hasData={organizationRows.length > 0} loading={organizations.loading} error={organizations.error} />
       </Panel>
     </div>
   );

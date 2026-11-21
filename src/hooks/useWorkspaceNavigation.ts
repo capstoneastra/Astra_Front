@@ -29,8 +29,8 @@ const isPage = (menu: string) =>
   Object.hasOwn(menuPermissions, menu) &&
   !["assistant", "chatbot", "autopilot"].includes(menu);
 const hashFor = (menu: string) => (menu === "home" ? "" : `#/${menu}`);
-export function useWorkspaceNavigation(scope: string, workspacePath = "/") {
-  const { pathname, hash, state } = useLocation();
+export function useWorkspaceNavigation(scope: string) {
+  const { hash, state } = useLocation();
   const navigate = useNavigate();
   const saved: WorkspaceRoute | undefined = state?.astraWorkspace;
   const sameAccount = saved?.scope === scope;
@@ -43,13 +43,13 @@ export function useWorkspaceNavigation(scope: string, workspacePath = "/") {
   );
 
   const persist = useCallback((next: WorkspaceRoute, replace: boolean) => {
-    navigate(`${workspacePath}${hashFor(next.menu)}`, { replace, state: { astraWorkspace: next } });
-  }, [navigate, workspacePath]);
+    navigate(`/${hashFor(next.menu)}`, { replace, state: { astraWorkspace: next } });
+  }, [navigate]);
 
   useEffect(() => {
-    if (pathname !== workspacePath || hash !== hashFor(menu) || (!restore && menu === "home"))
+    if (hash !== hashFor(menu) || (!restore && menu === "home"))
       persist(route, true);
-  }, [pathname, hash, menu, restore, route, persist, workspacePath]);
+  }, [hash, menu, restore, route, persist]);
 
   const go = useCallback((nextMenu: string, search: SearchView | null = null, destination: WorkspaceDestination = {}) => {
     if (!isPage(nextMenu)) return;

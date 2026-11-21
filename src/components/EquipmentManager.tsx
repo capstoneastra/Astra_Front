@@ -3,7 +3,6 @@ import { Box, Database, Info, Plus, Trash2 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, EmptyState, FormField, PageHeader, Panel } from "./ui";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
@@ -297,7 +296,6 @@ export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (me
           </Panel>
         )}
       </div>
-      <UiExample kind="managedEquipment" hasData={managedEquipment.length > 0} loading={catalogQuery.loading} error={catalogQuery.error} />
       {editing && (
         <EquipmentEditDialog
           key={editing}

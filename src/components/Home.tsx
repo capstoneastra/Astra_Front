@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowUpRight, Building2, CalendarDays, ClipboardCheck, ClipboardList, Database, MessageSquareText, Plus, RefreshCw, Search, Users } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
+import { useAuth } from "../auth/context";
 import { canAccessMenu } from "../auth/permissions";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { dashboardService } from "../services/dashboardService";
@@ -13,7 +14,6 @@ import { requestStatusLabels } from "../domain/constants";
 import { Badge, Button, PageHeader, Panel, TextLink } from "./ui";
 import ApiState from "./ui/ApiState";
 import type { ApiStateProps } from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import MetricCard from "./dashboard/MetricCard";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import "../styles/dashboard.css";
@@ -29,21 +29,18 @@ interface HomeProps {
   openChat: (id: number) => void;
 }
 
-type ExampleKind = "request" | "review" | "schedule" | "chat" | "institutionVerification";
-
-function DashboardSection({ title, action, empty, ready, loading, error, example, children }: {
+function DashboardSection({ title, action, empty, ready, loading, error, children }: {
   title: string;
   action?: ReactNode;
   empty: string;
   ready: boolean;
-  example: ExampleKind;
   children?: ReactNode;
 } & ApiStateProps) {
   return <Panel className="work-dashboard__panel" title={title} action={action}>
     {children ?? <p className="work-dashboard__message" aria-live="polite">
-      {loading ? "불러오는 중입니다." : error ? "목록을 불러오지 못했습니다." : ready ? empty : "데이터 연동 준비 중입니다."}
+      {loading ? "불러오는 중입니다." : error?.code === "LOCAL_WORKSPACE" ? "백엔드 연결 후 표시됩니다." :
+        error ? "목록을 불러오지 못했습니다." : ready ? empty : "데이터 연동 준비 중입니다."}
     </p>}
-    <UiExample kind={example} hasData={Boolean(children)} loading={loading} error={error} compact />
   </Panel>;
 }
 
@@ -85,6 +82,7 @@ function scheduleLabel(startAt: string, endAt: string) {
 
 export default function Home({ view, onViewChange, setActiveMenu, onSearch, openRequests, openCalendar, openApprovals, openChat }: HomeProps) {
   const { user, setDraftRequestId, setSelectedEquipment, setRequirementId, setTestCondition } = useWorkspace();
+  const localWorkspace = useAuth().status === "local";
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequest, setSelectedRequest] = useState<{ id: number; box: RequestBox } | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -121,7 +119,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
 
   const upcoming = provider && <DashboardSection title="다가오는 시험 예약" ready={requestsReady && summary.upcomingReservations !== undefined}
     loading={summaryQuery.loading} error={summaryQuery.error}
-    action={<TextLink onClick={() => openCalendar("RECEIVED")}>예약 캘린더</TextLink>} empty="예정된 시험이 없습니다." example="schedule">
+    action={<TextLink onClick={() => openCalendar("RECEIVED")}>예약 캘린더</TextLink>} empty="예정된 시험이 없습니다.">
     {schedules.length > 0 ? <ul className="work-dashboard__list">{schedules.map((item) =>
       <DashboardRow key={item.reservationId} title={item.equipmentName} detail={`${scheduleLabel(item.startAt, item.endAt)} · ${item.requestNo}`}
         onClick={() => setSelectedRequest({ id: item.requestId, box })} />
@@ -136,18 +134,32 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
     setActiveMenu("reservation");
   };
 
+  const changeView = (next: DashboardView) => {
+    setSelectedRequest(null);
+    onViewChange(next);
+  };
+  const canSwitchView = !admin && (user.organization != null || provider);
+  const refreshButton = <Button variant={canSwitchView ? "ghost" : "secondary"} icon={RefreshCw}
+    className={canSwitchView ? "work-dashboard__refresh" : undefined}
+    aria-label={canSwitchView ? "새로고침" : undefined} title={canSwitchView ? "새로고침" : undefined}
+    disabled={localWorkspace || summaryQuery.loading || summaryQuery.refreshing} onClick={summaryQuery.reload}>
+    {canSwitchView ? null : "새로고침"}
+  </Button>;
+
   return <div className="work-dashboard page-enter">
     <PageHeader eyebrow={null} title={title} description={orgName}>
-      <Button variant="secondary" icon={RefreshCw} disabled={summaryQuery.loading || summaryQuery.refreshing}
-        onClick={summaryQuery.reload}>새로고침</Button>
+      {!canSwitchView && refreshButton}
       {requester && <Button icon={Plus} onClick={startRequest}>새 시험 의뢰</Button>}
       {university && <Button icon={CalendarDays} onClick={() => openCalendar("RECEIVED")}>예약 캘린더</Button>}
       {provider && !university && <Button icon={ClipboardCheck} onClick={() => openRequests("RECEIVED")}>받은 의뢰</Button>}
     </PageHeader>
 
-    {!admin && (user.organization || provider) && <div className="work-dashboard__switch" role="group" aria-label="대시보드 업무 범위">
-      <Button variant={requester ? "primary" : "secondary"} aria-pressed={requester} onClick={() => onViewChange("REQUESTER")}>시험 의뢰</Button>
-      <Button variant={provider ? "primary" : "secondary"} aria-pressed={provider} onClick={() => onViewChange("PROVIDER")}>장비 운영</Button>
+    {canSwitchView && <div className="work-dashboard__toolbar">
+      <div className="work-dashboard__switch" role="group" aria-label="대시보드 업무 범위">
+        <button type="button" aria-pressed={requester} onClick={() => changeView("REQUESTER")}>시험 의뢰</button>
+        <button type="button" aria-pressed={provider} onClick={() => changeView("PROVIDER")}>장비 운영</button>
+      </div>
+      {refreshButton}
     </div>}
 
     {summaryQuery.error && <Panel><ApiState error={summaryQuery.error} onRetry={summaryQuery.reload} /></Panel>}
@@ -175,7 +187,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
     {!admin && <div className="work-dashboard__grid">
       {university && upcoming}
       <DashboardSection title={provider ? "검토할 의뢰" : "내가 처리할 의뢰"} ready={requestsReady} loading={summaryQuery.loading} error={summaryQuery.error}
-        action={<TextLink onClick={() => openRequests(box)}>전체 의뢰</TextLink>} empty={provider ? "검토 대기 중인 의뢰가 없습니다." : "지금 처리할 의뢰가 없습니다."} example={provider ? "review" : "request"}>
+        action={<TextLink onClick={() => openRequests(box)}>전체 의뢰</TextLink>} empty={provider ? "검토 대기 중인 의뢰가 없습니다." : "지금 처리할 의뢰가 없습니다."}>
         {taskRows.length > 0 ? <ul className="work-dashboard__list">{taskRows.map((item) =>
           <DashboardRow key={item.requestId} title={item.title} detail={requestMeta(item)} status={requestStatusLabels[item.status]}
             tone={item.status === "SUPPLEMENT_REQUESTED" ? "amber" : "cyan"} onClick={() => setSelectedRequest({ id: item.requestId, box })} />
@@ -184,7 +196,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
       {!university && upcoming}
       {requester && <>
         <DashboardSection title="최근 상담" ready={chatsReady} loading={summaryQuery.loading} error={summaryQuery.error}
-          action={<TextLink onClick={() => setActiveMenu("chatbot")}>AI 시험 상담</TextLink>} empty="최근 상담이 없습니다." example="chat">
+          action={<TextLink onClick={() => setActiveMenu("chatbot")}>AI 시험 상담</TextLink>} empty="최근 상담이 없습니다.">
           {recentChats.length > 0 ? <ul className="work-dashboard__list">{recentChats.map((item) =>
             <DashboardRow key={item.id} title={item.title} detail={Number.isFinite(readTime(item.updatedAt)) ? seoulDate(item.updatedAt) : undefined} onClick={() => openChat(item.id)} />
           )}</ul> : null}
@@ -202,7 +214,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
     </div>}
 
     {admin && <DashboardSection title="기관별 장비 정보 검증" ready={summary?.institutionVerification !== undefined}
-      loading={summaryQuery.loading} error={summaryQuery.error} empty="표시할 기관 검증 현황이 없습니다." example="institutionVerification">
+      loading={summaryQuery.loading} error={summaryQuery.error} empty="표시할 기관 검증 현황이 없습니다.">
       {verification.length > 0 ? <ul className="work-dashboard__list">{verification.map((item) => (
         <li className="work-dashboard__verification" key={item.id}>
           <span><strong>{item.name}</strong>{item.region && <small>{item.region}</small>}</span>

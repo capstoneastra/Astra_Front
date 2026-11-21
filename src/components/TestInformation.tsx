@@ -4,7 +4,6 @@ import { Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import { DemoNotice } from "./workflow/Feedback";
 export default function TestInformation({ setActiveMenu }) {
   const { testTypeCode, setTestTypeCode } = useWorkspace(),
@@ -138,7 +137,6 @@ export default function TestInformation({ setActiveMenu }) {
           </Panel>
         </>
       )}
-      <UiExample kind="testInfo" hasData={Boolean(detail.data?.institutions.length)} loading={detail.loading || types.loading} error={detail.error ?? types.error} />
     </div>
   );
 }

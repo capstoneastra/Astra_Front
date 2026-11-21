@@ -10,7 +10,6 @@ import { requestStatusLabels, formatDate } from "../domain/constants";
 import { apiConfig } from "../api/config";
 import type { RequestBox } from "../services/contracts";
 import { canAccessMenu } from "../auth/permissions";
-import UiExample from "./ui/UiExample";
 
 export default function ReservationCheck({
   setActiveMenu,
@@ -169,7 +168,6 @@ export default function ReservationCheck({
           ))}
         </div>
       )}
-      <UiExample kind="request" hasData={reservations.length > 0} loading={query.loading} error={query.error} />
       {selected && (
         <RequestDetailDialog
           key={selected}

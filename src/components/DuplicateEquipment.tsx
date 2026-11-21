@@ -4,7 +4,6 @@ import { Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import { DemoNotice } from "./workflow/Feedback";
 export default function DuplicateEquipment({ setActiveMenu }) {
   const { equipmentList, setComparisonIds } = useWorkspace(),
@@ -122,7 +121,6 @@ export default function DuplicateEquipment({ setActiveMenu }) {
           <p>선택한 조건에서 중복 후보 그룹이 없습니다.</p>
         </Panel>
       )}
-      <UiExample kind="duplicates" hasData={Boolean(query.data?.length)} loading={query.loading} error={query.error} />
     </div>
   );
 }

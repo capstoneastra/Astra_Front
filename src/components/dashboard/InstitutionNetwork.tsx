@@ -1,7 +1,6 @@
 import { Building2, Search } from "lucide-react";
 import { Badge, EmptyState, Panel } from "../ui";
 import ApiState from "../ui/ApiState";
-import UiExample from "../ui/UiExample";
 import type { ApiStateProps } from "../ui/ApiState";
 import type { Equipment } from "../../services/equipmentService";
 
@@ -21,6 +20,5 @@ export default function InstitutionNetwork({ equipmentList, onSearch, loading, e
         <span><strong>{institution.name}</strong><small>등록 장비 {institution.count}대</small></span>
         <Search size={16} aria-hidden="true" />
       </button>)}</div> : <EmptyState title="등록된 보유기관이 없습니다" description="장비의 보유기관 정보가 등록되면 표시됩니다." />}
-    <UiExample kind="institution" hasData={institutions.length > 0} loading={loading} error={error} compact />
   </Panel>;
 }

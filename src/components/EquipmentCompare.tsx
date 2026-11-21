@@ -4,7 +4,6 @@ import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
-import UiExample from "./ui/UiExample";
 import { DemoNotice } from "./workflow/Feedback";
 import { valueText } from "../domain/constants";
 export default function EquipmentCompare() {
@@ -170,7 +169,6 @@ export default function EquipmentCompare() {
           </Panel>
         )
       )}
-      <UiExample kind="comparison" hasData={Boolean(comparison.data)} loading={comparison.loading || catalogQuery.loading} error={comparison.error ?? catalogQuery.error} />
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 2026-11-21. 작업 브랜치 `feat/yeonji`, 기준 `83ac98f`.
 
+이 문서는 당시 작업 기록이다. 이후 실사용 전환 과정에서 당시 보존했던 가상 계정과 개발용 진입 경로도 제거했다.
+
 ## 작업 위치와 보호 범위
 
 처음 열린 프로젝트는 `feature/api-read-integration`의 이전 JavaScript 작업과 다수 미커밋 파일을 포함했다. 이 폴더를 덮어쓰거나 전환하지 않고 원격의 최신 TypeScript `feat/yeonji`를 별도 Git worktree(`.worktrees.local/feat-yeonji`)에 체크아웃했다. 원래 작업 파일과 로컬 main은 보존했다. 모든 업무 변경·커밋·푸시·PR은 feat/yeonji를 사용한다.

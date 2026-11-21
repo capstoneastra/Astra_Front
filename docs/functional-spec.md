@@ -61,7 +61,7 @@ type Page<T> = { content: T[]; page: number; size: number;
 
 React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이지는 `/#/search` 같은 기존 해시 경로이며 장비 상세·의뢰 상세는 별도 신규 URL이 아닌 다이얼로그다. AI 상담과 자동 추진은 기존 플로팅 AI 어시스턴트의 두 탭에서 실행한다. 뒤로가기와 검색 조건 복원은 기존 내비게이션을 사용한다.
 
-사이드바에서 대시보드, 장비 검색, 시험 의뢰 관리, 예약 캘린더, AI 어시스턴트에 접근한다. 보유 장비 관리와 회원·기관 승인은 권한에 따라 표시한다. 매칭·비교·시험 정보는 장비 검색이나 관련 상세에서 열고, 중복·유사 장비 조회는 장비 관리 또는 장비 검색에서 연다. 시뮬레이션은 지원 장비 상세에서 열 수 있고, 검색 결과가 비어 있을 때는 장비 검색의 도구 모음에서 실행 화면으로 이동할 수 있다. 새 의뢰는 대시보드·의뢰 관리·장비 상세에서 시작한다. 업무 알림은 헤더의 종 아이콘으로 연다. 빈 화면의 표시용 예시와 제거 방법은 [업무 화면 예시 데이터](ui-examples.md)를 참조한다.
+사이드바에서 대시보드, 장비 검색, 시험 의뢰 관리, 예약 캘린더, AI 어시스턴트에 접근한다. 보유 장비 관리와 회원·기관 승인은 권한에 따라 표시한다. 매칭·비교·시험 정보는 장비 검색이나 관련 상세에서 열고, 중복·유사 장비 조회는 장비 관리 또는 장비 검색에서 연다. 시뮬레이션은 지원 장비 상세에서 열 수 있고, 검색 결과가 비어 있을 때는 장비 검색의 도구 모음에서 실행 화면으로 이동할 수 있다. 새 의뢰는 대시보드·의뢰 관리·장비 상세에서 시작한다. 업무 알림은 헤더의 종 아이콘으로 연다. 프로필 보기와 로그아웃은 아바타 아래 계정 메뉴에서 선택한다.
 
 ## 1. 장비 통합 DB 검색
 
@@ -226,7 +226,7 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 - **API·요청:** `GET /dashboard/summary?view=REQUESTER|PROVIDER`, 관리자는 `view` 생략. 헤더 알림은 `GET /notifications?unreadOnly=true`를 사용한다. `GET /dashboard/equipment-stats`, `GET /notifications/unread-count` 전용 경로는 미연결이다.
 - **응답:** 공통 role/view, 10개 requestCounts, equipmentStats, dataAvailable. REQUESTER는 actionRequired/recentChats; PROVIDER는 institution/pendingReview/upcomingReservations/equipmentNeedsUpdate; ADMIN은 pendingUsers/pendingInstitutions/institutionVerification. 알림 DTO의 전체 필드는 UI 서비스와 서버 대조 필요.
 - **권한:** 기업의 기본은 의뢰자, 기관·대학의 기본은 장비 운영이다. 소속 사용자는 의뢰자와 장비 운영을 전환할 수 있다. 관리자는 관리자 요약을 본다. 선택한 view와 운영 조직 ID로 응답을 확인하고 조회 캐시도 범위별로 구분한다.
-- **상태 처리:** `dataAvailable.requests`·`dataAvailable.chats`가 false이면 준비 중을 표시한다. 실제 0건은 그대로 표시한다. 오류와 재시도는 유지하며 빈 목록의 [화면 예시](ui-examples.md)는 집계나 업무 요청에 사용하지 않는다.
+- **상태 처리:** `dataAvailable.requests`·`dataAvailable.chats`가 false이면 준비 중을 표시한다. 실제 0건과 빈 목록은 그대로 표시한다. 조회가 실패하면 오류와 재시도 안내를 표시한다.
 - **버튼·이동:** 보완·작성 중·검토 대기·일정 협의 KPI는 해당 의뢰함과 상태를 열고, 개별 의뢰나 예약은 건별 상세로 연결한다. 의뢰자는 확정 건수에서 보낸 의뢰의 캘린더를 연다. 최근 상담은 해당 대화를 열며, 관리자 승인 KPI는 승인 대기 목록을 연다. 기관 검증 행에서 해당 기관으로 검색을 좁힐 수 있다.
 - **후속 연동:** 실제 조직 계정의 view 전환과 응답 범위, 승인·예약·최근 상담 이동, 알림 유형·읽음 갱신을 테스트 서버에서 검증한다.
 

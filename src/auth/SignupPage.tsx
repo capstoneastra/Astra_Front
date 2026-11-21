@@ -9,7 +9,6 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { authService } from "../services/authService";
 import type { InstitutionType, SignupRequest } from "../services/authService";
 import AuthCardLink from "./AuthCardLink";
-import InternalPreviewLinks from "./InternalPreviewLinks";
 
 const noVerification = { codeExpiresAt: 0, resendAt: 0, token: "", tokenExpiresAt: 0 };
 const secondsLeft = (until: number, now: number) => Math.max(0, Math.ceil((until - now) / 1000));
@@ -304,7 +303,6 @@ export default function SignupPage() {
           </Button>
         </div>
       </form>
-      <div className="login-card__previews"><InternalPreviewLinks /></div>
     </div>
   );
 }
