@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Activity,
   ArrowRight,
   Building2,
+  BookOpen,
+  Columns3,
+  Copy,
   Info,
   Microscope,
   Search as SearchIcon,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import {
@@ -35,11 +40,15 @@ export default function EquipmentSearch({
   const {
     testCondition,
     setSelectedEquipment,
+    setDraftRequestId,
     equipmentList,
     catalogQuery,
     isApiMode,
     user,
     resolveEquipment,
+    comparisonIds,
+    setComparisonIds,
+    setSimulationEquipmentId,
   } = useWorkspace();
   const [searchTerm, setSearchTerm] = useState(initialView?.searchTerm ?? initialSearchTerm);
   const [queryTerm, setQueryTerm] = useState((initialView?.searchTerm ?? initialSearchTerm).trim());
@@ -55,7 +64,7 @@ export default function EquipmentSearch({
     (signal) => catalogService.testTypes(signal),
     "test-types",
   );
-  const [preview, setPreview] = useState(null);
+  const [detailEquipment, setDetailEquipment] = useState(null);
   const [selecting, setSelecting] = useState(null);
   const [selectionError, setSelectionError] = useState(null);
   const selectionRequest = useRef(null);
@@ -153,6 +162,7 @@ export default function EquipmentSearch({
   const waiting =
     state.loading || (serverSearch && searchTerm.trim() !== queryTerm);
   const handleSelect = (equip) => {
+    setDraftRequestId(null);
     setSelectedEquipment(equip);
     setActiveMenu("reservation");
   };
@@ -187,6 +197,30 @@ export default function EquipmentSearch({
               : "개발 전용 Mock 목록"}
         </Badge>
       </PageHeader>
+      <div className="workspace-context-actions" role="group" aria-label="장비 검색 도구">
+        <Button variant="secondary" icon={Sparkles} onClick={() => setActiveMenu("matching")}>
+          조건 분석·매칭
+        </Button>
+        <Button variant="secondary" icon={Columns3} onClick={() => setActiveMenu("compare")}>
+          장비 비교{comparisonIds.length > 0 && ` (${comparisonIds.length})`}
+        </Button>
+        <Button variant="secondary" icon={BookOpen} onClick={() => setActiveMenu("testInfo")}>
+          시험 정보 안내
+        </Button>
+        {!canAccessMenu(user.role, "manager") && (
+          <Button variant="secondary" icon={Copy} onClick={() => setActiveMenu("duplicates")}>
+            중복·유사 장비 조회
+          </Button>
+        )}
+        {!waiting && filteredEquipment.length === 0 && (
+          <Button variant="secondary" icon={Activity} onClick={() => {
+            setSimulationEquipmentId(null);
+            setActiveMenu("simulation");
+          }}>
+            가상 시뮬레이션
+          </Button>
+        )}
+      </div>
       {testCondition && (
         <div className="content-note">
           <Info size={16} />
@@ -198,14 +232,6 @@ export default function EquipmentSearch({
               있습니다.
             </p>
           </div>
-          {canAccessMenu(user.role, "matching") && (
-            <Button
-              variant="secondary"
-              onClick={() => setActiveMenu("matching")}
-            >
-              조건 분석·매칭
-            </Button>
-          )}
         </div>
       )}
       <Panel className="search-toolbar">
@@ -369,14 +395,28 @@ export default function EquipmentSearch({
                   </p>
                   <small>정보 갱신일 {equip.updateDate || "확인 필요"}</small>
                 </div>
+                <label className="equipment-card__compare">
+                  <input
+                    type="checkbox"
+                    aria-label={`${equip.name} 비교에 담기`}
+                    checked={comparisonIds.includes(equip.id)}
+                    disabled={!comparisonIds.includes(equip.id) && comparisonIds.length >= 5}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setComparisonIds((ids) => checked ? [...ids, equip.id] : ids.filter((id) => id !== equip.id));
+                    }}
+                  />
+                  비교에 담기
+                </label>
                 <div className="equipment-card__footer">
-                  <TextLink onClick={() => setPreview(equip)}>
+                  <TextLink onClick={() => setDetailEquipment(equip)}>
                     상세보기
                   </TextLink>
                   <Button
                     icon={ArrowRight}
                     disabled={
                       selecting !== null ||
+                      (user.organization?.id != null && equip.institutionId === user.organization.id) ||
                       !canAccessMenu(user.role, "reservation")
                     }
                     onClick={() => requestEquipment(equip)}
@@ -435,8 +475,8 @@ export default function EquipmentSearch({
       )}
       {selectionError && <ApiState error={selectionError} />}
       <EquipmentDetailDialog
-        item={preview}
-        onClose={() => setPreview(null)}
+        item={detailEquipment}
+        onClose={() => setDetailEquipment(null)}
         onSelect={handleSelect}
       />
     </div>

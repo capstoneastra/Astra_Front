@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../../auth/context";
 import { useAction } from "../../hooks/useAction";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { requestService } from "../../services/requestService";
@@ -9,9 +8,8 @@ import ApiState from "../ui/ApiState";
 import { formatDate } from "../../domain/constants";
 import { invalidateData } from "../../api/cache";
 import { overlaps } from "../../domain/calendar";
-export default function ReservationControls({ request, initialDate }) {
-  const { user } = useAuth(),
-    [startAt, setStart] = useState(initialDate ? `${initialDate}T09:00` : ""),
+export default function ReservationControls({ request, initialDate, canConfirm }) {
+  const [startAt, setStart] = useState(initialDate ? `${initialDate}T09:00` : ""),
     [endAt, setEnd] = useState(initialDate ? `${initialDate}T18:00` : ""),
     [note, setNote] = useState(""),
     action = useAction();
@@ -19,8 +17,7 @@ export default function ReservationControls({ request, initialDate }) {
     (signal) => requestService.availability(request.equipment.id, {}, signal),
     `availability:${request.equipment.id}`,
   );
-  const institution = ["ADMIN", "INSTITUTION_MANAGER"].includes(user.role),
-    scheduling = request.status === "SCHEDULING";
+  const scheduling = request.status === "SCHEDULING";
   useEffect(() => {
     // A concurrent confirmation/version change must invalidate both the request and busy intervals.
     if (action.error?.status === 409) invalidateData();
@@ -43,7 +40,7 @@ export default function ReservationControls({ request, initialDate }) {
     <section>
       <h3>예약 일정 협의</h3>
       <p className="field-hint">
-        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 기관 담당자만 할 수
+        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 장비 보유 조직에서 할 수
         있습니다.
       </p>
       {(busy.loading || busy.error) && (
@@ -172,7 +169,7 @@ export default function ReservationControls({ request, initialDate }) {
                       >
                         입력한 시간으로 대안 제안
                       </Button>
-                      {institution && (
+                      {canConfirm && (
                         <Button
                           disabled={action.busy || availabilityBlocked || conflicting}
                           onClick={() =>

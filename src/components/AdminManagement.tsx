@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/context";
 import { Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -7,6 +7,7 @@ import { adminService } from "../services/adminService";
 import { DemoNotice, Feedback } from "./workflow/Feedback";
 import { accountStatusLabels, roleLabels } from "../domain/constants";
 import ApiState from "./ui/ApiState";
+import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
 
 const organizationTypeLabels = {
   COMPANY: "기업",
@@ -14,9 +15,10 @@ const organizationTypeLabels = {
   UNIVERSITY: "대학",
 };
 
-export default function AdminManagement() {
+export default function AdminManagement({ approvalFocus }: { approvalFocus?: ApprovalFocus }) {
   const { user } = useAuth(),
-    [status, setStatus] = useState(""),
+    [status, setStatus] = useState(approvalFocus === "members" ? "PENDING" : ""),
+    [unverifiedOnly, setUnverifiedOnly] = useState(approvalFocus === "organizations"),
     [reasons, setReasons] = useState({}),
     action = useAction();
   const members = useApiQuery(
@@ -24,9 +26,22 @@ export default function AdminManagement() {
       `admin-users:${status}`,
     ),
     organizations = useApiQuery(
-      (signal) => adminService.organizations({}, signal),
-      "admin-organizations",
+      async (signal) => {
+        if (!unverifiedOnly) return (await adminService.organizations({}, signal)).content;
+        const pages = await Promise.all(["INSTITUTION", "UNIVERSITY"].map((orgType) =>
+          adminService.organizations({ orgType, verified: false }, signal)));
+        return pages.flatMap((page) => page.content).filter((organization) => !organization.isVerified);
+      },
+      `admin-organizations:${unverifiedOnly}`,
     );
+  const organizationRows = organizations.data ?? [];
+
+  useEffect(() => {
+    if (approvalFocus !== "organizations") return;
+    const panel = document.getElementById("organization-approvals");
+    panel?.focus({ preventScroll: true });
+    panel?.scrollIntoView({ block: "start" });
+  }, [approvalFocus]);
   return (
     <div className="content-page page-enter">
       <PageHeader
@@ -162,7 +177,9 @@ export default function AdminManagement() {
           <p>해당 상태의 회원이 없습니다.</p>
         )}
       </Panel>
-      <Panel className="form-panel" title="기관 승인 현황">
+      <Panel id="organization-approvals" tabIndex={-1} className="form-panel" title="기관 승인 현황"
+        action={<label className="equipment-card__compare"><input type="checkbox" checked={unverifiedOnly}
+          onChange={(event) => setUnverifiedOnly(event.target.checked)} />미승인 기관·대학만</label>}>
         {organizations.loading || organizations.error ? (
           <ApiState
             loading={organizations.loading}
@@ -181,7 +198,7 @@ export default function AdminManagement() {
                 </tr>
               </thead>
               <tbody>
-                {organizations.data?.content.map((org) => (
+                {organizationRows.map((org) => (
                   <tr key={org.id}>
                     <td>{org.name}</td>
                     <td>{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
@@ -209,6 +226,7 @@ export default function AdminManagement() {
             </table>
           </div>
         )}
+        {!organizations.loading && !organizations.error && !organizationRows.length && <p>조회된 기관이 없습니다.</p>}
       </Panel>
     </div>
   );

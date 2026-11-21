@@ -8,9 +8,12 @@ import { Badge, Button, EmptyState } from "../ui/index";
 import ApiState from "../ui/ApiState";
 import ReservationControls from "../workflow/ReservationControls";
 import { apiConfig } from "../../api/config";
+import { useAuth } from "../../auth/context";
+import { ownsOrganization } from "../../auth/permissions";
 
-export default function ScheduleDetail({ date, events, busy = [], initialId, eligibleRequests, testName, onClose, onRequest }) {
+export default function ScheduleDetail({ date, events, busy = [], initialId, eligibleRequests, testName, requestBox, onClose, onRequest }) {
   const dialog = useRef(null);
+  const { user } = useAuth();
   const [selectedId, setSelectedId] = useState(initialId ?? events[0]?.id ?? null);
   const selected = events.find((event) => event.id === selectedId);
   const query = useApiQuery((signal) => requestService.get(selected.requestId, signal),
@@ -44,7 +47,7 @@ export default function ScheduleDetail({ date, events, busy = [], initialId, eli
             </dl>
             <Button variant="secondary" onClick={() => onRequest(request.id, date)}>시험 의뢰 상세보기</Button>
             {["SCHEDULING", "CONFIRMED", "COMPLETED"].includes(request.status) && <fieldset className="schedule-detail__controls" disabled={query.refreshing}>
-              <ReservationControls request={request} initialDate={date} />
+              <ReservationControls request={request} initialDate={date} canConfirm={user.role === "ADMIN" || (requestBox === "RECEIVED" && ownsOrganization(user, request.institution?.id))} />
             </fieldset>}
           </> : <EmptyState title="예약 정보를 다시 확인해주세요" description="예약이 변경되었거나 더 이상 조회할 수 없습니다." />}
         </div>

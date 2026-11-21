@@ -6,7 +6,7 @@ import { loadCalendar } from "../services/calendarService";
 import { requestService } from "../services/requestService";
 import { catalogService } from "../services/catalogService";
 import { inMonth, monthOf, onDay, reservationStatuses, seoulDate } from "../domain/calendar";
-import type { RequestSummary } from "../services/contracts";
+import type { RequestBox, RequestSummary } from "../services/contracts";
 import { Badge, Button, EmptyState, PageHeader, Panel } from "./ui/index";
 import ApiState from "./ui/ApiState";
 import Calendar from "./calendar/Calendar";
@@ -23,8 +23,12 @@ function uniqueOptions(items: RequestSummary[], key: "equipment" | "institution"
   }
   return [...options];
 }
-export default function ReservationCalendar() {
+export default function ReservationCalendar({ requestBox, onBoxChange }: {
+  requestBox?: RequestBox;
+  onBoxChange: (box: RequestBox) => void;
+}) {
   const { user } = useAuth();
+  const box = user.role === "ADMIN" ? undefined : requestBox ?? (user.role === "INSTITUTION_MANAGER" ? "RECEIVED" : "SENT");
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer); }, []);
   const today = seoulDate(now);
@@ -33,7 +37,7 @@ export default function ReservationCalendar() {
   const [requestDetail, setRequestDetail] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({ test: "", equipment: "", status: "", institution: "" });
-  const query = useApiQuery((signal) => loadCalendar(signal), `calendar:${user.id}:${user.role}`);
+  const query = useApiQuery((signal) => loadCalendar(signal, box), `calendar:${user.id}:${box ?? "ALL"}`);
   const types = useApiQuery((signal) => catalogService.testTypes(signal), "calendar-test-types");
   const busy = useApiQuery((signal) => requestService.availability(filters.equipment, {}, signal),
     `calendar-busy:${user.id}:${filters.equipment}`, Boolean(filters.equipment));
@@ -57,13 +61,24 @@ export default function ReservationCalendar() {
   const updateFilter = (name, value) => { setFilters((previous) => ({ ...previous, [name]: value })); setSelection(null); };
   const chooseDate = (date: string, id?: number) => { setSelection({ date, id }); setMonth(monthOf(date)); };
   const openRequest = (id, date) => { setSelection(null); setRequestDetail({ id, date }); };
-  const scope = user.role === "ADMIN" ? "전체 기관의 시험 예약" : user.role === "INSTITUTION_MANAGER" ? "소속 기관에 접수된 시험 예약" : "내가 신청한 시험 예약";
+  const scope = !box ? "전체 시험 예약" : box === "RECEIVED" ? "소속 조직에 접수된 시험 예약" : "내가 신청한 시험 예약";
+  const changeBox = (next: RequestBox) => {
+    if (box === next) return;
+    setFilters({ test: "", equipment: "", status: "", institution: "" });
+    setSelection(null);
+    setRequestDetail(null);
+    onBoxChange(next);
+  };
   return <div className="content-page page-enter reservation-calendar">
     <PageHeader eyebrow="ASTRA SCHEDULE CONTROL" title="시험 예약 캘린더" description={`${scope}을 한눈에 확인하고 일정을 협의하세요.`}>
       <Badge tone="cyan"><CalendarDays size={14} /> 월간 일정</Badge>
       <Button className="schedule-filter-toggle" variant="secondary" icon={SlidersHorizontal} aria-controls="schedule-filters" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((value) => !value)}>필터</Button>
       <Button variant="secondary" icon={RefreshCw} disabled={query.loading || query.refreshing} onClick={query.reload}>새로고침</Button>
     </PageHeader>
+    {box && <div className="workspace-context-actions" role="group" aria-label="예약 조회 범위">
+      <Button variant={box === "SENT" ? "primary" : "secondary"} aria-pressed={box === "SENT"} onClick={() => changeBox("SENT")}>보낸 의뢰의 예약</Button>
+      <Button variant={box === "RECEIVED" ? "primary" : "secondary"} aria-pressed={box === "RECEIVED"} onClick={() => changeBox("RECEIVED")}>받은 의뢰의 예약</Button>
+    </div>}
     <div className="schedule-source"><Badge tone="cyan">{query.data ? "예약 정보" : "조회 대기"}</Badge><span>{query.data ? "서버 응답 기준의 시험 예약입니다." : "시험 예약 정보를 서버에서 조회합니다."} 제안 일정은 기관 확정 전까지 미확정입니다.</span></div>
     <div className="schedule-metrics" aria-label="선택한 달 예약 요약">
       {[{ icon: CalendarDays, label: "선택한 달 시험 예약", value: monthly.length, hint: "필터 적용 · 여러 날 시험은 1건", tone: "blue" },
@@ -80,7 +95,9 @@ export default function ReservationCalendar() {
     </Panel>
     {types.error && <p className="field-hint" role="status">시험 종류 이름을 불러오지 못해 코드로 표시합니다. <button type="button" className="text-link" onClick={types.reload}>다시 조회</button></p>}
     {filters.equipment && <div className="schedule-busy-note">{busy.error ? <ApiState error={busy.error} onRetry={busy.reload} /> : <span role="status">{busy.loading || busy.refreshing ? "선택 장비의 확정 점유 구간 조회 중…" : "선택 장비의 확정 점유 구간을 함께 표시합니다. 다른 기업의 의뢰 정보는 공개하지 않으며 월별 예약 건수에 포함하지 않습니다."}</span>}</div>}
-    {query.loading || query.error ? <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel> : <>
+    {query.loading || query.error ? (
+      <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>
+    ) : <>
       <div className="schedule-legend" aria-label="예약 상태 범례">{Object.entries(reservationStatuses).map(([key, item]) => <span key={key} className={`schedule-status schedule-status--${item.tone}`}>{item.label}</span>)}<span className="schedule-legend__note" role="status">{query.refreshing ? "최신 예약 상태 확인 중…" : "조회한 의뢰 기준 · 한국 표준시"}</span></div>
       <div className="schedule-workspace">
         <div className="schedule-workspace__main"><Calendar month={month} today={today} selected={selection?.date ?? today} events={filtered} busy={anonymousBusy} testName={testName} onMonth={setMonth} onToday={() => { setMonth(monthOf(today)); setSelection(null); }} onDaySelect={(date) => chooseDate(date)} onEventSelect={(event, date) => chooseDate(date, event.id)} />
@@ -92,7 +109,7 @@ export default function ReservationCalendar() {
         </aside>
       </div>
     </>}
-    {selection && !query.error && !query.loading && <ScheduleDetail key={`${selection.date}:${selection.id ?? "day"}`} date={selection.date} events={filtered.filter((event) => onDay(event, selection.date))} busy={anonymousBusy.filter((interval) => onDay(interval, selection.date))} initialId={selection.id} eligibleRequests={eligible} testName={testName} onClose={() => setSelection(null)} onRequest={openRequest} />}
-    {requestDetail && <RequestDetailDialog requestId={requestDetail.id} initialReservationDate={requestDetail.date} onClose={() => setRequestDetail(null)} />}
+    {selection && !query.error && !query.loading && <ScheduleDetail key={`${selection.date}:${selection.id ?? "day"}`} date={selection.date} events={filtered.filter((event) => onDay(event, selection.date))} busy={anonymousBusy.filter((interval) => onDay(interval, selection.date))} initialId={selection.id} eligibleRequests={eligible} testName={testName} requestBox={box} onClose={() => setSelection(null)} onRequest={openRequest} />}
+    {requestDetail && <RequestDetailDialog requestId={requestDetail.id} initialReservationDate={requestDetail.date} requestBox={box} onClose={() => setRequestDetail(null)} />}
   </div>;
 }

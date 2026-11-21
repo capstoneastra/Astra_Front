@@ -88,12 +88,7 @@ export default function Chatbot({ setActiveMenu }) {
         eyebrow="ASTRA AI ASSISTANT"
         title="AI 시험 상담"
         description="시험 목적에서 장비 탐색까지, 필요한 조건을 함께 정리해 보세요."
-      >
-        <Badge tone="violet">
-          <Sparkles size={11} />
-          상담 시연
-        </Badge>
-      </PageHeader>
+      />
       <div className="content-note">
         <Info size={16} />
         <span>

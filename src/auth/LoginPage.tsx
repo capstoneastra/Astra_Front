@@ -4,7 +4,8 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useLocation } from "react-router";
 import AuthCardLink from "./AuthCardLink";
 import { useAuth } from "./context";
-import InternalPreviewLinks from "./InternalPreviewLinks";
+import { localWorkspaceAccounts } from "./localWorkspace";
+import type { LocalWorkspaceAccount } from "./localWorkspace";
 
 const rememberedEmailKey = "astra.auth.remembered-email";
 const accountStatus: Record<string, string> = {
@@ -30,7 +31,7 @@ function rememberEmail(email: string) {
   }
 }
 
-export default function LoginPage() {
+export default function LoginPage({ onEnterLocal }: { onEnterLocal?: (account: LocalWorkspaceAccount) => void }) {
   const { login, error } = useAuth();
   const signupPending = useLocation().state?.signupPending === true;
   const emailInput = useRef<HTMLInputElement>(null);
@@ -41,6 +42,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [validation, setValidation] = useState<{ field: "email" | "password"; message: string } | null>(null);
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy) return;
@@ -154,7 +156,18 @@ export default function LoginPage() {
           </p>
         )}
       </form>
-      <div className="login-card__previews"><InternalPreviewLinks /></div>
+      {onEnterLocal && (
+        <div className="login-card__accounts" role="group" aria-labelledby="login-local-workspace">
+          <p id="login-local-workspace">서버 없이 화면 열기</p>
+          <div className="login-card__account-options">
+            {(Object.keys(localWorkspaceAccounts) as LocalWorkspaceAccount[]).map((account) => (
+              <button key={account} type="button" disabled={busy} onClick={() => onEnterLocal(account)}>
+                {localWorkspaceAccounts[account].label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <p className="login-card__note">신규 계정은 관리자 승인 후 이용할 수 있습니다.</p>
     </div>
   );

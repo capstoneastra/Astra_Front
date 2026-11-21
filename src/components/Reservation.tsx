@@ -21,6 +21,7 @@ export default function Reservation({ setActiveMenu }) {
     requirementId,
     draftRequestId,
     setDraftRequestId,
+    user,
   } = useWorkspace();
   const [editor, setEditor] = useState(null),
     [reviewed, setReviewed] = useState(false),
@@ -46,15 +47,18 @@ export default function Reservation({ setActiveMenu }) {
       setReviewed(false);
     }
   };
-  const options =
+  const candidateEquipment =
     selectedEquipment &&
     !equipmentList.some((item) => item.id === selectedEquipment.id)
       ? [selectedEquipment, ...equipmentList]
       : equipmentList;
+  const organizationId = user.organization?.id;
+  const options = candidateEquipment.filter((equipment) => organizationId == null || equipment.institutionId !== organizationId);
+  const canStartDraft = selectedEquipment != null && options.some((equipment) => equipment.id === selectedEquipment.id);
 
   const handleEquipmentChange = (e) => {
     const selectedId = parseInt(e.target.value);
-    const equipment = equipmentList.find((eq) => eq.id === selectedId);
+    const equipment = options.find((eq) => eq.id === selectedId);
     setSelectedEquipment(equipment || null);
   };
 
@@ -120,7 +124,7 @@ export default function Reservation({ setActiveMenu }) {
             >
               <select
                 id="request-equipment"
-                value={draft?.equipment.id ?? selectedEquipment?.id ?? ""}
+                value={draft?.equipment?.id ?? (canStartDraft ? selectedEquipment.id : "")}
                 disabled={Boolean(draftRequestId) || action.busy}
                 onChange={handleEquipmentChange}
               >
@@ -136,7 +140,7 @@ export default function Reservation({ setActiveMenu }) {
               {!draftRequestId && (
                 <div className="form-actions">
                   <Button
-                    disabled={!selectedEquipment || action.busy}
+                    disabled={!canStartDraft || action.busy}
                     onClick={() =>
                       action.run(async (signal) => {
                         const body = {

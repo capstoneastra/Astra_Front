@@ -1,19 +1,20 @@
+import type { User } from "../services/authService";
+
 const everyone = ["COMPANY_USER", "INSTITUTION_MANAGER", "ADMIN"];
-const company = ["COMPANY_USER", "ADMIN"];
 export const menuPermissions = {
   home: everyone,
   search: everyone,
   compare: everyone,
   duplicates: everyone,
-  chatbot: company,
-  assistant: company,
-  matching: company,
-  autopilot: company,
-  reservation: company,
+  chatbot: everyone,
+  assistant: everyone,
+  matching: everyone,
+  autopilot: everyone,
+  reservation: everyone,
   reservationCheck: everyone,
   calendar: everyone,
   manager: ["INSTITUTION_MANAGER", "ADMIN"],
-  review: ["INSTITUTION_MANAGER", "ADMIN"],
+  review: everyone,
   testInfo: everyone,
   simulation: everyone,
   notifications: everyone,
@@ -21,3 +22,7 @@ export const menuPermissions = {
 };
 export const canAccessMenu = (role, menu) =>
   menuPermissions[menu]?.includes(role) === true;
+
+export function ownsOrganization(user: User, organizationId?: number | null) {
+  return organizationId != null && user.organization?.id === organizationId;
+}

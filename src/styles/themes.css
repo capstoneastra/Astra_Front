@@ -42,7 +42,7 @@
 /* Secondary copy uses one readable ink color across all existing screens. */
 :root[data-theme="light"]
   :is(
-    .brand__text > span,
+    .brand .astra-brand__text small,
     .nav-group__label,
     .nav-item small,
     .sidebar-assistant p,

@@ -12,7 +12,7 @@ export default function InstitutionNetwork({ equipmentList, onSearch, loading, e
     id: item.institutionId, name: item.institution,
     count: equipmentList.filter((other) => other.institution === item.institution).length,
   }])).values()];
-  return <Panel className="institution-directory" title="장비 보유기관" action={<Badge tone="cyan">{institutions.length}개 기관</Badge>}>
+  return <Panel className="institution-directory" title="장비 보유기관" action={<Badge tone="cyan">{loading || error ? "—" : institutions.length}개 기관</Badge>}>
     {loading || error ? <ApiState loading={loading} error={error} onRetry={onRetry} /> : institutions.length ?
       <div className="institution-directory__list">{institutions.map((institution) => <button type="button" key={institution.id ?? institution.name}
         onClick={() => onSearch(institution.name, { institutionId: institution.id })}>

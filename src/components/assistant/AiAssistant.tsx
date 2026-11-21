@@ -20,6 +20,7 @@ const modes = [
 ];
 
 export default function AiAssistant({
+  chatPanelKey,
   open,
   started,
   mode,
@@ -203,7 +204,7 @@ export default function AiAssistant({
                 }}
               >
                 {id === "chatbot" ? (
-                  <Chatbot setActiveMenu={onNavigate} />
+                  <Chatbot key={chatPanelKey} setActiveMenu={onNavigate} />
                 ) : (
                   <Automation setActiveMenu={onNavigate} embedded />
                 )}

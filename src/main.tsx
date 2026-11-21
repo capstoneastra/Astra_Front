@@ -36,7 +36,7 @@ initializeApi()
           <ApiState
             error={{
               message:
-                "API 환경을 시작하지 못했습니다. Mock 모드에서는 /api/v1 주소와 Service Worker 실행 가능 여부를 확인해주세요.",
+                "서비스를 시작하지 못했습니다. 페이지를 새로고침해 다시 시도해주세요.",
             }}
             onRetry={() => window.location.reload()}
           />

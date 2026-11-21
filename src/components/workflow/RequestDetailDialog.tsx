@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "../../auth/context";
+import { ownsOrganization } from "../../auth/permissions";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { useAction } from "../../hooks/useAction";
 import { requestService } from "../../services/requestService";
+import type { RequestBox } from "../../services/contracts";
 import { catalogService } from "../../services/catalogService";
 import { Badge, Button, FormField } from "../ui/index";
 import ApiState from "../ui/ApiState";
@@ -16,10 +18,11 @@ import {
   valueText,
 } from "../../domain/constants";
 
-export default function RequestDetailDialog({ requestId, onClose, initialReservationDate }: {
+export default function RequestDetailDialog({ requestId, onClose, initialReservationDate, requestBox }: {
   requestId: number;
   onClose: () => void;
   initialReservationDate?: string;
+  requestBox?: RequestBox;
 }) {
   const dialog = useRef(null),
     { user } = useAuth(),
@@ -49,9 +52,12 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
     [selectedFields, setSelectedFields] = useState(null),
     [changeSummary, setSummary] = useState(""),
     [responseMessage, setResponse] = useState("요청하신 정보를 보완했습니다.");
-  const content = edited ?? r?.revision.content,
-    institution = ["INSTITUTION_MANAGER", "ADMIN"].includes(user.role),
-    company = ["COMPANY_USER", "ADMIN"].includes(user.role);
+  const content = edited ?? r?.revision.content;
+  const admin = user.role === "ADMIN";
+  const ownsEquipment = ownsOrganization(user, r?.institution?.id);
+  const institution = admin || (requestBox !== "SENT" && ownsEquipment);
+  const company = admin || requestBox === "SENT" ||
+    (!requestBox && user.role === "COMPANY_USER" && !ownsEquipment);
   useEffect(() => {
     dialog.current.showModal();
   }, []);
@@ -376,7 +382,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
             </section>
           )}
           {["SCHEDULING", "CONFIRMED", "COMPLETED"].includes(r.status) && (
-                <ReservationControls request={r} initialDate={initialReservationDate} />
+            <ReservationControls request={r} initialDate={initialReservationDate} canConfirm={institution} />
           )}
           {institution && r.status === "CONFIRMED" && (
             <Button

@@ -1,19 +1,38 @@
-import { useEffect, useRef } from "react";
-import { ArrowUpRight, Orbit, X } from "lucide-react";
-import { navigation } from "../data/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { navigation, parentMenu } from "../data/navigation";
 import { useAuth } from "../auth/context";
 import { canAccessMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
+import AstraBrand from "./ui/AstraBrand";
 
 export default function Sidebar({
   activeMenu,
   setActiveMenu,
   open,
   onClose,
+  collapsed,
+  onToggleCollapse,
   blocked = false,
+}: {
+  activeMenu: string;
+  setActiveMenu: (menu: string) => void;
+  open: boolean;
+  onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  blocked?: boolean;
 }) {
   const sidebar = useRef<HTMLElement>(null);
+  const hintTimer = useRef<number>();
+  const [hint, setHint] = useState<{ label: string; top: number } | null>(null);
+  const hideHint = useCallback(() => {
+    window.clearTimeout(hintTimer.current);
+    setHint(null);
+  }, []);
   const { user } = useAuth();
+  const collapseLabel = collapsed ? "사이드바 펼치기" : "사이드바 접기";
+  const highlighted = parentMenu[activeMenu] ?? activeMenu;
   const visibleNavigation = navigation
     .map((group) => ({
       ...group,
@@ -55,6 +74,29 @@ export default function Sidebar({
     };
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!collapsed || open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") hideHint(); };
+    window.addEventListener("resize", hideHint);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(hintTimer.current);
+      window.removeEventListener("resize", hideHint);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [collapsed, open, hideHint]);
+
+  const showHint = (button: HTMLButtonElement, label: string, keyboard = false) => {
+    if (!collapsed || open) return;
+    hideHint();
+    const show = () => {
+      const { top, height } = button.getBoundingClientRect();
+      setHint({ label, top: Math.max(18, Math.min(window.innerHeight - 18, top + height / 2)) });
+    };
+    if (keyboard) show();
+    else hintTimer.current = window.setTimeout(show, 320);
+  };
+
   return (
     <>
       {open && (
@@ -78,16 +120,12 @@ export default function Sidebar({
       >
         <div className="sidebar__brand-row">
           <button
+            type="button"
             className="brand"
             onClick={() => setActiveMenu("home")}
             aria-label="ASTRA 대시보드"
           >
-            <span className="brand__mark">
-              <Orbit size={28} strokeWidth={1.4} aria-hidden="true" />
-            </span>
-            <span className="brand__text">
-              ASTRA<span>AEROSPACE INFRASTRUCTURE</span>
-            </span>
+            <AstraBrand />
           </button>
           <button
             className="icon-button sidebar__close"
@@ -97,25 +135,36 @@ export default function Sidebar({
             <X size={19} />
           </button>
         </div>
-        <div className="workspace-label">
-          <span className="workspace-label__icon">A</span>
+        <div className="sidebar__section">
           <div>
-            시험장비 공동활용<span>통합 워크스페이스</span>
+            <div className="workspace-label">
+              <span className="workspace-label__icon">A</span>
+              <div>시험장비 공동활용<span>통합 워크스페이스</span></div>
+              <span className="workspace-label__dot" />
+            </div>
           </div>
-          <span className="workspace-label__dot" />
         </div>
-        <nav className="sidebar__nav" aria-label="서비스 메뉴">
+        <nav id="sidebar-navigation" className="sidebar__nav" aria-label="서비스 메뉴" onScroll={hideHint}>
           {visibleNavigation.map((group) => (
             <div className="nav-group" key={group.label}>
-              <p className="nav-group__label">{group.label}</p>
+              <div className="sidebar__section">
+                <div><p className="nav-group__label">{group.label}</p></div>
+              </div>
               {group.items.map(({ id, label, icon: Icon, upcoming }) => (
                 <button
                   key={id}
+                  type="button"
                   disabled={upcoming}
-                  onClick={() => setActiveMenu(id)}
-                  className={`nav-item ${activeMenu === id ? "nav-item--active" : ""}`}
+                  onClick={() => { hideHint(); setActiveMenu(id); }}
+                  onMouseEnter={(event) => showHint(event.currentTarget, label)}
+                  onMouseLeave={hideHint}
+                  onFocus={(event) => {
+                    if (event.currentTarget.matches(":focus-visible")) showHint(event.currentTarget, label, true);
+                  }}
+                  onBlur={hideHint}
+                  className={`nav-item ${highlighted === id ? "nav-item--active" : ""}`}
                   aria-current={
-                    activeMenu === id && id !== "assistant" ? "page" : undefined
+                    highlighted === id && id !== "assistant" ? "page" : undefined
                   }
                   aria-expanded={
                     id === "assistant" ? activeMenu === id : undefined
@@ -124,7 +173,6 @@ export default function Sidebar({
                     id === "assistant" ? "astra-ai-assistant" : undefined
                   }
                   aria-label={upcoming ? `${label} · 준비 중` : label}
-                  title={upcoming ? `${label} · 후속 구현 예정` : label}
                 >
                   <Icon size={18} strokeWidth={1.7} aria-hidden="true" />
                   <span>{label}</span>
@@ -138,25 +186,20 @@ export default function Sidebar({
           ))}
         </nav>
         <div className="sidebar__bottom">
-          {canAccessMenu(user.role, "assistant") && (
-            <button
-              className="sidebar-assistant"
-              onClick={() => setActiveMenu("assistant")}
-            >
-              <span>
-                <Orbit size={19} />
-                ASTRA AI 열기
-              </span>
-              <p>시험 상담 · 자동 추진</p>
-              <ArrowUpRight size={15} className="sidebar-assistant__arrow" />
-            </button>
-          )}
           <div className="sidebar__footer">
             <span className="status-dot" />
             {roleLabels[user.role] ?? user.role}
             <span>v0.1</span>
           </div>
+          <button type="button" className="icon-button sidebar__collapse" aria-label={collapseLabel}
+            aria-expanded={!collapsed} aria-controls="sidebar-navigation"
+            onClick={() => { hideHint(); onToggleCollapse(); }}>
+            {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
+          </button>
         </div>
+        {hint && collapsed && !open && (
+          <span key={hint.label} className="sidebar__hint" style={{ top: hint.top }} aria-hidden="true">{hint.label}</span>
+        )}
       </aside>
     </>
   );

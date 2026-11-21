@@ -23,6 +23,8 @@ interface ApiClientOptions {
   adapter?: AxiosRequestConfig["adapter"];
 }
 
+const localWorkspaceAdapter = () => Promise.reject(new ApiError("백엔드 연결 후 이 기능을 이용할 수 있습니다.", { code: "LOCAL_WORKSPACE" }));
+
 export function createApiClient({
   baseURL = apiConfig.baseURL,
   store = tokenStore,
@@ -87,6 +89,7 @@ export function createApiClient({
   }
 
   client.interceptors.request.use((config) => {
+    if (config.adapter === localWorkspaceAdapter) return config;
     config.sessionVersion ??= store.getVersion();
     if (config.retriedAfterRefresh && config.sessionVersion !== store.getVersion())
       throw aborted();
@@ -145,6 +148,16 @@ export function createApiClient({
 }
 
 export const apiClient = createApiClient();
+
+export function blockLocalWorkspaceRequests() {
+  const adapter = apiClient.defaults.adapter;
+  apiClient.defaults.adapter = localWorkspaceAdapter;
+
+  return () => {
+    if (apiClient.defaults.adapter === localWorkspaceAdapter) apiClient.defaults.adapter = adapter;
+  };
+}
+
 export function responseData<T = unknown>(response: AxiosResponse<unknown>) {
   return validateEnvelope<T>(response.data, response.status);
 }
