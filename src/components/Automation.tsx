@@ -11,7 +11,7 @@ import ApiState from "./ui/ApiState";
 export default function Automation({ setActiveMenu, embedded = false }) {
   const { autoRunId, setAutoRunId, setRequirementId, setDraftRequestId } =
       useWorkspace(),
-    [input, setInput] = useState("위성 전장품 15kg, 20~2000Hz 진동시험"),
+    [input, setInput] = useState(""),
     action = useAction(),
     completed = useRef(null);
   const query = useApiQuery(
@@ -44,6 +44,7 @@ export default function Automation({ setActiveMenu, embedded = false }) {
           <textarea
             id="auto-input"
             rows={3}
+            placeholder="시험 목적과 확인된 조건을 입력하세요."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={running || action.busy}

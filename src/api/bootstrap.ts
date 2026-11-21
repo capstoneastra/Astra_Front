@@ -1,4 +1,5 @@
 import { apiConfig } from "./config";
+import { removeLegacyBusinessData } from "./legacyBusinessData";
 
 function removeLegacyMockAccounts() {
   try {
@@ -16,20 +17,12 @@ function removeLegacyMockAccounts() {
 }
 
 export async function initializeApi() {
-  if (import.meta.env.DEV && apiConfig.preview) {
-    const { initializePreviewApi } = await import("../preview/api");
-    initializePreviewApi(apiConfig.preview.account);
-    return;
-  }
-  removeLegacyMockAccounts();
-  if (import.meta.env?.DEV && apiConfig.isMock) {
-    const { worker } = await import("../mocks/browser");
-    await worker.start({
-      quiet: true,
-      onUnhandledRequest: "bypass",
-      serviceWorker: { url: "/mockServiceWorker.js" },
-    });
-    return;
+  // Preserve the existing account cleanup behavior outside development previews.
+  if (!apiConfig.preview) removeLegacyMockAccounts();
+  try {
+    removeLegacyBusinessData(window.localStorage);
+  } catch {
+    /* Local browser storage is optional. */
   }
   // Deactivate and remove only ASTRA's MSW; never touch unrelated service workers.
   if ("serviceWorker" in navigator) {
