@@ -79,6 +79,7 @@ export default function Simulation() {
                 setResult(null);
               }}
             >
+              <option value="" disabled>장비를 선택하세요</option>
               {equipmentList.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.externalId} · {e.name}

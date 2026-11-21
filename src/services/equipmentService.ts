@@ -126,25 +126,6 @@ export const equipmentService = {
     }: EquipmentFilters = {},
     signal?: AbortSignal,
   ) {
-    if (import.meta.env?.DEV && apiConfig.useMockCatalog) {
-      const { mockEquipment } = await import("../mocks/equipment");
-      const filtered = mockEquipment.filter(
-        (item) =>
-          (!q ||
-            [item.name, item.model, ...item.testTypes]
-              .join(" ")
-              .toLowerCase()
-              .includes(q.toLowerCase())) &&
-              (!institutionId || item.institution?.id === institutionId),
-      );
-      return equipmentPage({
-        content: filtered.slice(page * size, (page + 1) * size),
-        page,
-        size,
-        totalElements: filtered.length,
-        totalPages: Math.ceil(filtered.length / size),
-      });
-    }
     return equipmentPage(
       responseData<Page<EquipmentDto>>(
         await apiClient.get("/equipment", {
@@ -190,12 +171,6 @@ export const equipmentService = {
   async detail(id: ResourceId, signal?: AbortSignal) {
     if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0)
       throw contractError("장비 ID가 유효하지 않습니다.");
-    if (import.meta.env?.DEV && apiConfig.useMockCatalog) {
-      const { mockEquipment } = await import("../mocks/equipment");
-      const item = mockEquipment.find((e) => e.id === Number(id));
-      if (!item) throw contractError("시연 장비가 없습니다.");
-      return equipmentView(item);
-    }
     return equipmentView(
       responseData<EquipmentDto>(await apiClient.get(`/equipment/${Number(id)}`, { signal })),
     );

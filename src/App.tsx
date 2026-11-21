@@ -50,7 +50,7 @@ function Workspace() {
   const [draftRequestId, setDraftRequestId] = useState<number | null>(null);
   const [comparisonIds, setComparisonIds] = useState<number[]>([]);
   const [testTypeCode, setTestTypeCode] = useState("VIBRATION");
-  const [simulationEquipmentId, setSimulationEquipmentId] = useState(48);
+  const [simulationEquipmentId, setSimulationEquipmentId] = useState<number | null>(null);
   const [autoRunId, setAutoRunId] = useState<number | null>(null);
   const [testCondition, setTestCondition] = useState("");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -289,7 +289,7 @@ function Workspace() {
             </span>
             <span>
               {apiConfig.isPreview
-                ? "DEMO · 개발용 미리보기 · 현재 화면에서만 유지"
+                ? "개발용 화면 미리보기 · 업무 데이터는 서버 연결 필요"
                 : apiConfig.isMock
                   ? "DEMO · MSW 시연 · 이 브라우저에 저장 · 실기관 미전송"
                   : isApiMode

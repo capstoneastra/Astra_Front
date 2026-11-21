@@ -42,8 +42,8 @@ interface WorkspaceContext {
   setComparisonIds: Setter<number[]>;
   testTypeCode: string;
   setTestTypeCode: Setter<string>;
-  simulationEquipmentId: number;
-  setSimulationEquipmentId: Setter<number>;
+  simulationEquipmentId: number | null;
+  setSimulationEquipmentId: Setter<number | null>;
   autoRunId: number | null;
   setAutoRunId: Setter<number | null>;
   openSimulation: (id: number) => void;

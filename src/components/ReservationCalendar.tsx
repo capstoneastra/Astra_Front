@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCheck, Clock3, RefreshCw, Sparkles, SlidersHorizontal } from "lucide-react";
+import { CalendarDays, CheckCheck, Clock3, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "../auth/context";
 import { useApiQuery } from "../hooks/useApiQuery";
-import { useAction } from "../hooks/useAction";
 import { loadCalendar } from "../services/calendarService";
 import { requestService } from "../services/requestService";
 import { catalogService } from "../services/catalogService";
-import { apiConfig } from "../api/config";
-import { invalidateData } from "../api/cache";
 import { inMonth, monthOf, onDay, reservationStatuses, seoulDate } from "../domain/calendar";
 import type { RequestSummary } from "../services/contracts";
 import { Badge, Button, EmptyState, PageHeader, Panel } from "./ui/index";
@@ -18,8 +15,6 @@ import ScheduleDetail from "./calendar/ScheduleDetail";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import "../styles/calendar.css";
 
-// Booking fixtures are available only on the development server.
-const loadDemo = import.meta.env.DEV ? () => import("../mocks/calendarDemo") : null;
 function uniqueOptions(items: RequestSummary[], key: "equipment" | "institution") {
   const options = new Map<string, string>();
   for (const item of items) {
@@ -38,7 +33,6 @@ export default function ReservationCalendar() {
   const [requestDetail, setRequestDetail] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({ test: "", equipment: "", status: "", institution: "" });
-  const demo = useAction();
   const query = useApiQuery((signal) => loadCalendar(signal), `calendar:${user.id}:${user.role}`);
   const types = useApiQuery((signal) => catalogService.testTypes(signal), "calendar-test-types");
   const busy = useApiQuery((signal) => requestService.availability(filters.equipment, {}, signal),
@@ -64,16 +58,13 @@ export default function ReservationCalendar() {
   const chooseDate = (date: string, id?: number) => { setSelection({ date, id }); setMonth(monthOf(date)); };
   const openRequest = (id, date) => { setSelection(null); setRequestDetail({ id, date }); };
   const scope = user.role === "ADMIN" ? "전체 기관의 시험 예약" : user.role === "INSTITUTION_MANAGER" ? "소속 기관에 접수된 시험 예약" : "내가 신청한 시험 예약";
-  const demoInstitution = apiConfig.isPreview && user.role === "INSTITUTION_MANAGER"
-    ? user.organization?.id
-    : undefined;
   return <div className="content-page page-enter reservation-calendar">
     <PageHeader eyebrow="ASTRA SCHEDULE CONTROL" title="시험 예약 캘린더" description={`${scope}을 한눈에 확인하고 일정을 협의하세요.`}>
       <Badge tone="cyan"><CalendarDays size={14} /> 월간 일정</Badge>
       <Button className="schedule-filter-toggle" variant="secondary" icon={SlidersHorizontal} aria-controls="schedule-filters" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((value) => !value)}>필터</Button>
       <Button variant="secondary" icon={RefreshCw} disabled={query.loading || query.refreshing} onClick={query.reload}>새로고침</Button>
     </PageHeader>
-    <div className="schedule-source"><Badge tone={apiConfig.isMock ? "amber" : "cyan"}>{apiConfig.isMock ? "DEMO · 시연" : "실제 API"}</Badge><span>{apiConfig.isMock ? "시연용 예약 데이터입니다." : "서버에서 조회한 시험 예약입니다."} 제안 일정은 기관 확정 전까지 미확정입니다.</span></div>
+    <div className="schedule-source"><Badge tone="cyan">{query.data ? "예약 정보" : "조회 대기"}</Badge><span>{query.data ? "서버 응답 기준의 시험 예약입니다." : "시험 예약 정보를 서버에서 조회합니다."} 제안 일정은 기관 확정 전까지 미확정입니다.</span></div>
     <div className="schedule-metrics" aria-label="선택한 달 예약 요약">
       {[{ icon: CalendarDays, label: "선택한 달 시험 예약", value: monthly.length, hint: "필터 적용 · 여러 날 시험은 1건", tone: "blue" },
         { icon: CheckCheck, label: "예약 확정", value: confirmed, hint: "기관 확인이 완료된 일정", tone: "cyan" },
@@ -87,19 +78,6 @@ export default function ReservationCalendar() {
       {user.role === "ADMIN" && <div><label htmlFor="calendar-institution">시험기관</label><select id="calendar-institution" value={filters.institution} onChange={(e) => updateFilter("institution", e.target.value)}><option value="">전체 기관</option>{uniqueOptions(query.data?.requests ?? [], "institution").map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></div>}
       <Button variant="ghost" onClick={() => { setFilters({ test: "", equipment: "", status: "", institution: "" }); setSelection(null); }}>필터 초기화</Button>
     </Panel>
-    {apiConfig.isMock && loadDemo && <div className="schedule-demo">
-      <span>기존 의뢰를 유지하며 가상 예약 예시를 추가할 수 있습니다.</span>
-      <Button variant="secondary" icon={Sparkles} disabled={demo.busy || query.loading}
-        onClick={() => demo.run(async () => {
-          const module = await loadDemo();
-          module.addCalendarDemo(month, { institutionId: demoInstitution });
-          invalidateData();
-        }, "시연 일정을 불러왔습니다. 실제 예약이 아닙니다.")}>
-        시연 일정 불러오기
-      </Button>
-      <span className="sr-only" role="status">{demo.message}</span>
-    </div>}
-    {demo.error && <ApiState error={demo.error} />}
     {types.error && <p className="field-hint" role="status">시험 종류 이름을 불러오지 못해 코드로 표시합니다. <button type="button" className="text-link" onClick={types.reload}>다시 조회</button></p>}
     {filters.equipment && <div className="schedule-busy-note">{busy.error ? <ApiState error={busy.error} onRetry={busy.reload} /> : <span role="status">{busy.loading || busy.refreshing ? "선택 장비의 확정 점유 구간 조회 중…" : "선택 장비의 확정 점유 구간을 함께 표시합니다. 다른 기업의 의뢰 정보는 공개하지 않으며 월별 예약 건수에 포함하지 않습니다."}</span>}</div>}
     {query.loading || query.error ? <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel> : <>
