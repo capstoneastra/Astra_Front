@@ -34,8 +34,8 @@ interface Applicant {
 
 export type SignupRequest = Applicant & (
   | { role: "COMPANY_USER"; organization: { name: string; businessRegNo: string } }
-  | { role: "INSTITUTION_MANAGER"; organizationId: number }
-  | { role: "INSTITUTION_MANAGER"; organization: { orgType: InstitutionType; name: string; address: string; phone: string } }
+  | { role: "INSTITUTION_MANAGER"; researcherNo: string; organizationId: number }
+  | { role: "INSTITUTION_MANAGER"; researcherNo: string; organization: { orgType: InstitutionType; name: string; address: string; phone: string } }
 );
 
 const publicPost = async <T>(path: string, body: object, signal?: AbortSignal) =>

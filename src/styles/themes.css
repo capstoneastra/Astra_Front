@@ -129,11 +129,6 @@
   background: var(--control-hover);
   color: var(--text);
 }
-:root[data-theme="light"] .nav-item .nav-item__ai {
-  color: var(--violet);
-  background: color-mix(in srgb, var(--violet) 10%, var(--surface));
-  border-color: color-mix(in srgb, var(--violet) 25%, transparent);
-}
 :root[data-theme="light"] .button--secondary {
   background: var(--surface-raised);
   color: var(--text);

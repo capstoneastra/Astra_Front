@@ -34,6 +34,7 @@
 | 조건·사양 키 | JSON 필드명(camelCase)과 별개로, 조건·사양을 가리키는 키 값은 단위 없는 snake_case. 단위는 `unit`에 따로 (`{ "key": "sample_mass", "value": 15, "unit": "kg" }`). 시험유형별 키 목록은 `GET /test-types/{code}`의 `conditionRules` |
 | MOCK 표시 | 시연용 데이터가 섞인 응답엔 `isMock`/`sourceType` 필드를 반드시 포함, 프론트는 "DEMO" 배지 표시 |
 | 동시성 | 상태 변경 요청은 `version` 필드를 보내고, 불일치 시 `409 CONFLICT` |
+| 필수 검사 스위치 | 서버 설정 `ASTRA_RULES_STRICT`(기본 `true`). `false` 면 회의 결정으로 추가된 필수 검사 3가지(가입 국가연구자번호, 제출 필수 칸, 결과 등록 후 완료)를 건너뜀. 프론트가 새 칸을 만들기 전 연동할 때만 사용 ([`frontend-integration.md`](frontend-integration.md)) |
 | CORS | 브라우저에서 부를 수 있는 프론트 주소는 서버 환경변수 `CORS_ALLOWED_ORIGINS` (쉼표로 여러 개, `http://localhost:*` 패턴 가능, 기본 `http://localhost:5173`). 쿠키는 쓰지 않으므로 `withCredentials` 불필요. 401·403 응답에도 CORS 헤더가 붙음 |
 
 ### 0-3. HTTP 상태 / 에러 코드
@@ -454,7 +455,10 @@ availability를 보내면 서버가 availabilityUpdatedAt/By를 기록하고 알
         { "key": "sample_mass", "label": "시료 질량", "value": 15, "unit": "kg", "status": "CONFIRMED", "confidence": 0.95 },
         { "key": "frequency", "label": "주파수 범위", "min": 20, "max": 2000, "unit": "Hz", "status": "CONFIRMED", "confidence": 0.9 },
         { "key": "fixture_mass", "label": "고정구 질량", "unit": "kg", "status": "MISSING" } ],
-      "suggestedTestType": "VIBRATION" } } }
+      "suggestedTestType": "VIBRATION",
+      "suggestedEquipmentIds": [45, 107, 108] } } }
+// suggestedEquipmentIds: 상담 AI 가 소개할 수 있게 넘긴 그 시험유형의 DB 장비(최대 5대, 내 조직 제외, 예약 가능 먼저).
+//   적합 여부 판단은 하지 않음(매칭이 판단). 화면에서 장비 카드로 보여 주면 좋음
 
 // POST /requirements/{id}/analyze → 200
 { "requirementId": 7, "testTypeCode": "VIBRATION",
