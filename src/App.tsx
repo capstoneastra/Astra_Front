@@ -259,7 +259,7 @@ function Workspace() {
           본문으로 건너뛰기
         </a>
         <Sidebar
-          activeMenu={assistantOpen ? "assistant" : activeMenu}
+          activeMenu={activeMenu}
           setActiveMenu={navigate}
           open={menuOpen}
           onClose={closeMenu}

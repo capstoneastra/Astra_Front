@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Telescope,
-  BotMessageSquare,
   ClipboardList,
   Database,
   ShieldCheck,
@@ -25,12 +24,6 @@ export const navigation: { label: string; items: { id: string; label: string; ic
     items: [
       { id: "reservationCheck", label: "시험 의뢰 관리", icon: ClipboardList },
       { id: "calendar", label: "시험 예약 캘린더", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "AI 지원",
-    items: [
-      { id: "assistant", label: "AI 어시스턴트", icon: BotMessageSquare },
     ],
   },
   {

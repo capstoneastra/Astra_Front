@@ -346,11 +346,6 @@ option {
   border-radius: 4px;
   padding: 0 4px;
 }
-.nav-item .nav-item__ai {
-  background: color-mix(in srgb, var(--violet) 12%, var(--surface));
-  color: var(--violet);
-  border: 1px solid color-mix(in srgb, var(--violet) 26%, transparent);
-}
 .sidebar__bottom {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 32px;

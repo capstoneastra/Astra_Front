@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import { ApiError, toApiError } from "../api/errors";
 import { Button, FormField } from "../components/ui";
@@ -13,6 +14,7 @@ import AuthCardLink from "./AuthCardLink";
 const noVerification = { codeExpiresAt: 0, resendAt: 0, token: "", tokenExpiresAt: 0 };
 const secondsLeft = (until: number, now: number) => Math.max(0, Math.ceil((until - now) / 1000));
 const sixDigits = /^[0-9]{6}$/;
+const researcherNoPattern = /^[0-9]{8}$/;
 const fieldLabels: Record<string, string> = {
   email: "이메일",
   code: "인증 코드",
@@ -20,6 +22,7 @@ const fieldLabels: Record<string, string> = {
   phone: "개인 연락처",
   password: "비밀번호",
   role: "가입 유형",
+  researcherNo: "국가연구자번호",
   organizationId: "소속 기관·대학",
   "organization.name": "조직 이름",
   "organization.businessRegNo": "사업자등록번호",
@@ -66,16 +69,20 @@ function signupRequest(
       },
     };
   }
+  const researcherNo = read("researcherNo");
+  if (!researcherNoPattern.test(researcherNo))
+    throw new ApiError("국가연구자번호는 숫자 8자리를 입력해주세요.", { code: "VALIDATION_FAILED" });
   if (existing) {
     const organizationId = Number(read("organizationId"));
     if (!institutionIds.includes(organizationId))
       throw new ApiError("가입할 기관 또는 대학을 선택해주세요.", { code: "VALIDATION_FAILED" });
-    return { ...applicant, role, organizationId };
+    return { ...applicant, role, researcherNo, organizationId };
   }
   const orgType: InstitutionType = read("orgType") === "UNIVERSITY" ? "UNIVERSITY" : "INSTITUTION";
   return {
     ...applicant,
     role,
+    researcherNo,
     organization: {
       orgType,
       name: required("organizationName", "기관 또는 대학 이름을 입력해주세요."),
@@ -246,6 +253,30 @@ export default function SignupPage() {
               </>
             ) : (
               <>
+                <FormField id="signup-researcher-no" label="국가연구자번호" className="form-field--full"
+                  hint={<span id="signup-researcher-no-hint">발급받은 번호 8자리를 입력해주세요.</span>}>
+                  <div className="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+                    <input
+                      id="signup-researcher-no"
+                      name="researcherNo"
+                      className="tw:min-w-0 tw:grow tw:basis-52"
+                      inputMode="numeric"
+                      pattern={researcherNoPattern.source}
+                      aria-describedby="signup-researcher-no-hint"
+                      required
+                    />
+                    <a
+                      className="button button--secondary tw:shrink-0"
+                      href="https://www.iris.go.kr/mbrs/srch/retrieveSrchNumInfo.do"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="IRIS에서 국가연구자번호 조회 (새 탭)"
+                    >
+                      IRIS에서 조회
+                      <ArrowUpRight size={15} aria-hidden="true" />
+                    </a>
+                  </div>
+                </FormField>
                 <FormField id="signup-affiliation" label="소속 등록 방식" className="form-field--full">
                   <select id="signup-affiliation" value={existing ? "existing" : "new"} onChange={(event) => setExisting(event.target.value === "existing")}>
                     <option value="existing">등록된 기관·대학 선택</option>

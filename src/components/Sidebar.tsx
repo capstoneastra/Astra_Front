@@ -163,23 +163,12 @@ export default function Sidebar({
                   }}
                   onBlur={hideHint}
                   className={`nav-item ${highlighted === id ? "nav-item--active" : ""}`}
-                  aria-current={
-                    highlighted === id && id !== "assistant" ? "page" : undefined
-                  }
-                  aria-expanded={
-                    id === "assistant" ? activeMenu === id : undefined
-                  }
-                  aria-controls={
-                    id === "assistant" ? "astra-ai-assistant" : undefined
-                  }
+                  aria-current={highlighted === id ? "page" : undefined}
                   aria-label={upcoming ? `${label} · 준비 중` : label}
                 >
                   <Icon size={18} strokeWidth={1.7} aria-hidden="true" />
                   <span>{label}</span>
                   {upcoming && <small>예정</small>}
-                  {id === "assistant" && (
-                    <small className="nav-item__ai">AI</small>
-                  )}
                 </button>
               ))}
             </div>
