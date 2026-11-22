@@ -1,5 +1,4 @@
 import { Info } from "lucide-react";
-import { apiConfig } from "../../api/config";
 import ApiState from "../ui/ApiState";
 import type { ApiStateProps } from "../ui/ApiState";
 import type { ReactNode } from "react";
@@ -24,9 +23,7 @@ export function DemoNotice({ children }: { children?: ReactNode }) {
     <div className="content-note">
       <Info size={16} />
       <span>
-        {apiConfig.isMock
-          ? "DEMO · 시연 데이터입니다. 실기관 전송 없이 이 화면에서 업무를 체험할 수 있습니다."
-          : "실제 API 모드 · 최종 시험 가능 여부와 일정은 기관이 확인합니다."}
+        실제 API 모드 · 최종 시험 가능 여부와 일정은 기관이 확인합니다.
         {children && (
           <>
             <br />

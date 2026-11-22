@@ -8,7 +8,6 @@ import { chatService } from "../services/chatService";
 import type { ChatExchange } from "../services/chatService";
 import { Feedback } from "./workflow/Feedback";
 import { valueText } from "../domain/constants";
-import { apiConfig } from "../api/config";
 
 export default function Chatbot({ setActiveMenu }) {
   const {
@@ -92,9 +91,7 @@ export default function Chatbot({ setActiveMenu }) {
       <div className="content-note">
         <Info size={16} />
         <span>
-          {apiConfig.isMock
-            ? "DEMO 상담입니다. 입력한 시험유형·숫자 조건을 규칙으로 정리하며 실제 AI 서버나 기관에 전송하지 않습니다."
-            : "상담 API의 응답입니다. 추출된 시험조건을 직접 확인한 뒤 진행해주세요."}
+          상담 API의 응답입니다. 추출된 시험조건을 직접 확인한 뒤 진행해주세요.
         </span>
       </div>
       <div className="chat-layout">
@@ -107,7 +104,7 @@ export default function Chatbot({ setActiveMenu }) {
               <h2>ASTRA AI 어시스턴트</h2>
               <small>시험 준비를 위한 대화형 워크스페이스</small>
             </div>
-            <Badge tone="violet">{apiConfig.isMock ? "DEMO" : "API"}</Badge>
+            <Badge tone="violet">API</Badge>
           </div>
           <div
             className="chat-messages"

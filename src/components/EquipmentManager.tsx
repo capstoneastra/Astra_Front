@@ -8,7 +8,6 @@ import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
-import { apiConfig } from "../api/config";
 
 export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
   const { equipmentList, user, catalogQuery } = useWorkspace();
@@ -90,9 +89,7 @@ export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (me
       <div className="content-note">
         <Info size={16} />
         <span>
-          {apiConfig.isMock
-            ? "DEMO 장비 관리입니다. 입력은 이 브라우저의 시연 DB에만 저장됩니다."
-            : "기관이 등록·확인한 정보로 갱신합니다."}{" "}
+          기관이 등록·확인한 정보로 갱신합니다.{" "}
           소속 기관의 장비만 관리하며, 미확인 비용·사양은 추정해 입력하지
           않습니다.
         </span>

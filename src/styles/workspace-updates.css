@@ -1,14 +1,5 @@
 .workspace-back { border: 1px solid var(--border); border-radius: 9px; width: 32px; height: 32px; flex-shrink: 0; margin-right: 8px; }
 .workspace-back:disabled { opacity: .28; cursor: default; }
-.institution-directory { height: 100%; }
-.institution-directory__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 20px; }
-.institution-directory__list > button { display: flex; align-items: center; gap: 13px; padding: 17px 14px; min-width: 0; background: color-mix(in srgb, var(--surface-raised) 45%, transparent); border: 1px solid var(--border); border-radius: 11px; text-align: left; transition: border-color .18s, background .18s; }
-.institution-directory__list > button:hover { border-color: color-mix(in srgb, var(--cyan) 40%, transparent); background: color-mix(in srgb, var(--cyan) 6%, var(--surface)); }
-.institution-directory__list > button > span:nth-child(2) { flex: 1; min-width: 0; }
-.institution-directory__list .institution-icon { flex-shrink: 0; }
-.institution-directory__list strong { display: block; font-size: 14px; color: var(--text); word-break: keep-all; overflow-wrap: anywhere; font-weight: 550; }
-.institution-directory__list small { display: block; font-size: 12px; color: var(--text-muted); margin-top: 5px; }
-.institution-directory__list > button > svg { flex-shrink: 0; color: var(--text-muted); }
 .equipment-search-page { max-width: 1560px; }
 .equipment-search-page .equipment-card__footer { flex-wrap: wrap; gap: 12px; }
 .equipment-search-page .equipment-card__body { padding: 18px; }
@@ -21,13 +12,10 @@
 .simulation-export__feedback[role="alert"] { color: var(--red); }
 @media (min-width: 1024px) { .equipment-search-page .equipment-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1800px) { .equipment-search-page .equipment-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-@media (max-width: 1200px) { .institution-directory__list { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 480px) {
   .workspace-back { margin-right: 0; width: 29px; height: 29px; }.app-header__location { gap: 5px; }.app-header { --app-header-inline: 14px; }.app-header__tools { gap: 8px; }
-  .institution-directory__list { padding: 14px; }.institution-directory__list > button { padding: 14px 12px; }
   .simulation-export > span { flex-basis: 100%; }.simulation-export .button { padding: 8px 12px; }
 }
-@media (prefers-reduced-motion: reduce) { .institution-directory__list > button { transition: none; } }
 .workspace-context-actions,
 .request-box-switch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .workspace-context-actions { margin: 0 0 18px; }

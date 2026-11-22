@@ -29,7 +29,7 @@
   --primary-ink: #fff;
 }
 
-:root[data-theme="light"] :is(.metric-card, .dashboard-search) {
+:root[data-theme="light"] .metric-card {
   box-shadow: var(--panel-shadow);
 }
 :root[data-theme="light"] .dialog {
@@ -45,8 +45,6 @@
     .brand .astra-brand__text small,
     .nav-group__label,
     .nav-item small,
-    .sidebar-assistant p,
-    .sidebar-assistant__arrow,
     .sidebar__footer,
     .sidebar__footer > span:last-child,
     .header-date,
@@ -55,8 +53,6 @@
     .demo-notice > span:first-child,
     .demo-notice p,
     .demo-notice__right,
-    .dashboard-search__label div > span,
-    .dashboard-search form,
     .metric-card__top,
     .metric-card__value > span,
     .metric-card__bottom,
@@ -64,20 +60,6 @@
     .panel__header p,
     .panel-footnote,
     .muted-label,
-    .network-panel__source,
-    .institution-callout small,
-    .network-panel__footer,
-    .ai-panel > p,
-    .ai-panel__disclaimer,
-    .next-action small,
-    .next-action > svg,
-    .requests-empty p,
-    .equipment-row__body small,
-    .equipment-row__end,
-    .distribution__legend > button,
-    .distribution__legend small,
-    .dashboard-closing,
-    .dashboard-closing > span:last-child,
     th,
     td,
     td small,
@@ -104,25 +86,19 @@
 }
 :root[data-theme="light"]
   :is(
-    .sidebar-assistant > span,
     td > strong,
     .detail-list dd,
     .equipment-description p,
     .form-field > label,
     .request-card__condition,
-    .message__bubble,
-    .institution-callout
+    .message__bubble
   ) {
   color: var(--text);
 }
 :root[data-theme="light"]
   :is(
     .workspace-label__icon,
-    .institution-icon,
-    .institution-callout > svg,
-    .next-action__icon,
     .equipment-glyph,
-    .equipment-row__category,
     .equipment-description > span,
     .form-section-heading > span,
     .manager-row__icon,
@@ -132,25 +108,20 @@
   background-color: var(--accent-background);
   border-color: var(--accent-border);
 }
-:root[data-theme="light"]
-  :is(.ai-label, .ai-orbit, .chat-avatar, .next-action__icon--violet) {
+:root[data-theme="light"] .chat-avatar {
   color: var(--violet);
 }
 :root[data-theme="light"] :is(.workspace-label, .content-note, .demo-notice) {
   background: var(--surface-sunken);
   border-color: var(--border);
 }
-:root[data-theme="light"] .sidebar-assistant {
-  background: color-mix(in srgb, var(--violet) 7%, var(--surface));
-  border-color: color-mix(in srgb, var(--violet) 25%, transparent);
-}
 :root[data-theme="light"]
-  :is(.dashboard-search form, .search-field, .chat-form) {
+  :is(div.search-field, div.chat-form) {
   background: var(--surface);
   border-color: var(--border-strong);
 }
 :root[data-theme="light"]
-  :is(.dashboard-search input, .search-field input, .chat-form textarea) {
+  :is(.search-field input, .chat-form textarea) {
   background: transparent;
 }
 :root[data-theme="light"]
@@ -163,17 +134,12 @@
   background: color-mix(in srgb, var(--violet) 10%, var(--surface));
   border-color: color-mix(in srgb, var(--violet) 25%, transparent);
 }
-:root[data-theme="light"]
-  :is(.button--secondary, .dashboard-search form > button) {
+:root[data-theme="light"] .button--secondary {
   background: var(--surface-raised);
   color: var(--text);
   border-color: var(--border-strong);
 }
-:root[data-theme="light"]
-  :is(
-    .button--secondary:not(:disabled):hover,
-    .dashboard-search form > button:hover
-  ) {
+:root[data-theme="light"] .button--secondary:not(:disabled):hover {
   background: var(--control-hover);
   border-color: var(--accent-border);
 }
@@ -182,42 +148,8 @@
   background: var(--accent-background);
   border-color: var(--accent-border);
 }
-:root[data-theme="light"] .segmented-control {
-  background: var(--surface-raised);
-}
-:root[data-theme="light"] .segmented-control button {
-  color: var(--text-secondary);
-}
-:root[data-theme="light"] .segmented-control button[aria-pressed="true"] {
-  background: var(--surface);
-  border-color: var(--accent-border);
-  color: var(--cyan);
-}
-:root[data-theme="light"] .segmented-control button:hover {
-  color: var(--cyan);
-}
-:root[data-theme="light"] :is(.institution-callout, .institution-list__item) {
-  background: var(--surface-sunken);
-  border-color: var(--border-strong);
-}
-:root[data-theme="light"]
-  :is(.institution-callout:hover, .institution-list__item.is-selected) {
-  background: var(--control-hover);
-  border-color: var(--accent-border);
-}
-:root[data-theme="light"] :is(.next-action:hover, .equipment-row:hover) {
-  background: var(--control-hover);
-}
 :root[data-theme="light"] .equipment-glyph {
   background: var(--accent-background);
-}
-:root[data-theme="light"] .equipment-glyph--1 {
-  background: color-mix(in srgb, var(--blue) 10%, var(--surface));
-  color: var(--blue);
-}
-:root[data-theme="light"] .equipment-glyph--2 {
-  background: color-mix(in srgb, var(--violet) 10%, var(--surface));
-  color: var(--violet);
 }
 :root[data-theme="light"] th {
   background: var(--surface-raised);

@@ -7,7 +7,6 @@ import { requestStatusLabels, formatDate } from "../../domain/constants";
 import { Badge, Button, EmptyState } from "../ui/index";
 import ApiState from "../ui/ApiState";
 import ReservationControls from "../workflow/ReservationControls";
-import { apiConfig } from "../../api/config";
 import { useAuth } from "../../auth/context";
 import { ownsOrganization } from "../../auth/permissions";
 
@@ -24,7 +23,7 @@ export default function ScheduleDetail({ date, events, busy = [], initialId, eli
   return (
     <dialog className="dialog schedule-detail" ref={dialog} aria-labelledby="schedule-detail-title" onClose={onClose}
       onClick={(e) => { if (e.target === dialog.current) dialog.current.close(); }}>
-      <header className="schedule-detail__header"><div><span className="eyebrow">DAILY FLIGHT PLAN · KST</span><h2 id="schedule-detail-title">{dateLabel(date)}</h2><span>{events.length}건의 시험 일정 {apiConfig.isMock && "· DEMO"}</span></div>
+      <header className="schedule-detail__header"><div><span className="eyebrow">DAILY FLIGHT PLAN · KST</span><h2 id="schedule-detail-title">{dateLabel(date)}</h2><span>{events.length}건의 시험 일정</span></div>
         <button type="button" className="icon-button" aria-label="일정 상세 닫기" onClick={() => dialog.current.close()}><X size={21} /></button></header>
       {busy.length > 0 && <section className="schedule-detail__busy"><h3>선택 장비의 확정 점유 시간</h3><p>이 구간은 예약할 수 없습니다. 다른 기업의 비공개 의뢰 정보는 표시하지 않습니다.</p>{busy.map((interval, index) => <p key={index}>{formatDate(interval.startAt)} ~ {formatDate(interval.endAt)}</p>)}</section>}
       {events.length > 0 ? <div className="schedule-detail__layout">
