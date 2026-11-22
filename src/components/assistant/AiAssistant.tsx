@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { BotMessageSquare, MessageSquareText, Workflow, X } from "lucide-react";
 import Chatbot from "../Chatbot";
 import Automation from "../Automation";
-import { apiConfig } from "../../api/config";
 
 const modes = [
   {
@@ -148,9 +147,7 @@ export default function AiAssistant({
             <h2 id="ai-assistant-title">ASTRA AI</h2>
             <p>시험 준비를 함께하는 어시스턴트</p>
           </div>
-          <span className="ai-assistant__environment">
-            {apiConfig.isMock ? "DEMO" : "AI"}
-          </span>
+          <span className="ai-assistant__environment">AI</span>
           <button
             type="button"
             className="icon-button"

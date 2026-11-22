@@ -25,7 +25,6 @@ import {
 import { useApiQuery } from "../hooks/useApiQuery";
 import { equipmentService, equipmentView } from "../services/equipmentService";
 import { catalogService } from "../services/catalogService";
-import { apiConfig } from "../api/config";
 import { canAccessMenu } from "../auth/permissions";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
 import ApiState from "./ui/ApiState";
@@ -43,7 +42,6 @@ export default function EquipmentSearch({
     setDraftRequestId,
     equipmentList,
     catalogQuery,
-    isApiMode,
     user,
     resolveEquipment,
     comparisonIds,
@@ -69,7 +67,7 @@ export default function EquipmentSearch({
   const [selectionError, setSelectionError] = useState(null);
   const selectionRequest = useRef(null);
   useEffect(() => () => selectionRequest.current?.abort(), []);
-  const serverSearch = isApiMode && ["all", "natural"].includes(filterType);
+  const serverSearch = ["all", "natural"].includes(filterType);
   const institutionShortcut = Boolean(institutionId && equipmentList.some((item) =>
     item.institutionId === institutionId && item.institution === queryTerm));
   useEffect(() => {
@@ -189,13 +187,7 @@ export default function EquipmentSearch({
         title="시험장비 검색"
         description="기관의 경계를 넘어, 필요한 시험 인프라를 찾아보세요."
       >
-        <Badge tone="cyan" dot>
-          {apiConfig.isMock
-            ? "DEMO · 시연 장비 조회"
-            : isApiMode
-              ? "인증된 API 조회"
-              : "개발 전용 Mock 목록"}
-        </Badge>
+        <Badge tone="cyan" dot>인증된 API 조회</Badge>
       </PageHeader>
       <div className="workspace-context-actions" role="group" aria-label="장비 검색 도구">
         <Button variant="secondary" icon={Sparkles} onClick={() => setActiveMenu("matching")}>

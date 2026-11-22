@@ -9,7 +9,6 @@ import { catalogService } from "../services/catalogService";
 import ConditionEditor from "./workflow/ConditionEditor";
 import { Feedback } from "./workflow/Feedback";
 import ApiState from "./ui/ApiState";
-import { apiConfig } from "../api/config";
 
 export default function Reservation({ setActiveMenu }) {
   const {
@@ -87,16 +86,14 @@ export default function Reservation({ setActiveMenu }) {
         description="필요한 장비와 시험조건을 정리해 의뢰를 준비하세요."
       >
         <Badge tone="cyan">
-          {apiConfig.isMock ? "DEMO 의뢰" : "시험 의뢰"} ·{" "}
+          시험 의뢰 ·{" "}
           {draft?.status ?? "초안 작성"}
         </Badge>
       </PageHeader>
       <div className="content-note">
         <Info size={16} />
         <span>
-          {apiConfig.isMock
-            ? "DEMO · 시연용 시험 의뢰입니다."
-            : "입력한 정보를 확인하고 직접 제출해주세요."}{" "}
+          입력한 정보를 확인하고 직접 제출해주세요.{" "}
           초안 저장은 접수가 아니며, 예약은 기관 검토 이후 별도로 협의합니다.
         </span>
       </div>

@@ -7,7 +7,6 @@ import { requestService } from "../services/requestService";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels, formatDate } from "../domain/constants";
-import { apiConfig } from "../api/config";
 import type { RequestBox } from "../services/contracts";
 import { canAccessMenu } from "../auth/permissions";
 
@@ -58,9 +57,7 @@ export default function ReservationCheck({
       <div className="content-note">
         <Info size={16} />
         <span>
-          {apiConfig.isMock
-            ? "DEMO · 시연용 시험 의뢰를 조회합니다."
-            : "소속 기업·기관의 의뢰만 조회합니다."}{" "}
+          소속 기업·기관의 의뢰만 조회합니다.{" "}
           제출·검토·보완·예약은 각각 별도 상태로 관리합니다.
         </span>
       </div>

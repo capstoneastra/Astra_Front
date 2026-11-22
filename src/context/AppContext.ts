@@ -7,27 +7,15 @@ import type { MatchRun, ResourceId } from "../services/contracts";
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 
-export interface LocalReservation {
-  id: number;
-  equipment?: Pick<Equipment, "name" | "institution">;
-  hopeDate?: string;
-  status: string;
-}
-
 interface WorkspaceContext {
   testCondition: string;
   setTestCondition: Setter<string>;
   selectedEquipment: Equipment | null;
   setSelectedEquipment: Setter<Equipment | null>;
   equipmentList: Equipment[];
-  setEquipmentList: (value: Equipment[]) => void;
-  reservations: LocalReservation[];
-  setReservations: Setter<LocalReservation[]>;
   catalogQuery: ReturnType<typeof useApiQuery<Equipment[]>>;
   user: User;
-  isApiMode: boolean;
   resolveEquipment: (id: ResourceId, signal?: AbortSignal) => Promise<Equipment | undefined>;
-  isMockMode: boolean;
   requirementId: number | null;
   setRequirementId: Setter<number | null>;
   chatSessionId: number | null;

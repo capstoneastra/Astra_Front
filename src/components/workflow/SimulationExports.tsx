@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "../ui/index";
-import { apiConfig } from "../../api/config";
 import { buildSimulationReport } from "../../domain/simulationReport";
 import type { Equipment } from "../../services/equipmentService";
 import type { SimulationResult } from "../../services/simulationService";
@@ -17,7 +16,7 @@ export default function SimulationExports({ result, equipment }: { result: Simul
     setBusy(format); setError(""); setMessage("");
     try {
       const report = buildSimulationReport(result, { equipmentName: equipment?.name, institutionName: equipment?.institution,
-        source: apiConfig.isMock ? "DEMO · 시연 데이터" : "서버 API · 가상 모델 결과" });
+        source: "서버 API · 가상 모델 결과" });
       const { exportSimulation } = await import("../../exports/simulationExport");
       await exportSimulation(report, format, controller.signal);
       if (!controller.signal.aborted) setMessage(`${format.toUpperCase()} 파일을 생성했습니다.`);

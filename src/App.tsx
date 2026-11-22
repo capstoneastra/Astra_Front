@@ -9,9 +9,8 @@ import ReservationCheck from "./components/ReservationCheck";
 import EquipmentManager from "./components/EquipmentManager";
 import AppHeader from "./components/layout/AppHeader";
 import { AppContext } from "./context/AppContext";
-import type { LocalReservation } from "./context/AppContext";
 import type { Equipment } from "./services/equipmentService";
-import type { MatchRun, RequestBox, ResourceId } from "./services/contracts";
+import type { MatchRun, RequestBox } from "./services/contracts";
 import AuthProvider from "./auth/AuthProvider";
 import AuthGate from "./auth/AuthGate";
 import { AuthContext, useAuth } from "./auth/context";
@@ -21,7 +20,6 @@ import { canAccessMenu } from "./auth/permissions";
 import { useApiQuery } from "./hooks/useApiQuery";
 import { equipmentService } from "./services/equipmentService";
 import { defaultDashboardView } from "./services/dashboardService";
-import { apiConfig } from "./api/config";
 import { queryClient } from "./api/cache";
 import { blockLocalWorkspaceRequests } from "./api/client";
 import { ApiError } from "./api/errors";
@@ -55,8 +53,6 @@ function Workspace() {
   const [autoRunId, setAutoRunId] = useState<number | null>(null);
   const [testCondition, setTestCondition] = useState("");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
-  const [localCatalog, setLocalCatalog] = useState<Equipment[] | null>(null);
-  const [reservations, setReservations] = useState<LocalReservation[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const sidebar = useSidebarCollapse();
   const [calendarBox, setCalendarBox] = useState<RequestBox>();
@@ -84,18 +80,7 @@ function Workspace() {
     `catalog:${user.id}:${user.role}`,
     activeMenu !== "home" || assistantOpen,
   );
-  const isApiMode = !apiConfig.useMockCatalog;
-  const equipmentList =
-    !isApiMode && localCatalog !== null
-      ? localCatalog
-      : (catalogQuery.data ?? []);
-  const setEquipmentList = (value: Equipment[]) => {
-    if (!isApiMode) setLocalCatalog(value);
-  };
-  const resolveEquipment = (id: ResourceId, signal?: AbortSignal) =>
-    !isApiMode
-      ? Promise.resolve(equipmentList.find((item) => item.id === Number(id)))
-      : equipmentService.detail(id, signal);
+  const equipmentList = catalogQuery.data ?? [];
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1024px)");
@@ -233,14 +218,9 @@ function Workspace() {
         selectedEquipment,
         setSelectedEquipment,
         equipmentList,
-        setEquipmentList,
-        reservations,
-        setReservations,
         catalogQuery,
         user,
-        isApiMode,
-        resolveEquipment,
-        isMockMode: apiConfig.isMock,
+        resolveEquipment: equipmentService.detail,
         requirementId,
         setRequirementId,
         chatSessionId,
