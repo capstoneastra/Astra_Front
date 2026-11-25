@@ -9,12 +9,16 @@ import { catalogService } from "../services/catalogService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
 import { apiConfig } from "../api/config";
+import EquipmentStatus from "./workflow/EquipmentStatus";
+import { equipmentService } from "../services/equipmentService";
 
 export default function EquipmentManager() {
   const { equipmentList, user, catalogQuery } = useWorkspace();
+  const managedQuery = useApiQuery(signal => equipmentService.managed(signal), `owned-equipment:${user.id}:${user.organization?.id}`, user.role !== "ADMIN");
+  const state = user.role === "ADMIN" ? catalogQuery : managedQuery;
   const managedEquipment =
-    user.role === "INSTITUTION_MANAGER"
-      ? equipmentList.filter(
+    user.role !== "ADMIN"
+      ? (managedQuery.data ?? []).filter(
           (item) => item.institutionId === user.organization?.id,
         )
       : equipmentList;
@@ -82,7 +86,7 @@ export default function EquipmentManager() {
         description="공동활용 장비의 정보를 등록하고 목록을 관리하세요."
       >
         <Badge tone="cyan">
-          현재 {catalogQuery.status === "ready" ? managedEquipment.length : "—"}
+          현재 {state.status === "ready" ? managedEquipment.length : "—"}
           대
         </Badge>
       </PageHeader>
@@ -96,7 +100,7 @@ export default function EquipmentManager() {
           않습니다.
         </span>
       </div>
-      <Panel className="form-panel manager-add">
+      <details className="manager-add-disclosure"><summary>+ 새 장비 등록</summary><Panel className="form-panel manager-add">
         <div className="form-section-heading">
           <span>
             <Database size={18} />
@@ -226,7 +230,7 @@ export default function EquipmentManager() {
             </Button>
           </div>
         </form>
-      </Panel>
+      </Panel></details>
       <Feedback action={action} />
       {(types.error || institutions.error) && (
         <ApiState
@@ -241,19 +245,19 @@ export default function EquipmentManager() {
         <span>
           등록 장비
           <strong>
-            {catalogQuery.status === "ready" ? managedEquipment.length : "—"}
+            {state.status === "ready" ? managedEquipment.length : "—"}
           </strong>
           대
         </span>
         <small>현재 워크스페이스 기준</small>
       </div>
       <div className="manager-list">
-        {catalogQuery.loading || catalogQuery.error ? (
+        {state.loading || state.error ? (
           <Panel>
             <ApiState
-              loading={catalogQuery.loading}
-              error={catalogQuery.error}
-              onRetry={catalogQuery.reload}
+              loading={state.loading}
+              error={state.error}
+              onRetry={state.reload}
             />
           </Panel>
         ) : managedEquipment.length ? (
@@ -267,7 +271,10 @@ export default function EquipmentManager() {
                 <p>
                   {equip.testItem} · {equip.institution || "보유기관 미입력"}
                 </p>
+                <EquipmentStatus equipment={equip} />
               </div>
+              <label className="manager-availability">가용 상태<select aria-label={`${equip.name} 가용 상태`} value={equip.availability ?? "UNKNOWN"} disabled={action.busy} onChange={event => action.run(signal => catalogService.updateEquipment(equip.id, { availability: event.target.value }, signal), "가용 상태를 갱신했습니다.")}>{Object.entries({ UNKNOWN: "미확인", AVAILABLE: "가용", BUSY: "사용 중", MAINTENANCE: "정비 중", UNAVAILABLE: "제공 중단" }).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+              <Button variant="secondary" disabled={action.busy} onClick={() => { if (window.confirm("이 장비의 사양·이용조건을 실제로 확인했나요? 가용 상태 확인은 별도로 갱신해주세요.")) action.run(signal => catalogService.confirmEquipment(equip.id, signal), "장비 정보를 확인했습니다."); }}>정보 확인 완료</Button>
               <Button
                 variant="secondary"
                 disabled={action.busy}

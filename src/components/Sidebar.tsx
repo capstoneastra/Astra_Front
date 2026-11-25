@@ -4,6 +4,7 @@ import { navigation } from "../data/navigation";
 import { useAuth } from "../auth/context";
 import { canAccessMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
+import { useWorkspace } from "../context/AppContext";
 
 export default function Sidebar({
   activeMenu,
@@ -14,10 +15,14 @@ export default function Sidebar({
 }) {
   const sidebar = useRef<HTMLElement>(null);
   const { user } = useAuth();
+  const { workspaceView, setWorkspaceView } = useWorkspace();
+  const visible = workspaceView === "ADMIN" ? ["home","admin","manager","review","duplicates","calendar","notifications","settings"]
+    : workspaceView === "PROVIDER" ? ["home","manager","review","calendar","duplicates","notifications","settings"]
+    : ["home","search","reservation","reservationCheck","calendar","assistant","notifications","settings"];
   const visibleNavigation = navigation
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => canAccessMenu(user.role, item.id)),
+      items: group.items.filter((item) => canAccessMenu(user.role, item.id) && visible.includes(item.id)).map(item => item.id === "review" ? { ...item, label: user.role === "ADMIN" ? "시험 운영 관리" : "접수 의뢰·검토" } : item.id === "manager" ? { ...item, label: user.role === "ADMIN" ? "전체 장비 관리" : "보유 장비 관리" } : item),
     }))
     .filter((group) => group.items.length);
   useEffect(() => {
@@ -104,6 +109,7 @@ export default function Sidebar({
           </div>
           <span className="workspace-label__dot" />
         </div>
+        {user.role !== "ADMIN" && <div className="workspace-switch" aria-label="업무 공간 선택"><button type="button" aria-pressed={workspaceView === "REQUESTER"} onClick={() => setWorkspaceView("REQUESTER")}>장비 이용</button><button type="button" aria-pressed={workspaceView === "PROVIDER"} onClick={() => setWorkspaceView("PROVIDER")}>장비 제공</button></div>}
         <nav className="sidebar__nav" aria-label="서비스 메뉴">
           {visibleNavigation.map((group) => (
             <div className="nav-group" key={group.label}>
@@ -138,7 +144,7 @@ export default function Sidebar({
           ))}
         </nav>
         <div className="sidebar__bottom">
-          {canAccessMenu(user.role, "assistant") && (
+          {workspaceView === "REQUESTER" && canAccessMenu(user.role, "assistant") && (
             <button
               className="sidebar-assistant"
               onClick={() => setActiveMenu("assistant")}

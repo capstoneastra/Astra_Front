@@ -24,6 +24,7 @@ import MetricCard from "./dashboard/MetricCard";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
 import ApiState from "./ui/ApiState";
 import { canAccessMenu } from "../auth/permissions";
+import MissionOrbit from "./motion/MissionOrbit";
 
 function EquipmentGlyph({ index = 0 }) {
   return (
@@ -251,11 +252,12 @@ export default function Home({ setActiveMenu, onSearch }) {
         </Button>
       </PageHeader>
       {summaryQuery.error && (
-        <Panel>
+        <Panel className="dashboard-status">
           <ApiState error={summaryQuery.error} onRetry={summaryQuery.reload} />
         </Panel>
       )}
       <section className="dashboard-search" aria-label="장비 빠른 검색">
+        <MissionOrbit />
         <div className="dashboard-search__label">
           <span className="search-orbit">
             <Telescope size={20} />
@@ -335,7 +337,7 @@ export default function Home({ setActiveMenu, onSearch }) {
           }
           unit="건"
           description={
-            isApiMode
+            isMockMode ? "시연 의뢰 상태 합계" : isApiMode
               ? user.role === "ADMIN"
                 ? "서버 회원 승인 대기 집계"
                 : requestsAvailable
@@ -370,14 +372,14 @@ export default function Home({ setActiveMenu, onSearch }) {
                 : "—"
           }
           description={
-            user.role === "ADMIN"
+            isMockMode ? "시연 상태 집계 기준" : user.role === "ADMIN"
               ? "서버 기관 승인 대기 집계"
               : requestsAvailable
                 ? "서버 상태 집계 기준"
                 : "기관 업무 집계 준비 중"
           }
           tag={
-            user.role === "ADMIN" || requestsAvailable ? "서버 집계" : "준비 중"
+            isMockMode ? "시연 집계" : user.role === "ADMIN" || requestsAvailable ? "서버 집계" : "준비 중"
           }
           icon={ClipboardCheck}
           tone="amber"
@@ -666,11 +668,6 @@ export default function Home({ setActiveMenu, onSearch }) {
           error={catalogQuery.error}
           onRetry={catalogQuery.reload}
         />
-      </div>
-      <div className="dashboard-closing">
-        <Orbit size={16} />
-        <span>함께 쓰는 인프라, 더 넓어지는 우주항공의 가능성.</span>
-        <span>ASTRA INFRASTRUCTURE NETWORK</span>
       </div>
       <EquipmentDetailDialog
         item={preview}

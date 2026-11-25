@@ -27,6 +27,8 @@ interface WorkspaceContext {
   catalogQuery: ReturnType<typeof useApiQuery<Equipment[]>>;
   summaryQuery: ReturnType<typeof useApiQuery<Awaited<ReturnType<typeof dashboardService.summary>>>>;
   user: User;
+  workspaceView: "REQUESTER" | "PROVIDER" | "ADMIN";
+  setWorkspaceView: (view: "REQUESTER" | "PROVIDER" | "ADMIN") => void;
   isApiMode: boolean;
   resolveEquipment: (id: ResourceId, signal?: AbortSignal) => Promise<Equipment | undefined>;
   isMockMode: boolean;

@@ -9,6 +9,9 @@ import { Badge, Button, FormField } from "../ui/index";
 import ApiState from "../ui/ApiState";
 import ConditionEditor from "./ConditionEditor";
 import ReservationControls from "./ReservationControls";
+import RequestProgressSummary from "./RequestProgressSummary";
+import RequestPayment from "./RequestPayment";
+import ProviderRequestTools from "./ProviderRequestTools";
 import { Feedback } from "./Feedback";
 import {
   requestStatusLabels,
@@ -50,8 +53,8 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
     [changeSummary, setSummary] = useState(""),
     [responseMessage, setResponse] = useState("요청하신 정보를 보완했습니다.");
   const content = edited ?? r?.revision.content,
-    institution = ["INSTITUTION_MANAGER", "ADMIN"].includes(user.role),
-    company = ["COMPANY_USER", "ADMIN"].includes(user.role);
+    institution = user.role === "ADMIN" || Boolean(r && r.institution?.id === user.organization?.id),
+    company = user.role === "ADMIN" || Boolean(r && r.institution?.id !== user.organization?.id);
   useEffect(() => {
     dialog.current.showModal();
   }, []);
@@ -82,7 +85,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
   return (
     <dialog
       ref={dialog}
-      className="dialog equipment-dialog"
+      className="dialog equipment-dialog request-detail-dialog"
       aria-labelledby="request-detail-title"
       onClose={onClose}
       onClick={(e) => {
@@ -116,6 +119,9 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
             {r.revision.isAiGenerated ? "AI 초안 기반" : "사용자 작성"} ·{" "}
             {r.institution.name}
           </p>
+          <RequestProgressSummary request={r} />
+          {company && user.role !== "ADMIN" && <RequestPayment key={JSON.stringify([r.id,r.estimatedFee?.amount,r.estimatedFee?.updatedAt,r.revision.revisionNo])} request={r} />}
+          {institution && <ProviderRequestTools request={r} />}
           <dl className="detail-list">
             <div>
               <dt>장비</dt>

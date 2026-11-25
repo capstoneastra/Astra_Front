@@ -5,7 +5,9 @@ import {
   Info,
   Microscope,
   Search as SearchIcon,
-  SlidersHorizontal,
+  Columns3,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import {
@@ -20,10 +22,10 @@ import {
 import { useApiQuery } from "../hooks/useApiQuery";
 import { equipmentService, equipmentView } from "../services/equipmentService";
 import { catalogService } from "../services/catalogService";
-import { apiConfig } from "../api/config";
 import { canAccessMenu } from "../auth/permissions";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
 import ApiState from "./ui/ApiState";
+import EquipmentStatus from "./workflow/EquipmentStatus";
 
 export default function EquipmentSearch({
   setActiveMenu,
@@ -40,8 +42,11 @@ export default function EquipmentSearch({
     isApiMode,
     user,
     resolveEquipment,
+    comparisonIds,
+    setComparisonIds,
   } = useWorkspace();
   const [searchTerm, setSearchTerm] = useState(initialView?.searchTerm ?? initialSearchTerm);
+  const [displayMode, setDisplayMode] = useState(() => { try { return localStorage.getItem("astra.equipment-view.v1") === "cards" ? "cards" : "list"; } catch { return "list"; } });
   const [queryTerm, setQueryTerm] = useState((initialView?.searchTerm ?? initialSearchTerm).trim());
   const [filterType, setFilterType] = useState(initialView?.filterType ?? "all");
   const [institutionId, setInstitutionId] = useState(initialView?.institutionId ?? initialInstitutionId);
@@ -175,17 +180,10 @@ export default function EquipmentSearch({
   return (
     <div className="content-page page-enter equipment-search-page">
       <PageHeader
-        eyebrow="EQUIPMENT EXPLORER"
+        eyebrow={null}
         title="시험장비 검색"
-        description="기관의 경계를 넘어, 필요한 시험 인프라를 찾아보세요."
       >
-        <Badge tone="cyan" dot>
-          {apiConfig.isMock
-            ? "DEMO · 시연 장비 조회"
-            : isApiMode
-              ? "인증된 API 조회"
-              : "개발 전용 Mock 목록"}
-        </Badge>
+        <Button variant="secondary" icon={Columns3} onClick={() => setActiveMenu("compare")}>선택 장비 비교{comparisonIds.length ? ` · ${comparisonIds.length}` : ""}</Button>
       </PageHeader>
       {testCondition && (
         <div className="content-note">
@@ -245,8 +243,8 @@ export default function EquipmentSearch({
           />
         </div>
       </Panel>
-      <Panel className="form-panel">
-        <details>
+      <Panel className="form-panel search-filters">
+        <details open>
           <summary>지역·기관·시험유형 필터</summary>
           <div className="form-grid">
             <FormField id="equipment-region" label="지역">
@@ -320,17 +318,8 @@ export default function EquipmentSearch({
         <span>
           검색 결과<strong>{waiting || state.error ? "—" : total}</strong>건
         </span>
-        <small>
-          <SlidersHorizontal size={12} />
-          {serverSearch
-            ? institutionId
-              ? "기관 ID 필터 적용"
-              : filterType === "natural"
-                ? "자연어 해석 · 최대 20개 후보"
-                : "장비·모델·시험유형 검색"
-            : "전체 조회 목록에서 선택 필드 필터"}{" "}
-          · 최종 이용 일정은 기관 확인
-        </small>
+        {comparisonIds.length > 0 && <button type="button" className="text-link" onClick={() => setActiveMenu("compare")}>{comparisonIds.length}대 비교하기</button>}
+        <div className="equipment-view-switch" aria-label="검색 결과 표시 방식">{[{ mode: "list", label: "목록", icon: List }, { mode: "cards", label: "카드", icon: LayoutGrid }].map(({ mode, label, icon: Icon }) => <button type="button" key={mode} aria-pressed={displayMode === mode} onClick={() => { setDisplayMode(mode); try { localStorage.setItem("astra.equipment-view.v1", mode); } catch { /* Optional preference. */ } }}><Icon size={16} />{label}</button>)}</div>
       </div>
       {waiting || state.error ? (
         <Panel>
@@ -341,47 +330,55 @@ export default function EquipmentSearch({
           />
         </Panel>
       ) : filteredEquipment.length ? (
-        <div className="equipment-grid">
-          {filteredEquipment.map((equip, index) => (
-            <Panel className="equipment-card" key={equip.id}>
-              <div className="equipment-card__visual">
+        <div className={`equipment-grid equipment-results--${displayMode}`} role="list" aria-label="장비 검색 결과">
+          {displayMode === "list" && <div className="equipment-list-columns" role="presentation" aria-hidden="true"><span>장비명·보유기관</span><span>시험유형</span><span>상태·정보 갱신</span><span>작업</span></div>}
+          {filteredEquipment.map((equip) => (
+            <Panel className="equipment-card" key={equip.id} role="listitem">
+              {displayMode === "cards" && <div className="equipment-card__visual">
                 <Badge tone="cyan">
                   {equip.testItem || "시험항목 확인 필요"}
                 </Badge>
                 <Microscope size={56} aria-hidden="true" />
                 <span className="equipment-card__id">
                   {equip.externalId ||
-                    `EQ-${String(index + 1).padStart(3, "0")}`}
+                    `#${equip.id}`}
                   {equip.isMock && " · DEMO"}
                 </span>
-              </div>
+              </div>}
               <div className="equipment-card__body">
-                <h2>{equip.name}</h2>
+                <div className="equipment-card__identity">
+                <h2>{displayMode === "list" ? <button type="button" className="equipment-name-link" onClick={() => setPreview(equip)}>{equip.name}</button> : equip.name}</h2>
                 <p className="equipment-card__institution">
                   <Building2 size={14} />
                   {equip.institution || "보유기관 확인 필요"}
                 </p>
-                <div className="equipment-description">
+                {displayMode === "list" && <div className="equipment-list-meta"><span>{equip.externalId || `#${equip.id}`}</span>{equip.region && <span>{equip.region}</span>}{equip.isMock && <Badge tone="amber">DEMO</Badge>}</div>}
+                </div>
+                {displayMode === "list" && <div className="equipment-list-test"><span className="sr-only">시험유형: </span>{equip.testItem || "시험유형 확인 필요"}</div>}
+                <EquipmentStatus equipment={equip} showTestType={displayMode !== "list"} />
+                {displayMode === "cards" && <div className="equipment-description">
                   <span>장비 활용 설명 · 등록 정보</span>
                   <p>
                     {equip.reason ||
                       "상세보기에서 사양과 이용조건을 확인해주세요."}
                   </p>
                   <small>정보 갱신일 {equip.updateDate || "확인 필요"}</small>
-                </div>
+                </div>}
                 <div className="equipment-card__footer">
-                  <TextLink onClick={() => setPreview(equip)}>
+                  <label className="comparison-select"><input type="checkbox" aria-label={`${equip.name} 비교 선택`} checked={comparisonIds.includes(equip.id)} disabled={!comparisonIds.includes(equip.id) && comparisonIds.length >= 5} onChange={(event) => setComparisonIds(event.target.checked ? [...comparisonIds, equip.id] : comparisonIds.filter((id) => id !== equip.id))} />비교 선택</label>
+                  <TextLink aria-label={`${equip.name} 상세보기`} onClick={() => setPreview(equip)}>
                     상세보기
                   </TextLink>
                   <Button
                     icon={ArrowRight}
                     disabled={
                       selecting !== null ||
+                      equip.institutionId === user.organization?.id ||
                       !canAccessMenu(user.role, "reservation")
                     }
                     onClick={() => requestEquipment(equip)}
                   >
-                    {selecting === equip.id ? "장비 확인 중…" : "시험 의뢰하기"}
+                    {equip.institutionId === user.organization?.id ? "소속 조직 장비" : selecting === equip.id ? "장비 확인 중…" : "시험 의뢰하기"}
                   </Button>
                 </div>
               </div>

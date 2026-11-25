@@ -19,6 +19,7 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
     ),
     data = query.data,
     value = editor ?? data;
+  const types = useApiQuery(signal => catalogService.testTypes(signal), "test-types");
   useEffect(() => {
     dialog.current.showModal();
   }, []);
@@ -69,13 +70,14 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
               action.run(async (signal) => {
                 await catalogService.updateEquipment(
                   value.id,
-                  { name: value.name, model: value.model, usage: value.usage },
+                  { name: value.name, model: value.model, usage: value.usage, testTypes: value.testTypes },
                   signal,
                 );
               }, "장비 정보를 갱신했습니다.");
             }}
           >
             <div className="form-grid">
+              <FormField id="edit-equipment-test-types" label="시험유형 (여러 개 선택 가능)"><select id="edit-equipment-test-types" multiple value={value.testTypes} onChange={event => setEditor({ ...value, testTypes: Array.from(event.target.selectedOptions, option => option.value) })}>{types.data?.map(t => <option key={t.code} value={t.code}>{t.nameKo}</option>)}</select></FormField>
               <FormField id="edit-equipment-name" label="장비명">
                 <input
                   id="edit-equipment-name"

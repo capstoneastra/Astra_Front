@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Info, Orbit, Send, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Orbit, Send, Sparkles } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, PageHeader, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -10,7 +10,7 @@ import { Feedback } from "./workflow/Feedback";
 import { valueText } from "../domain/constants";
 import { apiConfig } from "../api/config";
 
-export default function Chatbot({ setActiveMenu }) {
+export default function Chatbot({ setActiveMenu, embedded = false }) {
   const {
     setTestCondition,
     chatSessionId,
@@ -83,28 +83,11 @@ export default function Chatbot({ setActiveMenu }) {
   };
 
   return (
-    <div className="content-page page-enter">
-      <PageHeader
-        eyebrow="ASTRA AI ASSISTANT"
-        title="AI 시험 상담"
-        description="시험 목적에서 장비 탐색까지, 필요한 조건을 함께 정리해 보세요."
-      >
-        <Badge tone="violet">
-          <Sparkles size={11} />
-          상담 시연
-        </Badge>
-      </PageHeader>
-      <div className="content-note">
-        <Info size={16} />
-        <span>
-          {apiConfig.isMock
-            ? "DEMO 상담입니다. 입력한 시험유형·숫자 조건을 규칙으로 정리하며 실제 AI 서버나 기관에 전송하지 않습니다."
-            : "상담 API의 응답입니다. 추출된 시험조건을 직접 확인한 뒤 진행해주세요."}
-        </span>
-      </div>
+    <div className="content-page page-enter chatbot-workspace">
+      {!embedded && <PageHeader title="AI 시험 상담" />}
       <div className="chat-layout">
         <Panel className="chat-panel">
-          <div className="chat-panel__heading">
+          {!embedded && <div className="chat-panel__heading">
             <span className="chat-avatar">
               <Orbit size={21} />
             </span>
@@ -113,7 +96,7 @@ export default function Chatbot({ setActiveMenu }) {
               <small>시험 준비를 위한 대화형 워크스페이스</small>
             </div>
             <Badge tone="violet">{apiConfig.isMock ? "DEMO" : "API"}</Badge>
-          </div>
+          </div>}
           <div
             className="chat-messages"
             role="log"
@@ -140,7 +123,7 @@ export default function Chatbot({ setActiveMenu }) {
                   <Sparkles size={14} />
                 </span>
                 <div className="message__bubble" role="status">
-                  시연 응답을 준비하고 있습니다…
+                  응답을 준비하고 있습니다…
                 </div>
               </div>
             )}
@@ -183,11 +166,10 @@ export default function Chatbot({ setActiveMenu }) {
             </Button>
           </div>
           <p className="chat-panel__footnote">
-            시연 응답은 실제 장비 적합성 판단이나 예약 가능 여부를 보장하지
-            않습니다.
+            {apiConfig.isMock ? "DEMO 상담 · 실제 AI 분석이 아닙니다." : "AI가 정리한 조건은 제출 전 확인해주세요."}
           </p>
         </Panel>
-        <Panel
+        {isConditionReady && <Panel
           title="정리된 시험조건"
           action={<Sparkles size={15} color="var(--violet)" />}
           className="chat-conditions"
@@ -251,7 +233,7 @@ export default function Chatbot({ setActiveMenu }) {
               </>
             )}
           </div>
-        </Panel>
+        </Panel>}
       </div>
       <Feedback action={{ ...action, error: action.error ?? history.error }} />
     </div>

@@ -48,4 +48,8 @@ export async function initializeApi() {
         }),
     );
   }
+  if ((import.meta.env.DEV || (import.meta.env.MODE === "public-demo" && import.meta.env.VITE_PUBLIC_DEMO === "true")) && apiConfig.isMock) {
+    const { initializeDemoApi } = await import("../demo/adapter");
+    initializeDemoApi(apiConfig.preview?.account);
+  }
 }

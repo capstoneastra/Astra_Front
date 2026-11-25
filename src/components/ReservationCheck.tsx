@@ -13,29 +13,29 @@ export default function ReservationCheck({
   setActiveMenu,
   institutionView = false,
 }) {
-  const { user, setDraftRequestId, setSelectedEquipment, equipmentList } =
+  const { user, workspaceView, setDraftRequestId, setSelectedEquipment, equipmentList } =
     useWorkspace();
   const [selected, setSelected] = useState(null),
     [status, setStatus] = useState("");
   const query = useApiQuery(
-    (signal) => requestService.list(status ? { status } : {}, signal),
-    `requests:${user.id}:${status}`,
+    (signal) => requestService.list({ ...(status ? { status } : {}), ...(user.role === "ADMIN" ? {} : { box: institutionView || workspaceView === "PROVIDER" ? "RECEIVED" : "SENT" }) }, signal),
+    `requests:${user.id}:${workspaceView}:${institutionView}:${status}`,
   );
   const reservations = query.data?.content ?? [],
-    company = ["COMPANY_USER", "ADMIN"].includes(user.role);
+    company = user.role !== "ADMIN" && !institutionView && workspaceView === "REQUESTER";
 
   return (
     <div className="content-page page-enter">
       <PageHeader
         eyebrow="MY TEST REQUESTS"
         title={
-          institutionView
+          user.role === "ADMIN" ? "시험 운영 관리" : institutionView
             ? "기관 검토·정보 보완"
-            : user.role === "INSTITUTION_MANAGER"
+            : workspaceView === "PROVIDER"
               ? "기관 접수 의뢰"
               : "내 의뢰 관리"
         }
-        description="신청한 시험 의뢰를 확인하고 관리하세요."
+        description={user.role === "ADMIN" ? "전체 조직의 의뢰 진행 현황을 확인하세요." : "신청한 시험 의뢰를 확인하고 관리하세요."}
       >
         <Button variant="secondary" icon={CalendarDays} onClick={() => setActiveMenu("calendar")}>예약 캘린더</Button>
         <Badge tone="cyan">
@@ -47,7 +47,7 @@ export default function ReservationCheck({
         <span>
           {apiConfig.isMock
             ? "DEMO · 시연용 시험 의뢰를 조회합니다."
-            : "소속 기업·기관의 의뢰만 조회합니다."}{" "}
+            : user.role === "ADMIN" ? "전체 기업·기관의 의뢰를 조회합니다." : "소속 기업·기관의 의뢰만 조회합니다."}{" "}
           제출·검토·보완·예약은 각각 별도 상태로 관리합니다.
         </span>
       </div>

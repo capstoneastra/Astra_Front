@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
+import { apiConfig } from "../api/config";
+import { demoRuntimeEnabled } from "../api/demoMode";
 import type { FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useLocation } from "react-router";
@@ -7,6 +9,7 @@ import { useAuth } from "./context";
 import InternalPreviewLinks from "./InternalPreviewLinks";
 
 const rememberedEmailKey = "astra.auth.remembered-email";
+const DemoLoginHelp = (import.meta.env.DEV || (import.meta.env.MODE === "public-demo" && import.meta.env.VITE_PUBLIC_DEMO === "true")) ? lazy(() => import("../demo/DemoLoginHelp")) : null;
 const accountStatus: Record<string, string> = {
   PENDING: "관리자 승인 대기 중입니다.",
   REJECTED: "가입이 반려되었습니다.",
@@ -40,33 +43,40 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(Boolean(email));
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const loginPending = useRef(false);
   const [validation, setValidation] = useState<{ field: "email" | "password"; message: string } | null>(null);
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (busy) return;
-    const address = email.trim();
-    if (!address || emailInput.current?.validity.typeMismatch) {
-      setValidation({
-        field: "email",
-        message: address ? "이메일 형식을 확인해 주세요." : "이메일을 입력해 주세요.",
-      });
-      emailInput.current?.focus();
-      return;
-    }
-    if (!password) {
-      setValidation({ field: "password", message: "비밀번호를 입력해 주세요." });
-      passwordInput.current?.focus();
-      return;
-    }
+  const authenticate = async (address: string, credential: string) => {
+    if (loginPending.current) return;
+    loginPending.current = true;
     setValidation(null);
     setBusy(true);
     try {
-      if (await login(address, password)) rememberEmail(remember ? address : "");
+      if (await login(address, credential)) rememberEmail(remember ? address : "");
     } finally {
+      loginPending.current = false;
       setBusy(false);
       setPassword("");
       setShowPassword(false);
     }
+  };
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (loginPending.current) return;
+    const address = email.trim();
+    if (!address || emailInput.current?.validity.typeMismatch) {
+      setValidation({ field: "email", message: address ? "이메일 형식을 확인해 주세요." : "이메일을 입력해 주세요." });
+      emailInput.current?.focus(); return;
+    }
+    if (!password) {
+      setValidation({ field: "password", message: "비밀번호를 입력해 주세요." });
+      passwordInput.current?.focus(); return;
+    }
+    await authenticate(address, password);
+  };
+  const quickLogin = async (address: string, credential: string) => {
+    if (!demoRuntimeEnabled || !apiConfig.isMock || loginPending.current) return;
+    setEmail(address); setPassword(credential); setShowPassword(false);
+    await authenticate(address, credential);
   };
 
   const account = error?.code === "ACCOUNT_NOT_ACTIVE" ? error.details : null;
@@ -76,6 +86,7 @@ export default function LoginPage() {
     <div className="login-card">
       <h1 id="auth-card-heading" tabIndex={-1}>로그인</h1>
       <p className="login-card__intro">등록한 이메일로 로그인해 주세요.</p>
+      {apiConfig.isMock && DemoLoginHelp && <Suspense><DemoLoginHelp onLogin={quickLogin} busy={busy} email={email} /></Suspense>}
       {signupPending && (
         <p className="login-feedback login-feedback--success" role="status">
           가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.
@@ -141,7 +152,7 @@ export default function LoginPage() {
             />
             이메일 기억하기
           </label>
-          <AuthCardLink className="login-signup-link" to="/auth/signup">회원가입</AuthCardLink>
+          {!apiConfig.isMock && <AuthCardLink className="login-signup-link" to="/auth/signup">회원가입</AuthCardLink>}
         </div>
         <button className="login-submit" type="submit" disabled={busy}>
           {busy ? "로그인 확인 중…" : "로그인"}
@@ -154,8 +165,8 @@ export default function LoginPage() {
           </p>
         )}
       </form>
-      <div className="login-card__previews"><InternalPreviewLinks /></div>
-      <p className="login-card__note">신규 계정은 관리자 승인 후 이용할 수 있습니다.</p>
+      {!apiConfig.isMock && <div className="login-card__previews"><InternalPreviewLinks /></div>}
+      <p className="login-card__note">{apiConfig.isMock ? "제공된 DEMO 계정으로 로그인할 수 있습니다." : "신규 계정은 관리자 승인 후 이용할 수 있습니다."}</p>
     </div>
   );
 }

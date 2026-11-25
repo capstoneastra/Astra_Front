@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { BotMessageSquare, MessageSquareText, Workflow, X } from "lucide-react";
 import Chatbot from "../Chatbot";
 import Automation from "../Automation";
@@ -9,13 +10,11 @@ const modes = [
     id: "chatbot",
     label: "시험 상담",
     icon: MessageSquareText,
-    description: "대화로 시험조건을 정리하고 필요한 장비를 찾아보세요.",
   },
   {
     id: "autopilot",
     label: "자동 추진",
     icon: Workflow,
-    description: "조건 분석부터 의뢰서 초안까지 단계별로 진행하세요.",
   },
 ];
 
@@ -28,6 +27,7 @@ export default function AiAssistant({
   onClose,
   onModeChange,
   onNavigate,
+  launcherTarget = null as HTMLElement | null,
 }) {
   const panel = useRef<HTMLElement>(null);
   const launcher = useRef(null);
@@ -112,12 +112,11 @@ export default function AiAssistant({
     tabs.current[modes[next].id]?.focus();
   };
 
-  return (
-    <>
-      <button
+  const launcherButton = <button
         ref={launcher}
+        hidden={open}
         type="button"
-        className={`ai-launcher ${open ? "ai-launcher--open" : ""}`}
+        className={`ai-launcher ${open ? "ai-launcher--open" : ""} ${launcherTarget ? "ai-launcher--docked" : ""}`}
         aria-label={open ? "AI 어시스턴트 닫기" : "AI 어시스턴트 열기"}
         title={open ? "AI 어시스턴트 닫기" : "시험 상담과 자동 추진 열기"}
         aria-expanded={open}
@@ -126,7 +125,11 @@ export default function AiAssistant({
       >
         <BotMessageSquare size={24} aria-hidden="true" />
         <span>ASTRA AI</span>
-      </button>
+      </button>;
+
+  return (
+    <>
+      {launcherTarget ? createPortal(launcherButton, launcherTarget) : launcherButton}
       <aside
         ref={(node) => {
           panel.current = node;
@@ -140,16 +143,10 @@ export default function AiAssistant({
         aria-labelledby="ai-assistant-title"
       >
         <header className="ai-assistant__header">
-          <span className="ai-assistant__mark">
-            <BotMessageSquare size={23} aria-hidden="true" />
-          </span>
           <div>
             <h2 id="ai-assistant-title">ASTRA AI</h2>
-            <p>시험 준비를 함께하는 어시스턴트</p>
           </div>
-          <span className="ai-assistant__environment">
-            {apiConfig.isMock ? "DEMO" : "AI"}
-          </span>
+          {apiConfig.isMock && <span className="ai-assistant__environment">DEMO</span>}
           <button
             type="button"
             className="icon-button"
@@ -186,7 +183,6 @@ export default function AiAssistant({
               </button>
             ))}
           </div>
-          <p>{modes.find((item) => item.id === mode)?.description}</p>
         </div>
         <div className="ai-assistant__body">
           {started &&
@@ -203,16 +199,13 @@ export default function AiAssistant({
                 }}
               >
                 {id === "chatbot" ? (
-                  <Chatbot setActiveMenu={onNavigate} />
+                  <Chatbot setActiveMenu={onNavigate} embedded />
                 ) : (
                   <Automation setActiveMenu={onNavigate} embedded />
                 )}
               </section>
             ))}
         </div>
-        <footer className="ai-assistant__footer">
-          상담과 자동 추진의 입력·진행 상태는 각각 유지됩니다.
-        </footer>
       </aside>
     </>
   );

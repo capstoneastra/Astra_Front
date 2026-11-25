@@ -54,18 +54,41 @@ const manifest = JSON.parse(await readFile("package.json", "utf8"));
 assert(!manifest.dependencies?.msw && !manifest.devDependencies?.msw);
 const viteConfig = await readFile("vite.config.ts", "utf8");
 assert(!viteConfig.includes("serveMockWorker"));
-console.log("PASS: functional mock modules, preview business adapter and MSW dependency/startup removed");
+console.log("PASS: retired src/mocks, implicit preview business adapter and MSW removed; explicit developer DEMO is separate");
 
-const protectedPaths = ["src/auth", "src/services/authService.ts", "src/api/client.ts",
+// Current user explicitly authorized DEV login and role-menu updates. Preserve
+// the original real JWT flow, signup, session/token code and API transport.
+const protectedAuthPaths = (await filesIn("src/auth")).filter(path => !["src/auth/LoginPage.tsx", "src/auth/permissions.ts"].includes(path));
+const protectedPaths = [...protectedAuthPaths, "src/services/authService.ts", "src/api/client.ts",
   "src/api/errors.ts", "src/preview/PreviewProvider.tsx", "src/preview/paths.ts", "src/preview/user.ts",
-  "src/index.css", "src/styles", "src/components/layout/AppHeader.tsx"];
+  "src/index.css"];
+// Preserve the original style files while allowing separately scoped visual layers.
+const originalStyles = execFileSync("git", ["ls-tree", "-r", "--name-only", "83ac98f", "--", "src/styles"],
+  { encoding: "utf8" }).trim().split(/\r?\n/).filter(Boolean);
+protectedPaths.push(...originalStyles);
 execFileSync("git", ["diff", "--exit-code", "83ac98f", "--", ...protectedPaths], { stdio: "pipe" });
+// Header presentation may change; the account binding and logout control may not.
+const headerPath = "src/components/layout/AppHeader.tsx";
+function headerAccountParts(source) {
+  const file = ts.createSourceFile(headerPath, source.replaceAll("\r\n", "\n"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const parts = [];
+  function inspect(node) {
+    if (ts.isVariableDeclaration(node) && (node.name.getText(file) === "exitLabel" ||
+      (node.initializer && ts.isCallExpression(node.initializer) && node.initializer.expression.getText(file) === "useAuth"))) parts.push(node.getText(file));
+    if (ts.isJsxElement(node) && node.openingElement.attributes.properties.some((attr) =>
+      ts.isJsxAttribute(attr) && attr.name.getText(file) === "className" && attr.initializer?.getText(file) === '"user-avatar"')) parts.push(node.getText(file));
+    ts.forEachChild(node, inspect);
+  }
+  inspect(file); assert.equal(parts.length, 3); return parts;
+}
+assert.deepEqual(headerAccountParts(await readFile(headerPath, "utf8")),
+  headerAccountParts(execFileSync("git", ["show", `83ac98f:${headerPath}`], { encoding: "utf8" })));
 const baselineBootstrap = execFileSync("git", ["show", "83ac98f:src/api/bootstrap.ts"], { encoding: "utf8" });
 const currentBootstrap = await readFile("src/api/bootstrap.ts", "utf8");
 const legacyAccountHelper = (source) => source.replaceAll("\r\n", "\n")
   .split("function removeLegacyMockAccounts() {")[1].split("export async function initializeApi")[0];
 assert.equal(legacyAccountHelper(currentBootstrap), legacyAccountHelper(baselineBootstrap));
-console.log("PASS: auth/signup files, auth transport, preview identities, account cleanup helper and styles unchanged");
+console.log("PASS: real auth/signup/session/token transport, preview identities, account helper and original styles preserved; DEV login help and role-menu updates authorized separately");
 
 // Render the actual shared state component without starting an API or inventing responses.
 process.env.VITE_API_MODE = "mock";

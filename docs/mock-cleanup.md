@@ -2,6 +2,8 @@
 
 2026-11-21. 작업 브랜치 `feat/yeonji`, 기준 `83ac98f`.
 
+후속 변경(2026-11-24): 장비·시뮬레이션 시연 복원 요청에 따라, 기본 API 모드와 분리된 명시적 개발 DEMO를 추가했다. 아래 내용은 당시 정리 기록이며 현재 실행 방법·격리 조건은 [demo-mode.md](demo-mode.md)를 따른다. 로그인·회원가입 보호 범위는 유지한다.
+
 ## 작업 위치와 보호 범위
 
 처음 열린 프로젝트는 `feature/api-read-integration`의 이전 JavaScript 작업과 다수 미커밋 파일을 포함했다. 이 폴더를 덮어쓰거나 전환하지 않고 원격의 최신 TypeScript `feat/yeonji`를 별도 Git worktree(`.worktrees.local/feat-yeonji`)에 체크아웃했다. 원래 작업 파일과 로컬 main은 보존했다. 모든 업무 변경·커밋·푸시·PR은 feat/yeonji를 사용한다.

@@ -4,6 +4,23 @@ import { USER_ROLES } from "./authService";
 import type { UserRole } from "./authService";
 import type { NamedResource } from "./contracts";
 
+export interface EquipmentStats {
+  total: number;
+  byRegion: Record<string, number>;
+  byEquipmentType: Record<string, number>;
+  byTestType: { code: string; nameKo: string; equipmentCount: number }[];
+  institutions: { id: number; name: string; region?: string; equipmentCount: number; verifiedCount: number; verificationRate: number }[];
+}
+const isCount = (value: unknown) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+export function validateEquipmentStats(data: EquipmentStats) {
+  if (!data || !isCount(data.total) || !data.byRegion || !data.byEquipmentType ||
+      ![data.byRegion, data.byEquipmentType].every(group => typeof group === "object" && !Array.isArray(group) && Object.values(group).every(isCount)) ||
+      !Array.isArray(data.byTestType) || data.byTestType.some(row => typeof row?.code !== "string" || typeof row.nameKo !== "string" || !isCount(row.equipmentCount)) ||
+      !Array.isArray(data.institutions) || data.institutions.some(row => !isCount(row?.id) || typeof row.name !== "string" || !isCount(row.equipmentCount) || !isCount(row.verifiedCount) || row.verifiedCount > row.equipmentCount || !Number.isFinite(row.verificationRate) || row.verificationRate < 0))
+    throw contractError("장비 통계의 지역·시험유형·기관별 집계 형식을 확인해주세요.");
+  return data;
+}
+
 export const REQUEST_STATUSES = [
   "DRAFT",
   "SUBMITTED",
@@ -27,6 +44,7 @@ interface DashboardRequest {
 }
 
 interface DashboardSummary {
+  view?: "REQUESTER" | "PROVIDER" | "ADMIN";
   role: UserRole;
   requestCounts: Record<typeof REQUEST_STATUSES[number], number>;
   equipmentStats: { total: number };
@@ -93,7 +111,7 @@ export function validateSummary(data: DashboardSummary | undefined, expectedRole
   )
     throw contractError("관리자 승인 대기 집계가 명세와 다릅니다.");
   if (
-    data.role === "INSTITUTION_MANAGER" &&
+    (data.view === "PROVIDER" || (!data.view && data.role === "INSTITUTION_MANAGER")) &&
     (!Number.isSafeInteger(data.institution?.id) ||
       typeof data.institution.name !== "string")
   )
@@ -102,9 +120,12 @@ export function validateSummary(data: DashboardSummary | undefined, expectedRole
 }
 
 export const dashboardService = {
-  async summary(role: UserRole, signal?: AbortSignal) {
+  async equipmentStats(signal?: AbortSignal) {
+    return validateEquipmentStats(responseData<EquipmentStats>(await apiClient.get("/dashboard/equipment-stats", { signal })));
+  },
+  async summary(role: UserRole, signal?: AbortSignal, view?: "REQUESTER" | "PROVIDER" | "ADMIN") {
     return validateSummary(
-      responseData<DashboardSummary>(await apiClient.get("/dashboard/summary", { signal })),
+      responseData<DashboardSummary>(await apiClient.get("/dashboard/summary", { signal, params: view && view !== "ADMIN" ? { view } : undefined })),
       role,
     );
   },

@@ -19,7 +19,7 @@ export default function ReservationControls({ request, initialDate }) {
     (signal) => requestService.availability(request.equipment.id, {}, signal),
     `availability:${request.equipment.id}`,
   );
-  const institution = ["ADMIN", "INSTITUTION_MANAGER"].includes(user.role),
+  const institution = user.role === "ADMIN" || request.institution?.id === user.organization?.id,
     scheduling = request.status === "SCHEDULING";
   useEffect(() => {
     // A concurrent confirmation/version change must invalidate both the request and busy intervals.
@@ -43,8 +43,7 @@ export default function ReservationControls({ request, initialDate }) {
     <section>
       <h3>예약 일정 협의</h3>
       <p className="field-hint">
-        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 기관 담당자만 할 수
-        있습니다.
+        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 장비 보유 조직 담당자가 진행합니다.
       </p>
       {(busy.loading || busy.error) && (
         <ApiState

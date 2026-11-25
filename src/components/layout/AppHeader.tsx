@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Command, Info, Menu, Orbit, Search, X } from "lucide-react";
+import { ArrowLeft, Info, Menu, Orbit, Search, Settings2, X } from "lucide-react";
 import { menuLabels } from "../../data/navigation";
 import { Badge, Button } from "../ui";
 import { useAuth } from "../../auth/context";
 import { apiConfig } from "../../api/config";
 import ThemeToggle from "../ui/ThemeToggle";
+import { useWorkspace } from "../../context/AppContext";
 
-export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack }) {
+export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onSettings, parentLabel = undefined }) {
   const { user, logout } = useAuth();
+  const { workspaceView } = useWorkspace();
   const exitLabel = apiConfig.isPreview ? "미리보기 종료" : "로그아웃";
   const searchDialog = useRef(null);
   const infoDialog = useRef(null);
@@ -54,29 +56,22 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
           <Menu size={21} />
         </button>
         <span className="app-header__workspace">
-          {apiConfig.preview ? `미리보기 · ${apiConfig.preview.label}` : "워크스페이스"}
+          {apiConfig.isPublicDemo ? "공개 DEMO · " : apiConfig.isMock ? "DEMO · " : ""}{apiConfig.preview ? apiConfig.preview.label : workspaceView === "ADMIN" ? "관리자 운영" : workspaceView === "PROVIDER" ? "장비 제공 업무" : "장비 이용 업무"}
         </span>
         <span className="breadcrumb-separator">/</span>
+        {parentLabel && <><span className="app-header__parent">{parentLabel}</span><span className="breadcrumb-separator">/</span></>}
         <span>{menuLabels[activeMenu]}</span>
       </div>
       <div className="app-header__tools">
-        <button
-          className="header-search"
-          onClick={() => searchDialog.current.showModal()}
-        >
-          <Search size={15} />
-          <span>장비 검색</span>
-          <kbd>
-            <Command size={10} /> K
-          </kbd>
-        </button>
         <span className="header-date">{date}</span>
         <span className="header-divider" />
         <ThemeToggle />
+        <button type="button" className="icon-button" onClick={onSettings} aria-label="계정 및 설정" title="계정 및 설정"><Settings2 size={18} /></button>
+        <Button className="header-logout" variant="ghost" onClick={logout}>로그아웃</Button>
         <button
           className="icon-button"
           onClick={() => infoDialog.current.showModal()}
-          aria-label="시연 환경 안내"
+          aria-label="플랫폼 안내"
         >
           <Info size={18} />
         </button>
@@ -157,14 +152,14 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
           </button>
         </div>
         <Badge tone="cyan" dot>
-          {apiConfig.isPreview ? "개발용 미리보기" : apiConfig.isMock ? "개발 전용 Mock · DEMO" : "API 연동 환경"}
+          {apiConfig.isPublicDemo ? "공개 시연 DEMO" : apiConfig.isMock ? "개발 전용 DEMO" : apiConfig.isPreview ? "개발용 미리보기" : "API 연동 환경"}
         </Badge>
-        <h2 id="info-dialog-title">함께 쓰는 장비, 더 넓어지는 가능성</h2>
+        <h2 id="info-dialog-title">ASTRA 플랫폼 안내</h2>
         <p>
-          {apiConfig.isPreview
-            ? "장비와 업무 화면을 시연 데이터로 둘러볼 수 있습니다. 입력은 미리보기 페이지의 메모리에 저장됩니다."
-            : apiConfig.isMock
-              ? "서버 계정으로 로그인하는 MSW 시연 환경입니다. 시연 상담·의뢰·예약은 이 브라우저에 저장됩니다."
+          {apiConfig.isMock
+            ? "DEMO 장비·상담·시뮬레이션은 시연용 응답입니다. 실제 기관 접수·예약 확정·AI 분석이 아닙니다. 입력은 이 브라우저의 별도 DEMO 저장소에 보관됩니다."
+            : apiConfig.isPreview
+              ? "개발용 화면 미리보기입니다. 업무 데이터는 연결된 서버의 응답으로 표시합니다."
               : "실제 API 환경입니다. 서버에서 인증된 역할과 소속을 기준으로 업무를 처리합니다."}
           {!apiConfig.isPreview && " 로그아웃해도 저장된 의뢰 이력은 삭제하지 않습니다."}
         </p>
@@ -176,7 +171,6 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
           <li>
             Mock 상담·분석·시뮬레이션은 DEMO이며 실제 AI·시험 결과가 아닙니다.
           </li>
-          <li>지도 위치는 예시이며 실제 기관 좌표가 아닙니다.</li>
           <li>AI 자동 추진은 의뢰서 초안까지만 진행합니다.</li>
         </ul>
         <Button variant="secondary" onClick={() => infoDialog.current.close()}>

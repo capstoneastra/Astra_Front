@@ -1,5 +1,9 @@
 # ASTRA 업무 기능 명세 및 프론트엔드 구현 대조
 
+후속 구현(2026-11-24): [의뢰 입력 간소화 및 진행 정보 통합](request-convenience.md)에 상담 자동 작성·누락 중심 수정·실사용자/회계 담당자·상세 진행 요약을 기록했다. 아래 초기 분석의 해당 누락 항목보다 후속 기록을 우선한다. 실제 Gemini·백엔드 통합 검증 완료를 의미하지 않는다.
+
+최신 UI 피드백 반영과 로그인 통합 후의 기업·기관·관리자 화면 구성안은 [업무 화면 피드백 명세](workspace-feedback-spec.md)를 함께 확인한다. 아래 문서는 최초 기능 대조 시점의 기록이며 회원별 화면 재구성은 후속 명세 단계다.
+
 작성일: 2026-11-21. 기준 브랜치: `feat/yeonji`, 조사 기준 커밋: `83ac98f`.
 
 기준 문서는 이 브랜치의 [API 명세](api-spec.md), [기술 스택](tech-stack.md), [개발 현황](dev-status.md)이다. API 명세는 제목이 v0.1 초안이지만 V6~V12 변경 내용과 의뢰자/장비 보유 조직 정책을 포함한다. 과거 PDF나 로컬에 남은 이전 백엔드 사본보다 현재 저장소 문서를 기준으로 대조했다. `team-guide.md`, `demo-scenario.md` 및 실제 배포 Swagger는 이 작업 브랜치에 없으므로 확인하지 못했다.
@@ -231,14 +235,14 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 
 ## 15. 가상 시뮬레이션
 
-- **목적·흐름:** 장비 선택 → 서버 모델·프리셋/한계 확인 → 사용자 입력 → 실행 응답 → 가상 결과/차트/이력 → Excel·CSV·PDF 내보내기.
-- **화면·컴포넌트:** `Simulation`, `SimulationStage`/3D 개념 시각화, 입력 폼, `SimulationChart`, `SimulationExports`, 이력 표. 기존 애니메이션·내보내기 유지.
+- **목적·흐름:** 장비 선택 → 서버 모델·프리셋/한계 확인 → 사용자 입력 → 실행 응답 → 가상 차트 → Excel·CSV·PDF 내보내기.
+- **화면·컴포넌트:** 2026-11-23 피드백으로 `Simulation`의 장비/프리셋 선택·접힌 조건 입력·`SimulationChart`·`SimulationExports`만 중심에 둔다. 3D 장면·이력 표·결과 요약/검사/단계 표시는 제거했다. 기존 `SimulationStage` 파일과 이력 서비스 인터페이스는 보존하나 이 화면에서 호출하지 않는다.
 - **API·요청:** `GET /simulation/models`, `GET /equipment/{id}/simulation-presets`, `POST /simulation/runs {presetId,inputParameters,requirementId?}`, `GET /simulation/runs/{id}`, `GET /simulation/runs?equipmentId=&page=&size=`.
 - **응답:** 모델 {modelType,description,requiredInputFields,limitation,capability}, 프리셋 {presetId,modelType,inputParameters}; 실행 {id,presetId,status,modelType,modelVersion,capability,isMock,output:{chart:{xLabel,yLabel,series},summary,...},warning}. 현재 화면은 추가로 equipmentId/inputParameters/limitation/createdAt을 사용하므로 실제 응답 포함 여부 확인 필요. 이력은 현재 서비스에서 Page로 사용.
 - **권한:** 로그인 전체 실행 가능하되 자신의 실행/조건만 접근. 관리자 범위는 서버 마스터 정책 기준.
 - **상태 처리:** 장비 미선택은 선택 안내, 모델 조회 실패는 연결 대기/오류, 프리셋 없음은 실행 불가 안내, 결과 없음은 차트/보고서 생성하지 않음. 결과는 capability + DEMO + warning을 유지하며 실제 성적서로 표시하지 않는다.
-- **버튼·이동:** 장비 변경 → 프리셋 조회/이전 결과 초기화, 실행 → 서버 결과만 저장, 이력 결과 → GET 응답 표시, 내보내기 → 현재 서버 결과를 브라우저 파일로 변환. 별도 다운로드 API를 만들지 않음.
-- **현재 구현:** 폼·조회/실행 서비스·3D 개념 UI·이력·세 형식 내보내기 존재. 고정 장비 id=48 초기 선택과 가짜 모델/프리셋/수치 결과 계산 라우트 제거. 그래픽의 카메라·도형·움직임 계수는 UI 표현이므로 유지.
+- **버튼·이동:** 장비 변경 → 프리셋 조회/이전 결과 초기화, 실행 → 서버 결과만 저장, 내보내기 → 현재 서버 결과를 브라우저 파일로 변환. 이력 조회 UI와 자동 호출은 제거했다. 별도 다운로드 API를 만들지 않음.
+- **현재 구현:** 입력·조회/실행 서비스·그래프·세 형식 내보내기 유지. 고정 장비 id=48 초기 선택과 가짜 모델/프리셋/수치 결과 계산 라우트는 제거된 상태다. 장식용 우주 히어로는 별도의 UI이며 시뮬레이션 데이터가 아니다.
 - **후속 연동:** 모델/프리셋/결과/이력 전체 DTO와 빈 모델 안내, 결과 이력의 장비 식별·입력 복원, 파일 내용·출처·한계 표시 검증. **백엔드 미배포로 테스트 불가**.
 
 ## 의뢰·예약 상태 전이 기준

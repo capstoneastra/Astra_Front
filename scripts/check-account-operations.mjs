@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'vite';
+const memory = new Map();
+globalThis.localStorage = { getItem: key => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, String(value)), removeItem: key => memory.delete(key) };
+globalThis.sessionStorage = { getItem: key => memory.get('session:'+key) ?? null, setItem: (key, value) => memory.set('session:'+key, String(value)), removeItem: key => memory.delete('session:'+key) };
+const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+try {
+  const { createMockApi } = await server.ssrLoadModule('/src/demo/engine.ts');
+  const { createPreviewAdminRoutes } = await server.ssrLoadModule('/src/demo/adminRoutes.ts');
+  const { demoAccounts, quickDemoAccounts, DEMO_PASSWORD, readDemoUser, writeDemoSession } = await server.ssrLoadModule('/src/demo/session.ts');
+  assert.equal(DEMO_PASSWORD,'12345678');
+  assert.deepEqual(quickDemoAccounts.map(account=>account.email),['company@astra.demo','manager1@astra.demo','univ1@astra.demo','admin@astra.demo']);
+  const { profileErrors } = await server.ssrLoadModule('/src/domain/profile.ts');
+  const { requestDistribution, equipmentDistribution } = await server.ssrLoadModule('/src/domain/dashboard.ts');
+  const { validateEquipmentStats } = await server.ssrLoadModule('/src/services/dashboardService.ts');
+  const { profileService } = await server.ssrLoadModule('/src/services/profileService.ts');
+  const { apiClient } = await server.ssrLoadModule('/src/api/client.ts');
+  const { adminService } = await server.ssrLoadModule('/src/services/adminService.ts');
+  const company = demoAccounts[0].user, partner = demoAccounts[1].user, admin = demoAccounts.at(-1).user;
+  const api = createMockApi({ additionalRoutes: createPreviewAdminRoutes() });
+  const call = (user, method, path, body = {}) => api.execute({ user, method, url: '/api/v1'+path, body });
+  assert(profileErrors({name:' ',phone:''}).name);
+  assert(profileErrors({name:'담당자',phone:'abc'}).phone);
+  assert.deepEqual(profileErrors({name:'담당자',phone:'+82 (10) 1234-5678'}),{});
+  assert.equal(call(company,'PATCH','/users/me',{name:'변경됨',role:'ADMIN'}).status,400);
+  assert.equal(call(company,'PATCH','/users/me',{name:' ',phone:'010-1234-5678'}).status,400);
+  const updated = call(company,'PATCH','/users/me',{name:'프로필 검증',phone:'010-1234-5678'}).envelope.data;
+  assert.equal(updated.id,company.id);assert.equal(updated.role,'COMPANY_USER');assert.equal(updated.organization.id,company.organization.id);
+  assert.equal(call(partner,'GET','/users/me').envelope.data.name,partner.name);
+  writeDemoSession(demoAccounts[0].email);
+  assert.equal(readDemoUser().name,'프로필 검증');assert.equal(readDemoUser().email,demoAccounts[0].email);
+  writeDemoSession('institution@astra.demo');
+  assert.equal(readDemoUser().email,'manager1@astra.demo','An existing DEMO session keeps its user ID and organization when its email changes');
+  writeDemoSession(demoAccounts[0].email);
+  assert.equal(call(company,'GET','/admin/users').status,403);
+  assert.equal(call(admin,'GET','/admin/users').envelope.data.totalElements,5);
+  assert.equal(call(admin,'PATCH',`/admin/users/${company.id}/status`,{status:'SUSPENDED'}).status,200);
+  assert.equal(readDemoUser(),null,'Suspended DEMO sessions cannot remain authenticated');
+  assert.equal(call(admin,'PATCH',`/admin/users/${company.id}/status`,{status:'ACTIVE'}).status,200);
+  assert.equal(readDemoUser().name,'프로필 검증');
+  const stats = call(admin,'GET','/dashboard/equipment-stats').envelope.data;
+  assert.equal(validateEquipmentStats(stats),stats);
+  assert.equal(Object.values(stats.byRegion).reduce((a,b)=>a+b,0),stats.total);
+  assert.equal(stats.institutions.reduce((a,b)=>a+b.equipmentCount,0),stats.total);
+  assert.throws(()=>validateEquipmentStats({...stats,total:-1}));
+  assert.throws(()=>validateEquipmentStats({...stats,byTestType:[{code:'X',nameKo:'시험',equipmentCount:'1'}]}));
+  const distribution = requestDistribution({DRAFT:1,SUBMITTED:2,UNDER_REVIEW:3,RESUBMITTED:4,SUPPLEMENT_REQUESTED:5,SCHEDULING:6,CONFIRMED:7,COMPLETED:8,REJECTED:9,CANCELED:10});
+  assert.equal(distribution.reduce((sum,item)=>sum+item.value,0),55,'All 10 statuses are accounted for exactly once');
+  const equipment = equipmentDistribution([{availability:'AVAILABLE'},{availability:null},{availability:'NEW_UNKNOWN_STATUS'}]);
+  assert.equal(equipment.find(row=>row.label==='미확인').value,2);
+  assert.equal(equipment.reduce((sum,item)=>sum+item.value,0),3);
+  const oldAdapter = apiClient.defaults.adapter;
+  try {
+    let posted;
+    apiClient.defaults.adapter = async config => {
+      posted = JSON.parse(config.data);
+      return {data:{success:true,data:{...company,...posted}},status:200,statusText:'OK',headers:{},config};
+    };
+    await profileService.update({name:' 저장 검증 ',phone:'010-1234-5678',role:'ADMIN'},company);
+    assert.deepEqual(posted,{name:'저장 검증',phone:'010-1234-5678'},'Profile service sends only the two documented fields');
+    apiClient.defaults.adapter = async config => ({data:{success:true,data:{...company,role:'ADMIN'}},status:200,statusText:'OK',headers:{},config});
+    await assert.rejects(()=>profileService.update({name:'정상 이름',phone:''},company),e=>e.code==='INVALID_RESPONSE');
+    let pages=0;
+    apiClient.defaults.adapter=async config=>{
+      pages++;
+      const page=config.params.page;
+      return {data:{success:true,data:{content:[{id:page+1,name:'기관 '+page,orgType:'INSTITUTION',isVerified:true}],page,totalPages:2}},status:200,statusText:'OK',headers:{},config};
+    };
+    assert.equal((await adminService.allOrganizations()).length,2);assert.equal(pages,2);
+  } finally { apiClient.defaults.adapter=oldAdapter; }
+  console.log('PASS: profile validation, documented PATCH field allowlist, per-account persistence, immutable identity, role rejection, suspension enforcement, all-page organization counts and source-based dashboard aggregation');
+} finally { await server.close(); delete globalThis.localStorage; delete globalThis.sessionStorage; }

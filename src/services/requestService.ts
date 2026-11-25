@@ -14,9 +14,12 @@ interface RequestHistoryEntry {
 interface DraftResult {
   requestId: number;
   id?: number;
+  aiNotes?: string[];
 }
 
 export const requestService = {
+  estimatedFee: (id: ResourceId, version: number, amount: number, note: string, signal?: AbortSignal) => mutate<RequestDetail>("PUT", `/test-requests/${id}/estimated-fee`, { version, amount, note }, signal),
+  result: (id: ResourceId, body: { summary: string; reportNo?: string; reportUrl?: string }, signal?: AbortSignal) => mutate<RequestDetail>("PUT", `/test-requests/${id}/result`, body, signal),
   list: (params: object = {}, signal?: AbortSignal) =>
     getData<Page<RequestSummary>>("/test-requests", { size: 100, ...params }, signal),
   get: (id: ResourceId, signal?: AbortSignal) => getData<RequestDetail>(`/test-requests/${id}`, undefined, signal),

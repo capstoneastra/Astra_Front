@@ -16,6 +16,7 @@ interface WorkspaceRoute {
   menu: string;
   index: number;
   search: SearchView | null;
+  origin?: "search";
 }
 
 const isPage = (menu: string) =>
@@ -44,10 +45,10 @@ export function useWorkspaceNavigation(scope: string, workspacePath = "/") {
       persist(route, true);
   }, [pathname, hash, menu, restore, route, persist, workspacePath]);
 
-  const go = useCallback((nextMenu: string, search: SearchView | null = null) => {
+  const go = useCallback((nextMenu: string, search: SearchView | null = null, origin?: "search") => {
     if (!isPage(nextMenu)) return;
-    if (route.menu === nextMenu && JSON.stringify(route.search) === JSON.stringify(search)) return;
-    persist({ scope, menu: nextMenu, search, index: route.index + 1 }, false);
+    if (route.menu === nextMenu && route.origin === origin && JSON.stringify(route.search) === JSON.stringify(search)) return;
+    persist({ scope, menu: nextMenu, search, origin, index: route.index + 1 }, false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [persist, route, scope]);
 

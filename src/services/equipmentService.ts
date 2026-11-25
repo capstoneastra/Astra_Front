@@ -110,6 +110,18 @@ export function equipmentPage(data: Page<EquipmentDto> | undefined) {
 }
 
 export const equipmentService = {
+  async managed(signal?: AbortSignal) {
+    const load = async (page: number) => equipmentPage(responseData<Page<EquipmentDto>>(await apiClient.get("/institutions/me/equipment", { params: { page, size: 100 }, signal })));
+    const first = await load(0), items = [...first.content];
+    if (first.totalPages > 200) throw contractError("보유 장비 목록이 큽니다. 조회 범위를 확인해주세요.");
+    for (let page = 1; page < first.totalPages; page++) {
+      const next = await load(page);
+      if (next.totalElements !== first.totalElements) throw contractError("보유 장비 목록이 변경되었습니다. 다시 조회해주세요.");
+      items.push(...next.content);
+    }
+    if (new Set(items.map(e => e.id)).size !== first.totalElements) throw contractError("보유 장비 건수와 목록이 다릅니다.");
+    return items;
+  },
   async list(
     {
       q,

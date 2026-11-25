@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { Plus, X } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
-import { DemoNotice } from "./workflow/Feedback";
 import { valueText } from "../domain/constants";
 export default function EquipmentCompare() {
   const { equipmentList, comparisonIds, setComparisonIds, catalogQuery } =
@@ -16,17 +16,13 @@ export default function EquipmentCompare() {
     comparisonIds.length >= 2,
   );
   return (
-    <div className="content-page page-enter">
+    <div className="content-page page-enter equipment-compare-page">
       <PageHeader
-        eyebrow="EQUIPMENT COMPARISON"
+        eyebrow={null}
         title="장비 비교"
-        description="서로 다른 장비 2~5대의 사양과 이용조건을 비교하세요."
       />
-      <DemoNotice>
-        REAL 사양을 우선 비교하며, 없는 사양과 이용료는 확인 필요로 표시합니다.
-      </DemoNotice>
-      <Panel className="form-panel">
-        <div className="form-grid">
+      <Panel className="form-panel comparison-selector" title="비교할 장비" action={<Badge tone="cyan">{comparisonIds.length} / 5대</Badge>}>
+        <div className="comparison-picker">
           <FormField id="compare-equipment" label="비교할 장비">
             <select
               id="compare-equipment"
@@ -43,33 +39,32 @@ export default function EquipmentCompare() {
           </FormField>
           <div className="form-actions">
             <Button
+              icon={Plus}
               disabled={
                 !candidate ||
                 comparisonIds.length >= 5 ||
                 comparisonIds.includes(Number(candidate))
               }
-              onClick={() =>
-                setComparisonIds([...comparisonIds, Number(candidate)])
-              }
+              onClick={() => { setComparisonIds([...comparisonIds, Number(candidate)]); setCandidate(""); }}
             >
               비교 장비 추가
             </Button>
           </div>
         </div>
-        <div className="form-actions">
+        {comparisonIds.length > 0 && <div className="comparison-chips" aria-label="선택된 비교 장비">
           {comparisonIds.map((id) => (
             <Button
               key={id}
               variant="secondary"
-              style={{ whiteSpace: "normal" }}
+              aria-label={`${equipmentList.find((e) => e.id === id)?.name ?? id} 비교에서 제외`}
               onClick={() =>
                 setComparisonIds(comparisonIds.filter((value) => value !== id))
               }
             >
-              {equipmentList.find((e) => e.id === id)?.name ?? id} · 제외
+              {equipmentList.find((e) => e.id === id)?.name ?? id}<X size={14} aria-hidden="true" />
             </Button>
           ))}
-        </div>
+        </div>}
         {(catalogQuery.loading || catalogQuery.error) && (
           <ApiState
             loading={catalogQuery.loading}
@@ -77,7 +72,7 @@ export default function EquipmentCompare() {
             onRetry={catalogQuery.reload}
           />
         )}
-        <p className="field-hint">{comparisonIds.length}/5대 선택</p>
+        {comparisonIds.length < 2 && <p className="comparison-hint">장비를 2대 이상 선택해주세요.</p>}
       </Panel>
       {(comparison.loading || comparison.error) && (
         <Panel>
@@ -161,14 +156,7 @@ export default function EquipmentCompare() {
             최종 시험 가능 여부·비용·일정은 보유기관에 확인해야 합니다.
           </p>
         </Panel>
-      ) : (
-        !comparison.loading &&
-        !comparison.error && (
-          <Panel className="form-panel">
-            <p>장비를 2대 이상 선택하면 비교표를 확인할 수 있습니다.</p>
-          </Panel>
-        )
-      )}
+      ) : null}
     </div>
   );
 }

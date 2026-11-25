@@ -153,13 +153,13 @@ export default function EquipmentDetailDialog({
           </dl>
           <Button
             icon={FilePlus2}
-            disabled={!canAccessMenu(user.role, "reservation")}
+            disabled={!canAccessMenu(user.role, "reservation") || data.institutionId === user.organization?.id}
             onClick={() => {
               onSelect(data);
               dialog.current.close();
             }}
           >
-            이 장비로 시험 의뢰하기
+            {data.institutionId === user.organization?.id ? "소속 조직 장비 · 직접 의뢰 불가" : "이 장비로 시험 의뢰하기"}
           </Button>
           <div className="form-actions">
             <Button

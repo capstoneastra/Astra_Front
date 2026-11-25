@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Bell,
   CalendarDays,
+  Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -58,6 +59,7 @@ export const navigation: { label: string; items: { id: string; label: string; ic
       { id: "simulation", label: "가상 시뮬레이션", icon: Activity },
       { id: "admin", label: "회원·기관 승인", icon: ShieldCheck },
       { id: "notifications", label: "업무 알림", icon: Bell },
+      { id: "settings", label: "계정 및 설정", icon: Settings2 },
     ],
   },
 ];

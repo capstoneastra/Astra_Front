@@ -27,6 +27,9 @@ export interface EquipmentSpec {
 }
 
 export interface EquipmentDto {
+  needsUpdate?: boolean;
+  availabilityNeedsConfirmation?: boolean;
+  availabilityUpdatedAt?: string | null;
   id: number;
   name: string;
   testTypes: string[];
@@ -93,13 +96,25 @@ export interface RequestRevision {
 
 export interface RequestContent {
   applicant: { companyName?: string; contactName?: string; email?: string; phone?: string };
-  test: { testTypeCode?: string; purpose?: string; conditions?: RequirementCondition[] };
+  actualUser?: RequestContact;
+  accounting?: RequestContact;
+  responsible?: { name?: string };
+  report?: { type?: string };
+  billing?: { method?: string };
+  test: { testTypeCode?: string; purpose?: string; standard?: string; conditions?: RequirementCondition[] };
   schedule: { desiredStartDate?: string | null; desiredEndDate?: string | null };
-  sample: { name?: string; quantity?: number | null; size?: string; weight?: string; notes?: string; readyDate?: string | null };
+  sample: { name?: string; quantity?: number | null; size?: string; weight?: string; notes?: string; readyDate?: string | null; disposal?: string };
   conditions: RequirementCondition[];
+  equipment?: NamedResource & { externalId?: string };
+  notes?: string;
+  serviceRequirements?: { accreditedRequired?: boolean | null; operatorSupportRequested?: boolean | null; securityOrExportControlled?: boolean | null };
 }
 
+export interface RequestContact { name?: string; phone?: string; email?: string }
+
 export interface RequestDetail extends RequestSummary {
+  estimatedFee?: { amount: number; note?: string | null; updatedAt?: string } | null;
+  result?: { summary: string; reportNo?: string | null; reportUrl?: string | null; registeredAt?: string; updatedAt?: string } | null;
   reservations: ReservationRecord[];
   version: number;
   supplements: {

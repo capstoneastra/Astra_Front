@@ -5,7 +5,7 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { adminService } from "../services/adminService";
 import { DemoNotice, Feedback } from "./workflow/Feedback";
-import { accountStatusLabels, roleLabels } from "../domain/constants";
+import { accountStatusLabels, roleLabels, formatDate } from "../domain/constants";
 import ApiState from "./ui/ApiState";
 
 const organizationTypeLabels = {
@@ -17,11 +17,13 @@ const organizationTypeLabels = {
 export default function AdminManagement() {
   const { user } = useAuth(),
     [status, setStatus] = useState(""),
+    [role, setRole] = useState(""),
+    [page, setPage] = useState(0),
     [reasons, setReasons] = useState({}),
     action = useAction();
   const members = useApiQuery(
-      (signal) => adminService.users(status ? { status } : {}, signal),
-      `admin-users:${status}`,
+      (signal) => adminService.users({ page, size: 20, ...(status ? { status } : {}), ...(role ? { role } : {}) }, signal),
+      `admin-users:${status}:${role}:${page}`,
     ),
     organizations = useApiQuery(
       (signal) => adminService.organizations({}, signal),
@@ -36,11 +38,11 @@ export default function AdminManagement() {
       />
       <DemoNotice />
       <Panel className="form-panel">
-        <FormField id="admin-status" label="계정 상태">
+        <div className="admin-member-filters"><FormField id="admin-status" label="계정 상태">
           <select
             id="admin-status"
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => { setStatus(e.target.value); setPage(0); }}
           >
             <option value="">전체 상태</option>
             {Object.entries(accountStatusLabels).map(([key, label]) => (
@@ -50,6 +52,7 @@ export default function AdminManagement() {
             ))}
           </select>
         </FormField>
+        <FormField id="admin-role" label="회원 유형"><select id="admin-role" value={role} onChange={e => { setRole(e.target.value); setPage(0); }}><option value="">전체 유형</option>{Object.entries(roleLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></FormField></div>
       </Panel>
       <Feedback action={action} />
       <Panel className="form-panel" title="회원 관리">
@@ -67,6 +70,7 @@ export default function AdminManagement() {
                   <th>계정</th>
                   <th>역할·소속</th>
                   <th>상태</th>
+                  <th>가입일</th>
                   <th>처리</th>
                 </tr>
               </thead>
@@ -82,6 +86,7 @@ export default function AdminManagement() {
                       <small>{member.organization?.name ?? "플랫폼"}</small>
                     </td>
                     <td>{accountStatusLabels[member.status]}</td>
+                    <td>{member.createdAt ? formatDate(member.createdAt) : "미제공"}</td>
                     <td>
                       {member.status === "PENDING" ? (
                         <>
@@ -161,6 +166,7 @@ export default function AdminManagement() {
         {members.data?.totalElements === 0 && (
           <p>해당 상태의 회원이 없습니다.</p>
         )}
+        {members.data && members.data.totalPages > 1 && <div className="admin-member-pagination"><span>전체 {members.data.totalElements}명 · {page + 1}/{members.data.totalPages}페이지</span><Button variant="ghost" disabled={members.loading || page === 0} onClick={() => setPage(value => value - 1)}>이전</Button><Button variant="ghost" disabled={members.loading || page + 1 >= members.data.totalPages} onClick={() => setPage(value => value + 1)}>다음</Button></div>}
       </Panel>
       <Panel className="form-panel" title="기관 승인 현황">
         {organizations.loading || organizations.error ? (

@@ -1,5 +1,5 @@
 const everyone = ["COMPANY_USER", "INSTITUTION_MANAGER", "ADMIN"];
-const company = ["COMPANY_USER", "ADMIN"];
+const company = ["COMPANY_USER", "INSTITUTION_MANAGER"];
 export const menuPermissions = {
   home: everyone,
   search: everyone,
@@ -12,11 +12,12 @@ export const menuPermissions = {
   reservation: company,
   reservationCheck: everyone,
   calendar: everyone,
-  manager: ["INSTITUTION_MANAGER", "ADMIN"],
-  review: ["INSTITUTION_MANAGER", "ADMIN"],
+  manager: everyone,
+  review: everyone,
   testInfo: everyone,
   simulation: everyone,
   notifications: everyone,
+  settings: everyone,
   admin: ["ADMIN"],
 };
 export const canAccessMenu = (role, menu) =>
