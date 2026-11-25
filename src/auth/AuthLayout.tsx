@@ -1,50 +1,15 @@
-import { useCallback, useEffect, useRef } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import AstraBrand from "../components/ui/AstraBrand";
-import LoginGuide from "./LoginGuide";
 import LoginOrbit from "./LoginOrbit";
 import "./login.css";
 
+// v9: 로그인 화면의 '이용 안내' 버튼과 안내 화면을 삭제했습니다.
 export default function AuthLayout() {
-  const { pathname, search, hash, state } = useLocation();
-  const navigate = useNavigate();
-  const guideOpen = hash === "#guide";
-  const cardLabel = pathname === "/auth/signup" ? "회원가입" : "로그인";
-  const previousView = useRef({ pathname, guideOpen });
-  const guideHeading = useRef<HTMLHeadingElement>(null);
-  const guideToggle = useRef<HTMLButtonElement>(null);
-  const cardFrame = useRef<HTMLDivElement>(null);
-  const changeGuide = useCallback((open: boolean) => {
-    if (open === guideOpen) return;
-    void navigate({ pathname, search, hash: open ? "#guide" : "" }, { state });
-  }, [guideOpen, navigate, pathname, search, state]);
-
-  useEffect(() => {
-    const previous = previousView.current;
-    if (previous.pathname === pathname && previous.guideOpen === guideOpen) return;
-    previousView.current = { pathname, guideOpen };
-    window.scrollTo(0, 0);
-    const focusTarget = guideOpen
-      ? guideHeading.current
-      : previous.pathname !== pathname
-        ? cardFrame.current?.querySelector("h1")
-        : guideToggle.current;
-    focusTarget?.focus({ preventScroll: true });
-  }, [guideOpen, pathname]);
-
-  useEffect(() => {
-    if (!guideOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) changeGuide(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [changeGuide, guideOpen]);
+  const { pathname, search, state } = useLocation();
 
   return (
-    <div className="login-experience" data-guide-open={guideOpen}>
+    <div className="login-experience">
       <LoginOrbit />
       <header className="login-topbar">
         <Link
@@ -57,32 +22,15 @@ export default function AuthLayout() {
         </Link>
         <div className="login-topbar__actions">
           <ThemeToggle />
-          <button ref={guideToggle} type="button" className="login-guide-link"
-            aria-controls="login-guide" aria-expanded={guideOpen}
-            aria-label={guideOpen ? `${cardLabel}으로 돌아가기` : undefined}
-            onClick={() => changeGuide(!guideOpen)}>
-            {guideOpen && <ArrowLeft size={15} aria-hidden="true" />}
-            {guideOpen ? cardLabel : "이용 안내"}
-            {!guideOpen && <ArrowRight size={15} aria-hidden="true" />}
-          </button>
         </div>
       </header>
 
       <main className="login-viewport">
-        <div className="login-track">
-          <section
-            id="login-view"
-            className="login-screen"
-            aria-hidden={guideOpen}
-            aria-labelledby="auth-card-heading"
-            ref={(element) => { if (element) element.inert = guideOpen; }}
-          >
-            <div key={pathname} ref={cardFrame} className="auth-card-frame">
-              <Outlet />
-            </div>
-          </section>
-          <LoginGuide open={guideOpen} headingRef={guideHeading} />
-        </div>
+        <section id="login-view" className="login-screen" aria-labelledby="auth-card-heading">
+          <div key={pathname} className="auth-card-frame">
+            <Outlet />
+          </div>
+        </section>
       </main>
 
       <footer className="login-footer">

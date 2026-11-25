@@ -4,8 +4,6 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useLocation } from "react-router";
 import AuthCardLink from "./AuthCardLink";
 import { useAuth } from "./context";
-import { localWorkspaceAccounts } from "./localWorkspace";
-import type { LocalWorkspaceAccount } from "./localWorkspace";
 
 const rememberedEmailKey = "astra.auth.remembered-email";
 const accountStatus: Record<string, string> = {
@@ -31,14 +29,16 @@ function rememberEmail(email: string) {
   }
 }
 
-export default function LoginPage({ onEnterLocal }: { onEnterLocal?: (account: LocalWorkspaceAccount) => void }) {
+export default function LoginPage() {
   const { login, error } = useAuth();
-  const signupPending = useLocation().state?.signupPending === true;
+  const routeState = useLocation().state;
+  const signupPending = routeState?.signupPending === true;
+  const passwordReset = routeState?.passwordReset === true; // v17: 계정 찾기에서 비밀번호를 바꾼 뒤
   const emailInput = useRef<HTMLInputElement>(null);
   const passwordInput = useRef<HTMLInputElement>(null);
-  const [email, setEmail] = useState(readRememberedEmail);
+  const [email, setEmail] = useState(() => (typeof routeState?.email === "string" && routeState.email) || readRememberedEmail());
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(Boolean(email));
+  const [remember, setRemember] = useState(() => Boolean(readRememberedEmail()));
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [validation, setValidation] = useState<{ field: "email" | "password"; message: string } | null>(null);
@@ -81,6 +81,11 @@ export default function LoginPage({ onEnterLocal }: { onEnterLocal?: (account: L
       {signupPending && (
         <p className="login-feedback login-feedback--success" role="status">
           가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.
+        </p>
+      )}
+      {passwordReset && (
+        <p className="login-feedback login-feedback--success" role="status">
+          비밀번호를 바꿨습니다. 새 비밀번호로 로그인해 주세요.
         </p>
       )}
       <form noValidate onSubmit={submit} aria-busy={busy}>
@@ -143,7 +148,10 @@ export default function LoginPage({ onEnterLocal }: { onEnterLocal?: (account: L
             />
             이메일 기억하기
           </label>
-          <AuthCardLink className="login-signup-link" to="/auth/signup">회원가입</AuthCardLink>
+          <span className="login-card__links">
+            <AuthCardLink className="login-signup-link login-signup-link--muted" to="/auth/recover">계정 찾기</AuthCardLink>
+            <AuthCardLink className="login-signup-link" to="/auth/signup">회원가입</AuthCardLink>
+          </span>
         </div>
         <button className="login-submit" type="submit" disabled={busy}>
           {busy ? "로그인 확인 중…" : "로그인"}
@@ -156,18 +164,6 @@ export default function LoginPage({ onEnterLocal }: { onEnterLocal?: (account: L
           </p>
         )}
       </form>
-      {onEnterLocal && (
-        <div className="login-card__accounts" role="group" aria-labelledby="login-local-workspace">
-          <p id="login-local-workspace">서버 없이 화면 열기</p>
-          <div className="login-card__account-options">
-            {(Object.keys(localWorkspaceAccounts) as LocalWorkspaceAccount[]).map((account) => (
-              <button key={account} type="button" disabled={busy} onClick={() => onEnterLocal(account)}>
-                {localWorkspaceAccounts[account].label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       <p className="login-card__note">신규 계정은 관리자 승인 후 이용할 수 있습니다.</p>
     </div>
   );

@@ -50,7 +50,7 @@ interface InstitutionVerification extends NamedResource {
   verifiedCount: number;
 }
 
-interface DashboardSummary {
+export interface DashboardSummary {
   role: UserRole;
   view?: DashboardView;
   requestCounts: Record<RequestStatus, number>;

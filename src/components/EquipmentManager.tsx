@@ -1,68 +1,58 @@
-import { useState } from "react";
-import { Box, Database, Info, Plus, Trash2 } from "lucide-react";
+import { Fragment, useState } from "react";
+import type { CSSProperties } from "react";
+import { ChevronDown, Database, Pencil, Search, Trash2 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
-import { Badge, Button, EmptyState, FormField, PageHeader, Panel } from "./ui";
+import { Button, EmptyState, PageHeader, Panel } from "./ui";
 import ApiState from "./ui/ApiState";
-import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
+import { testTypeLabel } from "../services/equipmentService";
+import type { Equipment } from "../services/equipmentService";
+import { valueText } from "../domain/constants";
+import { needsUpdate } from "./dashboard/ProviderParts";
+import "../styles/manager.css";
 
-export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
+const OPERATION: Record<string, [string, string]> = { AVAILABLE: ["운영 중", "green"], LIMITED: ["일정 제한", "amber"], MAINTENANCE: ["점검 중", "red"] };
+const operation = (item: Equipment) => OPERATION[item.availability ?? item.usage?.availability ?? ""] ?? ["상태 미등록", "neutral"];
+type StatusFilter = "all" | "AVAILABLE" | "LIMITED" | "MAINTENANCE" | "stale";
+
+export default function EquipmentManager() {
   const { equipmentList, user, catalogQuery } = useWorkspace();
+  const admin = user.role === "ADMIN";
   const managedEquipment =
     user.role === "INSTITUTION_MANAGER"
       ? equipmentList.filter(
           (item) => item.institutionId === user.organization?.id,
         )
       : equipmentList;
-  const [newEquip, setNewEquip] = useState({
-    name: "",
-    testItem: "",
-    institution: "",
-    reason: "",
-    institutionId: "",
-    equipmentType: "TEST",
-    model: "",
+  const [open, setOpen] = useState<number | null>(null);
+  // 대시보드의 '정보 갱신 필요'를 눌러 들어오면 해당 장비만 먼저 보여줍니다.
+  const [status, setStatus] = useState<StatusFilter>(() => {
+    try {
+      const saved = window.sessionStorage.getItem("astra.manager.filter");
+      window.sessionStorage.removeItem("astra.manager.filter");
+      return saved === "stale" ? "stale" : "all";
+    } catch { return "all"; }
   });
+  const now = Date.now();
+  const stale = (item: Equipment) => needsUpdate(item, now).reasons.length > 0;
+  const statusCounts: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all", label: "전체", count: managedEquipment.length },
+    { key: "AVAILABLE", label: "운영 중", count: managedEquipment.filter((e) => (e.availability ?? e.usage?.availability) === "AVAILABLE").length },
+    { key: "LIMITED", label: "일정 제한", count: managedEquipment.filter((e) => (e.availability ?? e.usage?.availability) === "LIMITED").length },
+    { key: "MAINTENANCE", label: "점검 중", count: managedEquipment.filter((e) => (e.availability ?? e.usage?.availability) === "MAINTENANCE").length },
+    { key: "stale", label: "정보 갱신 필요", count: managedEquipment.filter(stale).length },
+  ];
+  // v10: 시험 의뢰 관리처럼 오른쪽 위 검색 — 장비명·모델·장비번호·시험 종류로 찾기
+  const [keyword, setKeyword] = useState("");
+  const term = keyword.trim().toLowerCase().replace(/\s+/g, "");
+  const matches = (e: Equipment) => !term || [e.name, e.model, e.externalId, e.testItem]
+    .filter(Boolean).join(" ").toLowerCase().replace(/\s+/g, "").includes(term);
+  const visible = managedEquipment.filter((e) => (status === "all" || (status === "stale" ? stale(e) : (e.availability ?? e.usage?.availability) === status)) && matches(e));
   const [editing, setEditing] = useState(null),
     action = useAction();
-  const types = useApiQuery(
-    (signal) => catalogService.testTypes(signal),
-    "test-types",
-  );
-  const institutions = useApiQuery(
-    (signal) => catalogService.institutions(signal),
-    "institutions",
-    user.role === "ADMIN",
-  );
-
-  const handleAdd = () => {
-    if (!newEquip.name.trim() || !newEquip.testItem) return;
-    action.run(async (signal) => {
-      await catalogService.createEquipment(
-        {
-          name: newEquip.name,
-          model: newEquip.model || null,
-          description: newEquip.reason || null,
-          equipmentType: newEquip.equipmentType,
-          testTypes: [newEquip.testItem],
-          ...(user.role === "ADMIN"
-            ? { institutionId: Number(newEquip.institutionId) }
-            : {}),
-        },
-        signal,
-      );
-      setNewEquip({
-        ...newEquip,
-        name: "",
-        testItem: "",
-        reason: "",
-        model: "",
-      });
-    }, "장비를 등록했습니다.");
-  };
   const handleDelete = (id) => {
     if (
       window.confirm("이 장비를 비활성화할까요? 기존 의뢰 이력은 유지됩니다.")
@@ -75,224 +65,107 @@ export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (me
 
   return (
     <div className="content-page page-enter">
-      <PageHeader
-        eyebrow="INFRASTRUCTURE DATA"
-        title="보유 장비 관리"
-        description="공동활용 장비의 정보를 등록하고 목록을 관리하세요."
-      >
-        <Button variant="secondary" onClick={() => setActiveMenu("duplicates")}>중복·유사 장비 조회</Button>
-        <Badge tone="cyan">
-          현재 {catalogQuery.status === "ready" ? managedEquipment.length : "—"}
-          대
-        </Badge>
-      </PageHeader>
-      <div className="content-note">
-        <Info size={16} />
-        <span>
-          기관이 등록·확인한 정보로 갱신합니다.{" "}
-          소속 기관의 장비만 관리하며, 미확인 비용·사양은 추정해 입력하지
-          않습니다.
-        </span>
-      </div>
-      <Panel className="form-panel manager-add">
-        <div className="form-section-heading">
-          <span>
-            <Database size={18} />
-          </span>
-          <div>
-            <h2>새 장비 등록</h2>
-            <p>장비명과 시험항목은 필수 입력입니다.</p>
-          </div>
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAdd();
-          }}
-        >
-          <div className="form-grid">
-            <FormField id="new-equipment-name" label="장비명 *">
-              <input
-                id="new-equipment-name"
-                value={newEquip.name}
-                onChange={(e) =>
-                  setNewEquip({ ...newEquip, name: e.target.value })
-                }
-                placeholder="예: 치구복합가공기"
-              />
-            </FormField>
-            <FormField id="new-equipment-test" label="시험항목 *">
-              <select
-                id="new-equipment-test"
-                value={newEquip.testItem}
-                onChange={(e) =>
-                  setNewEquip({ ...newEquip, testItem: e.target.value })
-                }
-              >
-                <option value="">시험유형 선택</option>
-                {types.data?.map((t) => (
-                  <option key={t.code} value={t.code}>
-                    {t.nameKo}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField id="new-equipment-institution" label="보유기관">
-              {user.role === "ADMIN" ? (
-                <select
-                  id="new-equipment-institution"
-                  value={newEquip.institutionId}
-                  onChange={(e) =>
-                    setNewEquip({ ...newEquip, institutionId: e.target.value })
-                  }
-                >
-                  <option value="">기관 선택</option>
-                  {institutions.data?.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  id="new-equipment-institution"
-                  value={user.organization?.name ?? ""}
-                  disabled
-                  onChange={(e) =>
-                    setNewEquip({ ...newEquip, institution: e.target.value })
-                  }
-                  placeholder="예: 한국생산기술연구원"
-                />
-              )}
-            </FormField>
-            <FormField id="new-equipment-description" label="활용 설명">
-              <input
-                id="new-equipment-description"
-                value={newEquip.reason}
-                onChange={(e) =>
-                  setNewEquip({ ...newEquip, reason: e.target.value })
-                }
-                placeholder="예: 대형 항공기 부품 단조 성형"
-              />
-            </FormField>
-          </div>
-          <div className="form-grid">
-            <FormField id="new-equipment-model" label="모델">
-              <input
-                id="new-equipment-model"
-                value={newEquip.model}
-                onChange={(e) =>
-                  setNewEquip({ ...newEquip, model: e.target.value })
-                }
-              />
-            </FormField>
-            <FormField id="new-equipment-type" label="장비 유형">
-              <select
-                id="new-equipment-type"
-                value={newEquip.equipmentType}
-                onChange={(e) =>
-                  setNewEquip({ ...newEquip, equipmentType: e.target.value })
-                }
-              >
-                {Object.entries({
-                  TEST: "시험",
-                  MEASUREMENT: "측정",
-                  MANUFACTURING: "제조",
-                  SOFTWARE: "소프트웨어",
-                  SUPPORT: "지원",
-                }).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-          <div className="form-actions">
-            <p>등록 정보는 운영 데이터와 구분되는 시연 데이터입니다.</p>
-            <Button
-              type="submit"
-              icon={Plus}
-              disabled={
-                action.busy ||
-                !newEquip.name.trim() ||
-                !newEquip.testItem ||
-                (user.role === "ADMIN" && !newEquip.institutionId)
-              }
-            >
-              장비 추가하기
-            </Button>
-          </div>
-        </form>
-      </Panel>
+      <PageHeader title={admin ? "등록 장비 관리" : "보유 장비 관리"} />
       <Feedback action={action} />
-      {(types.error || institutions.error) && (
-        <ApiState
-          error={types.error ?? institutions.error}
-          onRetry={() => {
-            types.reload();
-            institutions.reload();
-          }}
-        />
+      <div className="manager-toolbar">
+        <div className="manager-status" role="group" aria-label="장비 상태로 보기">
+          {statusCounts.map((item) => (
+            <button type="button" key={item.key} aria-pressed={status === item.key} disabled={catalogQuery.status !== "ready"}
+              className={item.key === "stale" && item.count ? "is-attention" : undefined} onClick={() => { setStatus(item.key); setOpen(null); }}>
+              {item.label}<b>{catalogQuery.status === "ready" ? item.count : "—"}</b>
+            </button>
+          ))}
+        </div>
+        <label className="mgr-search">
+          <Search size={15} aria-hidden="true" />
+          <span className="sr-only">{admin ? "등록 장비 검색" : "보유 장비 검색"}</span>
+          <input type="search" value={keyword} onChange={(e) => { setKeyword(e.target.value); setOpen(null); }} placeholder="장비명·모델·번호 검색" />
+        </label>
+      </div>
+      {catalogQuery.loading || catalogQuery.error ? (
+        <Panel><ApiState loading={catalogQuery.loading} error={catalogQuery.error} onRetry={catalogQuery.reload} /></Panel>
+      ) : visible.length ? (
+        <div className="mgr-table" role="table" aria-label={admin ? "등록 장비 목록" : "보유 장비 목록"}>
+          <div className="mgr-row mgr-row--head" role="row">
+            <span role="columnheader">장비 · 모델</span>
+            <span role="columnheader">시험 종류</span>
+            <span role="columnheader">운영 상태</span>
+            <span role="columnheader">정보 확인</span>
+            <span role="columnheader">이용료</span>
+            <span role="columnheader"><span className="sr-only">작업</span></span>
+          </div>
+          {visible.map((equip, index) => {
+            const [opLabel, opTone] = operation(equip);
+            const check = needsUpdate(equip, now);
+            const expanded = open === equip.id;
+            return (
+              <Fragment key={equip.id}>
+                <div role="row" className={`mgr-row${expanded ? " is-open" : ""}${check.reasons.length ? " is-stale" : ""}`} style={{ "--i": Math.min(index, 12) } as CSSProperties}>
+                  <button type="button" role="cell" className="mgr-row__name" aria-expanded={expanded} aria-controls={`equipment-detail-${equip.id}`}
+                    onClick={() => setOpen(expanded ? null : equip.id)}>
+                    <ChevronDown size={15} aria-hidden="true" className="mgr-row__chevron" />
+                    <span><strong>{equip.name}</strong><small>{[equip.model, equip.externalId].filter(Boolean).join(" · ") || "모델 미입력"}</small></span>
+                  </button>
+                  <span role="cell" className="mgr-row__types">{equip.testTypes.map((code) => <span key={code} className="type-chip">{testTypeLabel(code)}</span>)}</span>
+                  <span role="cell" className="mgr-row__op"><span className={`status-chip status-chip--${opTone}`}><i aria-hidden="true" />{opLabel}</span></span>
+                  <span role="cell" className="mgr-row__check">
+                    {check.reasons.length ? <span className="warn-chip" title={check.reasons.join(", ")}>갱신 필요</span> : <span className="ok-chip">최신</span>}
+                    <small>{equip.updateDate ?? "갱신일 없음"}</small>
+                  </span>
+                  <span role="cell" className="mgr-row__fee">{equip.usage?.feeText ?? equip.feeText ?? "미등록"}</span>
+                  <span role="cell" className="mgr-row__actions">
+                    <button type="button" className="icon-button" aria-label={`${equip.name} 정보 수정`} title="정보 수정" disabled={action.busy} onClick={() => setEditing(equip.id)}><Pencil size={15} /></button>
+                    <button type="button" className="icon-button icon-button--danger" aria-label={`${equip.name} 비활성화`} title="비활성화" disabled={action.busy} onClick={() => handleDelete(equip.id)}><Trash2 size={15} /></button>
+                  </span>
+                </div>
+                <div id={`equipment-detail-${equip.id}`} className={`mgr-detail${expanded ? " is-open" : ""}`} role="row" aria-hidden={!expanded}>
+                  <div className="mgr-detail__inner" role="cell">
+                    <section>
+                      <h3>주요 사양</h3>
+                      {equip.specs?.length ? (
+                        <dl className="mgr-specs">
+                          {equip.specs.map((spec) => (
+                            <div key={spec.key}>
+                              <dt>{spec.label ?? spec.key}</dt>
+                              <dd>{valueText(spec)}{spec.verificationStatus !== "CONFIRMED" && <em>미확인</em>}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : <p className="mgr-detail__empty">등록된 사양이 없습니다.</p>}
+                    </section>
+                    <section>
+                      <h3>운영 정보</h3>
+                      <dl className="mgr-specs">
+                        <div><dt>제조사</dt><dd>{equip.manufacturer || "—"}</dd></div>
+                        <div><dt>지역</dt><dd>{equip.region || "—"}</dd></div>
+                        <div><dt>이용 범위</dt><dd>{equip.usage?.accessScope || "—"}</dd></div>
+                        <div><dt>소요 시간</dt><dd>{equip.usage?.durationText || "—"}</dd></div>
+                        <div><dt>이용료</dt><dd>{equip.usage?.feeText ?? equip.feeText ?? "—"}</dd></div>
+                      </dl>
+                    </section>
+                    <section>
+                      <h3>상태 점검</h3>
+                      <ul className="mgr-checks">
+                        <li className={equip.verificationStatus === "CONFIRMED" ? "is-ok" : "is-warn"}>사양 정보 {equip.verificationStatus === "CONFIRMED" ? "확인 완료" : "미확인"}</li>
+                        <li className={check.age != null && check.age <= 180 ? "is-ok" : "is-warn"}>마지막 갱신 {equip.updateDate ?? "기록 없음"}{check.age != null && ` (${check.age}일 전)`}</li>
+                        <li className={opLabel === "운영 중" ? "is-ok" : "is-warn"}>현재 {opLabel}</li>
+                      </ul>
+                      {equip.reason && <p className="mgr-detail__desc">{equip.reason}</p>}
+                      <Button variant="secondary" icon={Pencil} onClick={() => setEditing(equip.id)}>정보 수정</Button>
+                    </section>
+                  </div>
+                </div>
+              </Fragment>
+            );
+          })}
+        </div>
+      ) : (
+        <Panel>
+          <EmptyState icon={Database}
+            title={term ? "검색어와 맞는 장비가 없습니다" : status === "all" ? "등록된 장비가 없습니다" : "해당 상태의 장비가 없습니다"}
+            description={term ? "검색어를 바꾸거나 지워 보세요." : status === "all" ? (admin ? "기관·대학이 장비를 등록하면 여기에 표시됩니다." : "대시보드의 'AI 간편 등록'으로 첫 번째 장비를 등록해 보세요.") : "다른 상태를 선택해 보세요."} />
+        </Panel>
       )}
-      <div className="results-heading">
-        <span>
-          등록 장비
-          <strong>
-            {catalogQuery.status === "ready" ? managedEquipment.length : "—"}
-          </strong>
-          대
-        </span>
-        <small>현재 워크스페이스 기준</small>
-      </div>
-      <div className="manager-list">
-        {catalogQuery.loading || catalogQuery.error ? (
-          <Panel>
-            <ApiState
-              loading={catalogQuery.loading}
-              error={catalogQuery.error}
-              onRetry={catalogQuery.reload}
-            />
-          </Panel>
-        ) : managedEquipment.length ? (
-          managedEquipment.map((equip) => (
-            <Panel className="manager-row" key={equip.id}>
-              <span className="manager-row__icon">
-                <Box size={19} />
-              </span>
-              <div>
-                <h3>{equip.name}</h3>
-                <p>
-                  {equip.testItem} · {equip.institution || "보유기관 미입력"}
-                </p>
-              </div>
-              <Button
-                variant="secondary"
-                disabled={action.busy}
-                onClick={() => setEditing(equip.id)}
-              >
-                정보 수정
-              </Button>
-              <Button
-                variant="danger"
-                icon={Trash2}
-                disabled={action.busy}
-                onClick={() => handleDelete(equip.id)}
-              >
-                삭제
-              </Button>
-            </Panel>
-          ))
-        ) : (
-          <Panel>
-            <EmptyState
-              icon={Database}
-              title="등록된 장비가 없습니다"
-              description="위 입력란에서 첫 번째 장비를 등록해 보세요."
-            />
-          </Panel>
-        )}
-      </div>
       {editing && (
         <EquipmentEditDialog
           key={editing}

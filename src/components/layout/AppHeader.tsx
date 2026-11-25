@@ -1,50 +1,52 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bell, Command, Menu, Search, X } from "lucide-react";
-import { menuLabels } from "../../data/navigation";
-import { Button } from "../ui";
+import { Menu } from "lucide-react";
 import { useAuth } from "../../auth/context";
-import ThemeToggle from "../ui/ThemeToggle";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import { notificationService } from "../../services/notificationService";
 import ProfileMenu from "./ProfileMenu";
+import NotificationMenu from "./NotificationMenu";
+import QuickSearch from "./QuickSearch";
+import { HEADER_SLOT_ID, ViewSwitch } from "./HeaderSlot";
+import type { SearchSuggestion } from "./QuickSearch";
+import type { NotificationTarget } from "../../domain/notificationTarget";
+import type { DashboardView } from "../../services/dashboardService";
 
-export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications }) {
-  const { user, logout, status } = useAuth();
-  const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
-  const searchDialog = useRef(null);
-  const [query, setQuery] = useState("");
-  const [date] = useState(() =>
-    new Intl.DateTimeFormat("ko-KR", {
-      timeZone: "Asia/Seoul",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      weekday: "short",
-    }).format(new Date()),
-  );
+export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, searchSources, searchRecommendations, onNotifications, onOpenTarget, dashboardView, onDashboardView }: {
+  activeMenu: string;
+  menuOpen: boolean;
+  onMenu: () => void;
+  onSearch: (query: string, options?: SearchSuggestion["options"]) => void;
+  searchSources: SearchSuggestion[];
+  searchRecommendations?: SearchSuggestion[];
+  onNotifications: () => void;
+  onOpenTarget: (target: NotificationTarget) => void;
+  /** 기관 담당자: 대시보드 '장비 운영 / 내 의뢰' 전환 (대시보드에서만 표시) */
+  dashboardView?: DashboardView;
+  onDashboardView?: (view: DashboardView) => void;
+}) {
+  const { user, logout } = useAuth();
+  const admin = user.role === "ADMIN";
+  const tools = useRef<HTMLDivElement>(null);
+  const [panel, setPanel] = useState<"profile" | "notifications" | null>(null);
+  const toggle = (next: "profile" | "notifications") => setPanel((current) => (current === next ? null : next));
+  const close = () => setPanel(null);
 
+  // 바깥을 누르거나 Esc 를 누르면 펼친 메뉴를 닫습니다.
   useEffect(() => {
-    const shortcut = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        if (!searchDialog.current.open) searchDialog.current.showModal();
-      }
+    if (!panel) return;
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !tools.current?.contains(event.target)) setPanel(null);
     };
-    document.addEventListener("keydown", shortcut);
-    return () => document.removeEventListener("keydown", shortcut);
-  }, []);
-
-  const submit = (event) => {
-    event.preventDefault();
-    searchDialog.current.close();
-    onSearch(query.trim());
-    setQuery("");
-  };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setPanel(null); };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [panel]);
 
   return (
     <header className="app-header">
       <div className="app-header__location">
-        <button type="button" className="icon-button workspace-back" aria-label="이전 화면으로" title="이전 화면으로" disabled={!canGoBack} onClick={onBack}><ArrowLeft size={19} /></button>
         <button
           className="icon-button mobile-menu"
           onClick={onMenu}
@@ -54,82 +56,23 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
         >
           <Menu size={21} />
         </button>
-        <span className="app-header__workspace">{status === "local" ? "로컬 화면" : "워크스페이스"}</span>
-        <span className="breadcrumb-separator">/</span>
-        <span>{menuLabels[activeMenu]}</span>
-      </div>
-      <div className="app-header__tools">
-        <button
-          className="header-search"
-          onClick={() => searchDialog.current.showModal()}
-        >
-          <Search size={15} />
-          <span>장비 검색</span>
-          <kbd>
-            <Command size={10} /> K
-          </kbd>
-        </button>
-        <span className="header-date">{date}</span>
-        <span className="header-divider" />
-        <button
-          type="button"
-          className="icon-button header-notifications"
-          aria-label={unreadCount > 0 ? `업무 알림, 읽지 않은 알림 ${unreadCount}건` : "업무 알림"}
-          aria-current={activeMenu === "notifications" ? "page" : undefined}
-          title="업무 알림"
-          onClick={onNotifications}
-        >
-          <Bell size={18} aria-hidden="true" />
-          {unreadCount > 0 && <span aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
-        </button>
-        <ThemeToggle />
-        <ProfileMenu user={user} onLogout={logout} />
-      </div>
-      <dialog
-        className="dialog search-dialog"
-        ref={searchDialog}
-        onClick={(event) => {
-          if (event.target === searchDialog.current)
-            searchDialog.current.close();
-        }}
-        aria-labelledby="search-dialog-title"
-      >
-        <div className="dialog__heading">
-          <div>
-            <span className="eyebrow">QUICK SEARCH</span>
-            <h2 id="search-dialog-title">어떤 장비를 찾고 계신가요?</h2>
-          </div>
-          <button
-            className="icon-button"
-            aria-label="검색 닫기"
-            onClick={() => searchDialog.current.close()}
-          >
-            <X size={20} />
-          </button>
+        {/* v9: 화면 이름은 지우고, 화면별 전환 버튼만 이 자리에 둡니다. */}
+        <div id={HEADER_SLOT_ID} className="app-header__slot">
+          {activeMenu === "home" && user.role === "INSTITUTION_MANAGER" && dashboardView && onDashboardView && (
+            <ViewSwitch label="대시보드 업무 범위" value={dashboardView} onChange={onDashboardView}
+              options={[{ value: "PROVIDER", label: "장비 운영", title: "받은 의뢰와 보유 장비 일정" }, { value: "REQUESTER", label: "내 의뢰", title: "우리 기관이 다른 곳에 보낸 의뢰" }]} />
+          )}
         </div>
-        <form onSubmit={submit}>
-          <label className="sr-only" htmlFor="global-equipment-query">
-            장비명, 시험항목 또는 보유기관
-          </label>
-          <div className="search-field">
-            <Search size={19} />
-            <input
-              id="global-equipment-query"
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="장비명, 시험항목, 보유기관을 입력하세요"
-            />
-          </div>
-          <p className="field-hint">
-            장비명·모델·시험항목은 서버 q 검색, 기관은 목록에서 선택하거나 검색
-            화면의 기관 필터를 사용합니다.
-          </p>
-          <Button type="submit" icon={Search}>
-            장비 검색하기
-          </Button>
-        </form>
-      </dialog>
+      </div>
+
+      <QuickSearch userId={user.id} sources={searchSources} recommendations={searchRecommendations} onSearch={onSearch}
+        placeholder={admin ? "회원 이름, 이메일, 기관명 검색" : "장비명, 시험 종류, 기관명 검색"} />
+
+      <div className="app-header__tools" ref={tools}>
+        <NotificationMenu userId={user.id} role={user.role} open={panel === "notifications"}
+          onToggle={() => toggle("notifications")} onClose={close} onOpenTarget={onOpenTarget} onShowAll={onNotifications} />
+        <ProfileMenu user={user} onLogout={logout} open={panel === "profile"} onToggle={() => toggle("profile")} onClose={close} />
+      </div>
     </header>
   );
 }

@@ -1,0 +1,95 @@
+/* ── 보유 장비 관리 (v6): 카드 대신 표 + 펼치는 상세 ─────────────────── */
+.manager-status { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.manager-status button {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border: 1px solid var(--border-strong); border-radius: 999px;
+  background: transparent; color: var(--text-secondary); font-size: var(--fs-sm);
+  transition: background .22s var(--ease-soft, ease), color .22s, border-color .22s;
+}
+.manager-status button b { color: var(--text); font-variant-numeric: tabular-nums; }
+.manager-status button:hover:not(:disabled) { background: var(--control-hover); }
+.manager-status button[aria-pressed="true"] { background: var(--cyan); border-color: var(--cyan); color: var(--primary-ink); }
+.manager-status button[aria-pressed="true"] b { color: var(--primary-ink); }
+.manager-status button.is-attention:not([aria-pressed="true"]) { border-color: color-mix(in srgb, var(--violet) 40%, transparent); color: var(--violet); }
+
+.mgr-table { --mgr-cols: minmax(240px, 2fr) minmax(130px, 1fr) minmax(110px, .9fr) minmax(130px, 1fr) minmax(110px, .9fr) 84px;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-background); overflow: hidden; }
+.mgr-row { display: grid; grid-template-columns: var(--mgr-cols); align-items: center; gap: 14px; padding: 7px 14px; border-top: 1px solid var(--border);
+  transition: background .2s; animation: v6-rise .4s var(--ease-soft, ease) both; animation-delay: calc(var(--i, 0) * 30ms); }
+.mgr-row--head { border-top: 0; min-height: 36px; padding-block: 0; background: var(--surface-sunken); color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; animation: none; }
+.mgr-row:not(.mgr-row--head):hover, .mgr-row.is-open { background: var(--control-hover); }
+.mgr-row__name { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.mgr-row__name > span { display: grid; gap: 1px; min-width: 0; }
+.mgr-row__name strong { font-size: var(--fs-md); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mgr-row__name small { color: var(--text-muted); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mgr-row__chevron { flex-shrink: 0; color: var(--text-muted); transition: transform .3s var(--ease-soft, ease), color .2s; }
+.mgr-row.is-open .mgr-row__chevron { transform: rotate(180deg); color: var(--cyan); }
+.mgr-row__types { display: flex; flex-wrap: wrap; gap: 4px; }
+.mgr-row__check { display: grid; justify-items: start; gap: 2px; }
+.mgr-row__check small { color: var(--text-muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.mgr-row__fee { color: var(--text-secondary); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mgr-row__actions { display: flex; justify-content: flex-end; gap: 4px; }
+.mgr-row__actions .icon-button { width: 32px; height: 32px; }
+.icon-button--danger:hover:not(:disabled) { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+
+/* 펼치는 상세: 높이 애니메이션(grid-template-rows 0fr → 1fr)으로 끊김 없이 */
+.mgr-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s var(--ease-soft, ease); background: var(--surface-sunken); }
+.mgr-detail.is-open { grid-template-rows: 1fr; border-top: 1px solid var(--border); }
+.mgr-detail__inner { overflow: hidden; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; padding: 0 18px 0 38px; opacity: 0; transition: opacity .25s, padding .35s var(--ease-soft, ease); }
+.mgr-detail.is-open .mgr-detail__inner { padding-block: 14px 16px; opacity: 1; }
+.mgr-detail h3 { margin: 0 0 8px; font-size: var(--fs-xs); font-weight: 650; color: var(--text-muted); letter-spacing: .02em; }
+.mgr-specs { margin: 0; display: grid; gap: 4px; }
+.mgr-specs > div { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
+.mgr-specs dt { color: var(--text-muted); }
+.mgr-specs dd { margin: 0; font-weight: 560; text-align: right; font-variant-numeric: tabular-nums; }
+.mgr-specs em { margin-left: 6px; font-style: normal; font-size: 10.5px; color: var(--violet); }
+.mgr-checks { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.mgr-checks li { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+.mgr-checks li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.mgr-checks li.is-ok::before { background: var(--green); }
+.mgr-checks li.is-warn::before { background: var(--violet); }
+.mgr-detail__desc { margin: 0 0 10px; color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.6; }
+.mgr-detail__empty { color: var(--text-muted); font-size: var(--fs-sm); }
+.mgr-detail .button { min-height: 32px; padding: 5px 12px; }
+
+@media (max-width: 760px) {
+  .mgr-row--head { display: none; }
+  .mgr-detail__inner { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-left: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .mgr-row { animation: none; } .mgr-detail, .mgr-detail__inner { transition: none; } }
+
+/* v9: 가동률 열 삭제 — 6열 기준 정렬. 칩 열은 가운데, 금액은 오른쪽 */
+.mgr-row--head > :nth-child(2), .mgr-row--head > :nth-child(3), .mgr-row--head > :nth-child(4) { text-align: center; }
+.mgr-row__types { justify-content: center; }
+.mgr-row__op { display: flex; justify-content: center; }
+.mgr-row__check { justify-items: center; }
+.mgr-row--head > :nth-child(5), .mgr-row__fee { text-align: right; }
+.mgr-row { gap: 18px; }
+@media (max-width: 1180px) {
+  .mgr-table { --mgr-cols: minmax(200px, 1.6fr) minmax(100px, .9fr) minmax(110px, .9fr) 84px; }
+  .mgr-row > :nth-child(2), .mgr-row > :nth-child(5) { display: none; }
+}
+@media (max-width: 760px) {
+  .mgr-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .mgr-row > :nth-child(3), .mgr-row > :nth-child(4) { display: flex; grid-column: 1; }
+}
+
+/* v10: 상태 칩(왼쪽) + 검색(오른쪽 위) — 시험 의뢰 관리와 같은 배치 */
+.manager-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+.manager-toolbar .manager-status { flex: 1; min-width: 0; margin-bottom: 0; }
+.mgr-search {
+  display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 10px;
+  background: var(--surface-sunken); color: var(--text-muted); transition: border-color .2s, box-shadow .2s;
+}
+.mgr-search:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 14%, transparent); }
+.mgr-search input { width: clamp(150px, 16vw, 240px); padding: 8px 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--text); outline: none; }
+.mgr-search input:focus, .mgr-search input:focus-visible { box-shadow: none; outline: none; }
+@media (max-width: 640px) { .mgr-search { width: 100%; } .mgr-search input { width: 100%; } }
+
+/* v10: 좁은 화면 — [장비명 | 수정·삭제] / [운영 상태 · 정보 확인] 두 줄로 정렬 (칩이 가운데로 떠 보이던 문제) */
+@media (max-width: 760px) {
+  .mgr-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; row-gap: 8px; column-gap: 10px; }
+  .mgr-row > .mgr-row__name { grid-column: 1; grid-row: 1; }
+  .mgr-row > .mgr-row__actions { grid-column: 2; grid-row: 1; align-self: start; }
+  .mgr-row > .mgr-row__op { grid-column: 1; grid-row: 2; justify-content: flex-start; padding-left: 24px; }
+  .mgr-row > .mgr-row__check { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+}

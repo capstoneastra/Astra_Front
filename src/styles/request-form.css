@@ -1,0 +1,29 @@
+/* ── 시험 의뢰서: 왼쪽 입력 / 오른쪽 요약·제출 ───────────────────── */
+.request-form { display: grid; grid-template-columns: minmax(0, 1fr) clamp(260px, 24vw, 340px); gap: var(--stack); align-items: start; }
+.request-form__main { display: grid; gap: var(--stack); min-width: 0; }
+.request-form__section .panel__header { min-height: 0; padding: 16px 20px 6px; }
+.request-form__section .form-grid { padding: 6px 20px 18px; }
+.request-form__section > .form-grid + .form-grid { padding-top: 0; }
+.request-form__ai {
+  display: flex; align-items: center; gap: 10px; margin: 0 20px 18px; padding: 10px 12px;
+  border: 1px solid var(--blue-border); border-radius: 11px; background: var(--blue-soft); color: var(--blue); font-size: var(--fs-sm);
+}
+.request-form__ai span { flex: 1; color: var(--text-secondary); }
+.request-form__aside { position: sticky; top: calc(var(--header-h) + 16px); }
+.request-summary { padding: 18px; display: grid; gap: 14px; }
+.request-summary__equipment { display: grid; gap: 4px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.request-summary__equipment strong { font-size: var(--fs-lg); line-height: 1.4; }
+.request-summary__equipment small { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: var(--fs-sm); }
+.request-summary__checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.request-summary__checklist li { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: var(--fs-sm); transition: color .2s; }
+.request-summary__checklist li.is-done { color: var(--text); }
+.request-summary__checklist li.is-done svg { color: var(--green); animation: check-pop .3s var(--ease-out); }
+@keyframes check-pop { from { transform: scale(0.4); } to { transform: none; } }
+.request-summary__confirm { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--text-secondary); }
+.request-summary__confirm input { width: auto; }
+@media (max-width: 1023px) {
+  .request-form { grid-template-columns: minmax(0, 1fr); }
+  .request-form__aside { position: static; }
+}
+.request-form__section .form-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 16px 18px; }
+.request-form__section .form-field--full { grid-column: 1 / -1; }

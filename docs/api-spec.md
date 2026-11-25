@@ -42,6 +42,7 @@
 |---|---|---|
 | 400 | `VALIDATION_FAILED` | 입력값 검증 실패 (`details`에 필드별 사유) |
 | 400 | `EMAIL_NOT_VERIFIED`, `VERIFICATION_CODE_INVALID`, `VERIFICATION_CODE_EXPIRED` | 회원가입: 이메일 인증 토큰이 없거나 만료·사용됨 / 인증 코드 틀림(`details.remainingAttempts`) / 코드 만료·5회 틀림 → 다시 받기 |
+| 400 | `INVALID_PASSWORD` | 비밀번호 변경: 현재 비밀번호가 틀림 (`details.field = "currentPassword"`) |
 | 401 | `AUTH_REQUIRED`, `TOKEN_EXPIRED`, `INVALID_CREDENTIALS` | 미인증·잘못된 토큰 / access 토큰 만료 → refresh 시도 / 로그인 시 이메일 또는 비밀번호 불일치 |
 | 403 | `FORBIDDEN`, `ACCOUNT_NOT_ACTIVE` | 역할·소유권 불일치 (다른 기관 의뢰 조회 등) / 승인 대기·거절·정지 계정 로그인 (`details.status`, 거절이면 `details.rejectReason`) |
 | 404 | `NOT_FOUND`, `EQUIPMENT_NOT_FOUND`, `REQUEST_NOT_FOUND` | 없는 주소 / 없는 장비 / 없는 의뢰 |
@@ -82,6 +83,11 @@
 | POST | `/auth/logout` | 로그인 | refresh 토큰 폐기 |
 | GET | `/users/me` | 로그인 | 내 정보 + 소속 조직 |
 | PATCH | `/users/me` | 로그인 | 내 정보 수정 |
+| PATCH | `/users/me/password` | 로그인 | 비밀번호 변경 (2026-11-24 추가) |
+| POST | `/auth/find-email` | 🔓 | 이메일(아이디) 찾기 — 이름·연락처 → 가려진 이메일 (2026-11-25 FE 추가, 1-1) |
+| POST | `/auth/password-resets` | 🔓 | 비밀번호 재설정 코드(6자리) 발송 (1-1) |
+| POST | `/auth/password-resets/confirm` | 🔓 | 재설정 코드 확인 → `resetToken` (1-1) |
+| POST | `/auth/password-resets/complete` | 🔓 | 새 비밀번호 저장 (1-1) |
 
 **가입 흐름**
 
@@ -153,17 +159,50 @@
 [ { "id": 5, "orgType": "INSTITUTION", "name": "가온대학교 첨단소재분석센터", "region": "진주" }, ... ]
 
 // GET /users/me → 200 (organization 은 소속이 없으면 null)
-{ "id": 3, "email": "manager1@astra.demo", "name": "김담당", "phone": "042-000-0001",
+{ "id": 3, "email": "lab1@astra.kr", "name": "김담당", "phone": "042-000-0001",
   "role": "INSTITUTION_MANAGER", "status": "ACTIVE",
   "organization": { "id": 2, "orgType": "INSTITUTION", "name": "미리내우주환경시험센터", "region": "대전", "isVerified": true },
   "lastLoginAt": "2026-11-07T17:03:04+09:00", "createdAt": "2026-11-07T17:02:51+09:00" }
 
 // PATCH /users/me { "name"?: "김담당", "phone"?: "042-000-0009" } → 200 (GET 과 같은 형식, 보낸 값만 수정)
+
+// PATCH /users/me/password { "currentPassword": "1234", "newPassword": "new-pass-1234" }
+//   → 200 { "success": true }  (data 없음. 로그인 상태·토큰은 그대로)
+//   실패: 400 INVALID_PASSWORD (현재 비밀번호 틀림, details.field = "currentPassword")
+//         400 VALIDATION_FAILED (새 비밀번호 규칙 = 회원가입과 같음: 8~72자, UTF-8 72바이트 이하 / 빈 값)
 ```
 
-> 시연 계정(V3 seed): `admin@astra.demo`, `company@astra.demo`, `manager1@astra.demo`, `manager2@astra.demo`, `pending@astra.demo`(PENDING), V8 추가 `company2@astra.demo`, `univ1@astra.demo`. 비밀번호는 모두 `12345678` (V9).
+> 시연 계정 (V18 에서 짧게 바꿈, 2026-11-25): `admin@astra.kr`, `company@astra.kr`, `lab1@astra.kr`, `lab2@astra.kr`, `pending@astra.kr`(PENDING), V8 추가 `company2@astra.kr`, `univ@astra.kr`. 비밀번호는 모두 `1234`. 가입·비밀번호 변경 규칙(8자 이상)은 그대로이고, 시연 계정만 짧은 비밀번호를 씀
 
 > 토큰: access 토큰은 `Authorization: Bearer` 헤더로 보냅니다(유효 1시간). refresh 토큰은 유효 14일이고, 서버는 원문 대신 해시만 `refresh_tokens.token_hash`에 저장합니다.
+
+
+### 1-1. 계정 찾기 (2026-11-25 프론트 추가 · 서버 구현 필요)
+
+로그인 화면 **계정 찾기**(`/auth/recover`)에서 사용합니다. 아이디는 이메일이므로 ① 이메일 찾기 ② 비밀번호 재설정 두 가지입니다.
+코드 규칙은 가입용 이메일 인증과 같습니다(6자리, 10분 유효, 60초에 한 번 발송, 5번 틀리면 다시 받기).
+
+- **계정 존재 노출 방지**: `/auth/password-resets` 는 가입하지 않은 이메일이어도 같은 200 응답을 주고 메일만 보내지 않습니다. `/auth/find-email` 은 이메일을 가려서(`co*****@astra.kr`) 돌려줍니다.
+- 이름·연락처는 가입 때 넣은 값과 **둘 다** 일치해야 합니다(연락처는 숫자만 비교 권장). 연락처를 넣지 않은 계정은 찾을 수 없으며 화면에서 관리자 문의를 안내합니다.
+- 비밀번호를 바꾸면 그 회원의 refresh 토큰을 모두 폐기합니다(다른 기기 로그아웃).
+- PENDING·REJECTED 계정도 이메일 찾기·재설정은 됩니다(로그인 가능 여부는 기존 규칙 그대로).
+
+```json
+// POST /auth/find-email { "name": "홍길동", "phone": "010-0000-0000" } → 200
+{ "emails": ["a*****@company.com"] }          // 없으면 빈 배열 (항상 200)
+// 실패: 400 VALIDATION_FAILED (빈 값) / 429 TOO_MANY_REQUESTS { "retryAfter": 42 }
+
+// POST /auth/password-resets { "email": "a@company.com" } → 200
+{ "expiresIn": 600, "resendAvailableIn": 60 }
+// 실패: 429 TOO_MANY_REQUESTS { "retryAfter": 42 }
+
+// POST /auth/password-resets/confirm { "email": "a@company.com", "code": "123456" } → 200
+{ "resetToken": "Qm9vdHN0cmFw...", "expiresIn": 900 }   // 15분, 한 번만 사용
+// 실패: 400 VERIFICATION_CODE_INVALID { "remainingAttempts": 4 } / 400 VERIFICATION_CODE_EXPIRED
+
+// POST /auth/password-resets/complete { "resetToken": "Qm9v...", "newPassword": "new-pass-1234" } → 200 { "success": true } (data 없음)
+// 실패: 400 RESET_TOKEN_INVALID (만료·이미 사용) / 400 VALIDATION_FAILED (비밀번호 규칙 = 회원가입과 같음: 8~72자)
+```
 
 ---
 
@@ -209,17 +248,31 @@
 { "id": 48, "externalId": "ASTRA-CAND-0048", "name": "진동시험기", "model": "EDS5000LS4-445",
   "institution": { "id": 2, "name": "미리내우주환경시험센터" }, "region": "대전",
   "equipmentType": "TEST", "testTypes": ["VIBRATION"],
-  "availability": "UNKNOWN", "availabilityNeedsConfirmation": true, "utilizationRate": null, "feeText": null,
-  "verificationStatus": "LISTING_CONFIRMED", "isMock": true, "infoUpdatedAt": "2026-11-07T11:52:01.241657+09:00" }
+  "availability": "UNKNOWN", "availabilityNeedsConfirmation": true, "utilizationRate": 57.00, "feeText": "협의",
+  "verificationStatus": "LISTING_CONFIRMED", "isMock": true, "infoUpdatedAt": "2026-11-07T11:52:01.241657+09:00",
+  // 2026-11-24 추가 (상세를 따로 부르지 않아도 카드에 쓰도록)
+  "usage": { "accessScope": "UNKNOWN", "feeText": "협의", "feeAmount": null, "feeUnit": "NEGOTIABLE",
+             "vatIncluded": null, "durationText": null },
+  "keySpecs": [   // 주요 사양 최대 2개 = 상세 specs 순서에서 사양 키가 다른 앞 2개 (같은 키면 REAL 우선). 형식은 상세 specs 와 같음
+    { "key": "frequency", "label": "주파수 범위", "min": 10, "max": 3000, "unit": "Hz", "sourceType": "MOCK", ... },
+    { "key": "max_payload", "label": "최대 시료 질량", "value": 40, "unit": "kg", "sourceType": "MOCK", ... } ],
+  "simulation": { "capability": "CALCULATED_DEMO", "presetIds": ["SIM-0048"] } }   // 상세 simulation 과 같은 형식
 // infoUpdatedAt: 초기 적재 데이터는 DB 를 만든(마이그레이션) 시각. 기관이 수정·확인하면 그 시각으로 바뀜
+// 목록 항목 형식은 비교(POST /equipment/compare)의 equipment[] 에도 그대로 쓰임
+
+// 이용료 형식 (V17, 모든 장비): feeText = "금액원/단위 (부가세 별도|포함)" 또는 "협의"
+//   예: "12,000원/시간 (부가세 별도)", "1,250,000원/일 (부가세 별도)". 단위: 시간(HOUR)·일(DAY)·시료(SAMPLE)·건(CASE)
+//   금액이 있는 장비는 feeAmount(원)·feeUnit·vatIncluded 가 모두 있음. "협의" 장비는 feeAmount·vatIncluded 가 null, feeUnit = NEGOTIABLE
+//   utilizationRate: 시연 장비(isMock=true)는 모두 값이 있음(가상 25~84%). 기관이 직접 등록한 장비는 입력값 그대로(없으면 null)
 
 // GET /equipment/48 → 위 필드 + 아래
 // specs: REAL·MOCK 을 모두 주고, 같은 사양 키면 REAL 이 먼저 (예: 장비 37 의 frequency 는 REAL, MOCK 순)
 //        단일값 value / 범위 min·max / 숫자가 아니면 valueText. 값이 없는 필드는 생략
 { ...,
   "manufacturer": "(주)팜테크", "category": null, "description": null,
-  "usage": { "accessScope": "UNKNOWN", "feeText": null, "feeAmount": null, "feeUnit": null,
-             "durationText": null, "utilizationRate": null, "availability": "UNKNOWN",
+  "usage": { "accessScope": "UNKNOWN", "feeText": "협의", "feeAmount": null, "feeUnit": "NEGOTIABLE",
+             "vatIncluded": null,   // 2026-11-24 추가: 이용료 부가세 포함 여부 ("협의" 면 null)
+             "durationText": null, "utilizationRate": 57.00, "availability": "UNKNOWN",
              "availabilityUpdatedAt": null, "availabilityUpdatedBy": null, "availabilityNote": null,
              "availabilityNeedsConfirmation": true, "leadTimeDays": null, "operationMode": "UNKNOWN" },
   "specs": [
@@ -287,8 +340,8 @@
   "rows": [ { "key": "frequency", "label": "주파수 범위",
               "values": [ { "equipmentId": 48, "min": 10, "max": 3000, "unit": "Hz", "sourceType": "MOCK" },
                           { "equipmentId": 44, "min": 5, "max": 1800, "unit": "Hz", "sourceType": "MOCK" } ] }, ... ],
-  "usage": [ { "equipmentId": 48, "accessScope": "UNKNOWN", "feeText": null, "feeAmount": null, "feeUnit": null,
-               "durationText": null, "utilizationRate": null, "availability": "UNKNOWN",
+  "usage": [ { "equipmentId": 48, "accessScope": "UNKNOWN", "feeText": "협의", "feeAmount": null, "feeUnit": "NEGOTIABLE",
+               "vatIncluded": null, "durationText": null, "utilizationRate": 57.00, "availability": "UNKNOWN",
                "availabilityNeedsConfirmation": true, "leadTimeDays": null, "operationMode": "UNKNOWN",
                "verificationStatus": "LISTING_CONFIRMED", "infoUpdatedAt": "2026-11-07T11:52:01.241657+09:00",
                "testTypeEstimate": { "code": "VIBRATION", "supported": true, "estCostMin": null, "estCostMax": null,
@@ -342,6 +395,7 @@
 - 권한: 기관 담당자는 소속 기관 장비만 (`AccessGuard.requireInstitution`), 아니면 `403 FORBIDDEN`. 관리자는 전부. 기업 회원은 `403`
 - 없거나 비활성인 장비는 `404 EQUIPMENT_NOT_FOUND` (변경 이력 조회는 비활성 장비도 가능)
 - 장비 기본정보·사양·시험유형 변경은 `equipment_change_logs`에 `action`(CREATE / UPDATE / SPECS_UPDATE / TEST_TYPES_UPDATE / CONFIRM / DEACTIVATE / TRANSFER)과 `changes` `{"필드": {"before", "after"}}`로 기록. 정비 등록자는 별도 일정의 createdBy로 기록
+- 이용료 (2026-11-24): `usage.vatIncluded`(true/false) 입력 추가. 이용료 문구가 아직 없는 장비에 `feeText` 없이 `feeAmount`·`feeUnit`·`vatIncluded` 를 보내면 서버가 `"12,000원/시간 (부가세 별도)"` 형식으로 feeText 를 만듦 (금액·단위가 없거나 `NEGOTIABLE` 이면 `"협의"`). 이미 문구가 있으면 PATCH 규칙대로 feeText 를 보낸 경우에만 바뀌므로, 금액을 바꿀 때는 feeText 도 같이 보내 주세요
 - 입력 오류는 `400 VALIDATION_FAILED` + 필드 경로 (`specs[0].value`: 값 없음, `specs[0].min`: min > max, `specs[1].key`: 키 중복, `testTypes[0].code`: 없는 코드·중복)
 
 **초기 데이터 → 기관 인수인계 흐름**
@@ -634,6 +688,11 @@ structured output의 시험유형 enum은 test_types, 조건 키 enum은 선택 
 | POST | `/reservations/{id}/cancel` | 🏢 🏛 | 예약 취소 |
 | GET | `/equipment/{id}/reservations` | 로그인 | 장비 예약 현황(바쁜 구간만) `?from=2026-11-01&to=2026-11-30` |
 
+> 시연 예약 (2026-11-24): 서버가 뜰 때와 매일 0시 10분(한국 시간)에, lab1 계정 기관의 장비(id 순 앞 3대)에 **오늘부터 14일 안** 예약 4건이 있도록 맞춥니다.
+> 확정(CONFIRMED) 2건 + 제안(PROPOSED) 2건이고, 처음에는 실제 흐름(company 의뢰 → 제출 → lab1 검토·통과 → 일정 제안 → 확정)으로 만들어 알림·이력도 남습니다.
+> 날짜가 지나 14일 창 밖이 되면 날짜만 오늘 기준으로 옮기고, 시연 중 그 의뢰를 완료·취소했으면 새로 만듭니다. 예약의 `external_system = 'ASTRA_DEMO'` 로 구분.
+> 시연 계정이 없으면 아무것도 하지 않으며, `ASTRA_DEMO_RESERVATIONS=false` 로 끕니다.
+
 **중복 예약 방지 (필수 구현)**
 
 | 시점 | 검사 | 실패 시 |
@@ -733,7 +792,7 @@ structured output의 시험유형 enum은 test_types, 조건 키 enum은 선택 
   "equipmentStats": { "total": 339, "byRegion": { "경남": 1, "고흥": 40, "광주": 1, "대전": 32, "사천": 154, "원주": 1, "진주": 36, "창원": 74 } },
   "dataAvailable": { "requests": true, "chats": true } }
 
-// GET /dashboard/summary?view=PROVIDER (장비 보유 조직 화면. INSTITUTION_MANAGER 의 기본값, manager1 — seed 실제 값)
+// GET /dashboard/summary?view=PROVIDER (장비 보유 조직 화면. INSTITUTION_MANAGER 의 기본값, lab1 — seed 실제 값)
 { "role": "INSTITUTION_MANAGER", "view": "PROVIDER",
   "institution": { "id": 2, "name": "미리내우주환경시험센터" },
   "requestCounts": { ... 10개 상태 ... },                       // 우리 기관 접수함
@@ -749,7 +808,11 @@ structured output의 시험유형 enum은 test_types, 조건 키 enum은 선택 
   "requestCounts": { ... 10개 상태 (전체) ... },
   "institutionVerification": [ /* equipment-stats 의 institutions 와 같은 형식 */ ],
   "equipmentStats": { "total": 339, "byRegion": { ... } },
-  "dataAvailable": { "requests": false } }
+  "dataAvailable": { "requests": false },
+  // 2026-11-24 추가: 시험유형별 수요(의뢰)·공급(장비). 15개 전부, 표시 순서, 없으면 0
+  //   requestCount = 작성 중(DRAFT)을 뺀 의뢰 수 (시험유형 = 의뢰서 content.test.testTypeCode, 없으면 연결된 시험조건의 유형)
+  //   equipmentCount = 그 시험을 할 수 있는 활성 장비 수 (equipment-stats 의 byTestType 과 같은 값)
+  "byTestType": [ { "code": "VIBRATION", "nameKo": "진동시험", "requestCount": 5, "equipmentCount": 32 }, ... ] }
 
 // GET /dashboard/equipment-stats → 활성 장비 기준 (seed 실제 값)
 { "total": 339,
@@ -810,7 +873,7 @@ UNDER_REVIEW ──reject──▶ REJECTED        (DRAFT~SCHEDULING 에서 기�
 ```json
 // GET /admin/users?status=PENDING → 200 (페이지). 정렬 가능: createdAt(기본, 최신순)·email·name·role·status·approvedAt·lastLoginAt
 { "content": [
-    { "id": 5, "email": "pending@astra.demo", "name": "이대기", "phone": "055-000-0003",
+    { "id": 5, "email": "pending@astra.kr", "name": "이대기", "phone": "055-000-0003",
       "role": "INSTITUTION_MANAGER", "status": "PENDING",
       "organization": { "id": 4, "orgType": "INSTITUTION", "name": "가람재료시험연구원", "businessRegNo": null,
                         "region": "경남", "address": null, "phone": null, "isVerified": true },
@@ -856,3 +919,7 @@ UNDER_REVIEW ──reject──▶ REJECTED        (DRAFT~SCHEDULING 에서 기�
 | 회원 가입 신청 (기업·기관 담당자) | 관리자 전원 | `USER_APPROVAL_REQUESTED` |
 | 가입 승인 / 거절 | 신청자 | `USER_APPROVED` / `USER_REJECTED` |
 | 장비 상태 확인 90일 경과 | 소속 기관 담당자 | `EQUIPMENT_UPDATE_REQUIRED` |
+
+- 알림 문구 (2026-11-24): 제목 앞에 의뢰번호(`[REQ-…]`)를 붙이지 않습니다. 어느 의뢰인지는 `relatedRequestId`(+ `linkPath`)로 연결합니다.
+  장비를 가진 쪽은 화면 용어대로 "시험기관"이라고 씁니다. 예: `"시험기관에서 추가 정보(책임자명·성적서 종류·시료 처리·청구 방법)를 요청했습니다."`
+  V17 마이그레이션이 이미 쌓인 알림 문구와 시연 의뢰 제목의 `[시연]` 말머리도 같은 방식으로 고쳤습니다 (데모 여부는 장비의 `isMock`)

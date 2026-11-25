@@ -4,7 +4,14 @@ import { Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
-import { DemoNotice } from "./workflow/Feedback";
+// 서버의 비교 규칙 코드를 사용자가 이해할 수 있는 말로 (명세: MAX_LIMIT·MIN_LIMIT·RANGE_WITHIN·NONE, 데모: LTE·GTE·WITHIN)
+const COMPARATOR_LABEL: Record<string, string> = {
+  MAX_LIMIT: "장비 최대값 이하여야 함", LTE: "장비 최대값 이하여야 함",
+  MIN_LIMIT: "장비 최소값 이상이어야 함", GTE: "장비 최소값 이상이어야 함",
+  RANGE_WITHIN: "장비 범위 안에 있어야 함", WITHIN: "장비 범위 안에 있어야 함",
+  NONE: "기관이 직접 확인",
+};
+
 export default function TestInformation({ setActiveMenu }) {
   const { testTypeCode, setTestTypeCode } = useWorkspace(),
     [selected, setSelected] = useState(testTypeCode || "VIBRATION");
@@ -19,11 +26,10 @@ export default function TestInformation({ setActiveMenu }) {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="TEST INFORMATION"
+        
         title="시험 정보 안내"
         description="시험에 필요한 조건과 수행기관을 확인하세요."
       />
-      <DemoNotice />
       <Panel className="form-panel">
         <FormField id="information-test-type" label="시험유형">
           <select
@@ -65,7 +71,7 @@ export default function TestInformation({ setActiveMenu }) {
                     <th>조건</th>
                     <th>필수 여부</th>
                     <th>단위</th>
-                    <th>비교 규칙</th>
+                    <th>장비와 비교하는 방법</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -73,11 +79,9 @@ export default function TestInformation({ setActiveMenu }) {
                     <tr key={rule.conditionKey}>
                       <td>{rule.label}</td>
                       <td>{rule.isRequired ? "필수" : "선택"}</td>
-                      <td>{rule.unit ?? "텍스트"}</td>
+                      <td>{rule.unit ?? "—"}</td>
                       <td>
-                        {rule.comparator === "NONE"
-                          ? "기관 확인"
-                          : rule.comparator}
+                        {COMPARATOR_LABEL[rule.comparator] ?? "기관 확인"}
                       </td>
                     </tr>
                   ))}

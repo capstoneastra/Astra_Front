@@ -1,0 +1,54 @@
+/*
+ * v14 — new 버전 색감 이식
+ * new v1·v2에서 고른 '중립 회색 + 파랑 하나' 색을 v13 전체(로그인 포함)에 적용합니다.
+ * 모양(카드·둥근 모서리·대시보드 그림 등)은 v13 그대로이고, 색 값만 바꿉니다.
+ * 상태색(초록·노랑·빨강·주황), 일정 분류 8색, 포스트잇 색은 v13 값을 그대로 씁니다.
+ */
+:root:not([data-theme="light"]) {
+  --bg: #121416; --sidebar: #17191c; --surface: #1a1d20; --surface-raised: #202327; --surface-sunken: #16181b; --surface-glass: #1a1d20ee;
+  --border: #2b2f34; --border-strong: #3a3f45;
+  --text: #e4e7ea; --text-secondary: #b3bac1; --text-muted: #8f979f;
+  --blue: #7fa8e6; --blue-soft: #1f2a3a; --blue-border: #34496a; --primary-hover: #9dbcf0; --primary-ink: #0f1a2b;
+  --cyan: #7fa8e6; --accent-background: #1f2a3a; --accent-border: #34496a;
+  --control-hover: #23272b;
+  --panel-background: linear-gradient(140deg, var(--surface-raised), var(--surface));
+  --panel-shadow: 0 8px 30px #00000018;
+  /* 대시보드 첫 칸 */
+  --hero-bg: linear-gradient(155deg, #1e2125 0%, #191c1f 58%, #15171a 100%);
+  --hero-dot: color-mix(in srgb, #c9d0d8 8%, transparent);
+  --hero-border: #2b2f34;
+  --hero-muted: #9aa3ac;
+  --hero-line: color-mix(in srgb, #c9d0d8 55%, transparent);
+  --hero-faint: color-mix(in srgb, #c9d0d8 22%, transparent);
+  --hero-accent: #7fa8e6;
+  --hero-ai-bg: #7fa8e6; --hero-ai-ink: #0f1a2b; --hero-ai-hover: #9dbcf0;
+}
+:root[data-theme="light"] {
+  --bg: #eef0f2; --sidebar: #f8f9fa; --surface: #ffffff; --surface-raised: #f4f5f7; --surface-sunken: #fafbfc; --surface-glass: #ffffffee;
+  --border: #dde1e5; --border-strong: #c6ccd2;
+  --text: #1d2226; --text-secondary: #4a535b; --text-muted: #6a737b;
+  --blue: #2457a6; --blue-soft: #eaf1fb; --blue-border: #b9cdea; --primary-hover: #1d4a8f; --primary-ink: #fff;
+  --cyan: #2457a6; --accent-background: #eaf1fb; --accent-border: #b9cdea;
+  --control-hover: #f1f3f5;
+  --panel-background: linear-gradient(135deg, var(--surface), #f8f9fb);
+  --panel-shadow: 0 6px 24px #1d22260d;
+  --hero-bg: linear-gradient(155deg, #f7f8fa 0%, #f1f3f5 58%, #eceef1 100%);
+  --hero-dot: color-mix(in srgb, #2d3a48 8%, transparent);
+  --hero-border: #dde1e5;
+  --hero-ink: #1d2226; --hero-muted: #5d6670;
+  --hero-line: color-mix(in srgb, #2d3a48 50%, transparent);
+  --hero-faint: color-mix(in srgb, #2d3a48 18%, transparent);
+  --hero-accent: #2457a6;
+  --hero-ai-bg: #2457a6; --hero-ai-ink: #ffffff; --hero-ai-hover: #1d4a8f;
+}
+/* AI 버튼 아이콘은 버튼 글자색을 따름 (파란 버튼 위에 파란 아이콘이 묻히지 않게) */
+.hero-ai svg, :root[data-theme="light"] .hero-ai svg { color: currentColor; }
+/* 그림자에 남아 있던 초록빛 → 중립 */
+:root[data-theme="light"] .ai-assistant { box-shadow: -12px 12px 55px #1d222624; }
+:root[data-theme="light"] .ai-launcher { box-shadow: 0 8px 28px #1d22261f; }
+:root[data-theme="light"] .sticky-note { box-shadow: 0 1px 0 #0000000f, 0 4px 10px #1d22261a; }
+:root[data-theme="light"] .qsearch__panel, :root[data-theme="light"] .sched-pop, :root[data-theme="light"] .compare-prompt { box-shadow: 0 16px 40px #1d222624; }
+:root[data-theme="light"] .qsearch.is-open .qsearch__field { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 18%, transparent), 0 12px 30px #1d22261f; }
+:root[data-theme="light"] .line-chart__tip { box-shadow: 0 8px 20px #1d22261c; }
+:root[data-theme="light"] .dialog { box-shadow: 0 30px 110px #1d222638; }
+:root[data-theme="light"] .dialog::backdrop { background: #1d222670; }

@@ -1,76 +1,85 @@
-import { useState } from "react";
-import { ArrowRight, FilePlus2, Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowRight, Building2, Check, Circle, Sparkles } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { requestService } from "../services/requestService";
 import { catalogService } from "../services/catalogService";
+import type { RequestContent } from "../services/contracts";
 import ConditionEditor from "./workflow/ConditionEditor";
 import { Feedback } from "./workflow/Feedback";
 import ApiState from "./ui/ApiState";
+import { requestStatusLabels } from "../domain/constants";
+import "../styles/request-form.css";
 
-export default function Reservation({ setActiveMenu }) {
+type Content = RequestContent & { notes?: string; test: RequestContent["test"] & { standard?: string } };
+
+/**
+ * 시험 의뢰서 작성.
+ * 피드백에 따라 '초안 저장' 단계를 없앴습니다. 새 의뢰는 화면에서 바로 작성하고
+ * [의뢰서 제출] 한 번으로 생성 → 내용 저장 → 제출이 이어서 처리됩니다.
+ * (AI 자동 작성 등으로 이미 만들어진 초안은 불러와서 이어서 작성할 수 있습니다.)
+ */
+export default function Reservation({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
   const {
-    testCondition,
-    setTestCondition,
-    selectedEquipment,
-    setSelectedEquipment,
-    equipmentList,
-    requirementId,
-    draftRequestId,
-    setDraftRequestId,
-    user,
+    testCondition, setTestCondition, selectedEquipment, setSelectedEquipment, equipmentList,
+    requirementId, draftRequestId, setDraftRequestId, user,
   } = useWorkspace();
-  const [editor, setEditor] = useState(null),
-    [reviewed, setReviewed] = useState(false),
-    action = useAction();
-  const query = useApiQuery(
-    (signal) => requestService.get(draftRequestId, signal),
-    `request:${draftRequestId}`,
-    Boolean(draftRequestId),
-  );
-  const draft = query.data,
-    content = editor ?? draft?.revision.content;
-  const rules = useApiQuery(
-    (signal) => catalogService.testType(content.test.testTypeCode, signal),
-    `test-type:${content?.test.testTypeCode}`,
-    Boolean(content?.test.testTypeCode),
-  );
-  const change = (section, key, value) => {
-    if (content) {
-      setEditor({
-        ...content,
-        [section]: { ...content[section], [key]: value },
-      });
-      setReviewed(false);
-    }
-  };
-  const candidateEquipment =
-    selectedEquipment &&
-    !equipmentList.some((item) => item.id === selectedEquipment.id)
-      ? [selectedEquipment, ...equipmentList]
-      : equipmentList;
+  const action = useAction();
+  const [reviewed, setReviewed] = useState(false);
+  const [editor, setEditor] = useState<Content | null>(null);
+  const query = useApiQuery((signal) => requestService.get(draftRequestId, signal), `request:${draftRequestId}`, Boolean(draftRequestId));
+  const draft = query.data;
+
   const organizationId = user.organization?.id;
-  const options = candidateEquipment.filter((equipment) => organizationId == null || equipment.institutionId !== organizationId);
-  const canStartDraft = selectedEquipment != null && options.some((equipment) => equipment.id === selectedEquipment.id);
+  const options = useMemo(() => {
+    const list = selectedEquipment && !equipmentList.some((item) => item.id === selectedEquipment.id)
+      ? [selectedEquipment, ...equipmentList] : equipmentList;
+    return list.filter((equipment) => organizationId == null || equipment.institutionId !== organizationId);
+  }, [equipmentList, organizationId, selectedEquipment]);
+  const equipment = draft?.equipment ? options.find((e) => e.id === draft.equipment.id) ?? null : selectedEquipment;
 
-  const handleEquipmentChange = (e) => {
-    const selectedId = parseInt(e.target.value);
-    const equipment = options.find((eq) => eq.id === selectedId);
-    setSelectedEquipment(equipment || null);
+  const blank: Content = useMemo(() => ({
+    applicant: { companyName: user.organization?.name ?? "", contactName: user.name ?? "", email: user.email ?? "", phone: user.phone ?? "" },
+    test: { testTypeCode: selectedEquipment?.testTypes?.[0], purpose: "", conditions: [] },
+    schedule: { desiredStartDate: null, desiredEndDate: null },
+    sample: { name: "", quantity: 1, readyDate: null },
+    conditions: [],
+    notes: testCondition,
+  }), [user, selectedEquipment, testCondition]);
+  const content: Content = editor ?? (draft?.revision.content as Content) ?? blank;
+  const testTypeCode = content.test.testTypeCode ?? equipment?.testTypes?.[0];
+  const rules = useApiQuery((signal) => catalogService.testType(testTypeCode, signal), `test-type:${testTypeCode}`, Boolean(testTypeCode));
+
+  const change = <K extends keyof Content>(section: K, key: string, value: unknown) => {
+    setEditor({ ...content, [section]: { ...(content[section] as object), [key]: value } });
+    setReviewed(false);
   };
 
-  const handleReservationSubmit = () => {
-    if (!draft || !reviewed || !content) return;
-    action.run(async (signal) => {
-      const saved = await requestService.save(
-        draft.id,
-        draft.version,
-        content,
-        signal,
-      );
-      await requestService.submit(draft.id, saved.version, signal);
+  const checklist = [
+    { label: "시험장비", done: Boolean(equipment) },
+    { label: "희망 시험일", done: Boolean(content.schedule.desiredStartDate) },
+    { label: "담당자 연락 정보", done: Boolean(content.applicant.companyName && content.applicant.contactName && content.applicant.email) },
+    { label: "시료 정보", done: Boolean(content.sample.name && content.sample.quantity) },
+    { label: "시험 목적", done: Boolean(content.test.purpose?.trim()) },
+  ];
+  const ready = checklist.every((item) => item.done);
+  const locked = draft != null && draft.status !== "DRAFT";
+
+  const submit = () => {
+    if (!ready || !reviewed || !equipment || locked) return;
+    void action.run(async (signal) => {
+      let id = draft?.id;
+      let version = draft?.version;
+      if (!id) {
+        const body = { equipmentId: equipment.id, ...(requirementId ? { requirementId } : {}) };
+        const created = requirementId ? await requestService.aiDraft(body, signal) : await requestService.create(body, signal);
+        id = created.requestId ?? created.id;
+        version = (await requestService.get(id, signal)).version;
+      }
+      const saved = await requestService.save(id, version, { ...content, test: { ...content.test, testTypeCode } }, signal);
+      await requestService.submit(id, saved.version, signal);
       setDraftRequestId(null);
       setSelectedEquipment(null);
       setTestCondition("");
@@ -78,310 +87,141 @@ export default function Reservation({ setActiveMenu }) {
     });
   };
 
+  const loadAiDraft = () => action.run(async (signal) => {
+    const result = await requestService.aiDraft({ equipmentId: equipment.id, requirementId }, signal);
+    setEditor(null);
+    setDraftRequestId(result.requestId ?? result.id);
+  });
+
+  const disabled = action.busy || locked;
+
   return (
-    <div className="content-page content-page--narrow page-enter">
-      <PageHeader
-        eyebrow="TEST REQUEST"
-        title="시험 의뢰하기"
-        description="필요한 장비와 시험조건을 정리해 의뢰를 준비하세요."
-      >
-        <Badge tone="cyan">
-          시험 의뢰 ·{" "}
-          {draft?.status ?? "초안 작성"}
-        </Badge>
+    <div className="content-page page-enter request-form-page">
+      <PageHeader title="시험 의뢰하기" description="필수 항목을 채우고 바로 제출하세요. 제출 후 보유기관이 검토합니다.">
+        {draft && <Badge tone="cyan">{requestStatusLabels[draft.status] ?? draft.status} · {draft.requestNo}</Badge>}
       </PageHeader>
-      <div className="content-note">
-        <Info size={16} />
-        <span>
-          입력한 정보를 확인하고 직접 제출해주세요.{" "}
-          초안 저장은 접수가 아니며, 예약은 기관 검토 이후 별도로 협의합니다.
-        </span>
-      </div>
-      <Panel className="form-panel">
-        <div className="form-section-heading">
-          <span>
-            <FilePlus2 size={18} />
-          </span>
-          <div>
-            <h2>시험 의뢰 신청서</h2>
-            <p>선택한 장비와 상담에서 정리한 시험조건이 자동으로 연결됩니다.</p>
-          </div>
+      <form className="request-form" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <div className="request-form__main">
+          <Panel className="request-form__section" title="1. 시험장비">
+            <div className="form-grid">
+              <FormField id="request-equipment" label="시험장비 *" className="form-field--full">
+                <select id="request-equipment" value={equipment?.id ?? ""} disabled={Boolean(draftRequestId) || disabled}
+                  onChange={(event) => {
+                    const next = options.find((item) => item.id === Number(event.target.value)) ?? null;
+                    setSelectedEquipment(next);
+                    if (editor) setEditor({ ...editor, test: { ...editor.test, testTypeCode: next?.testTypes?.[0] } });
+                  }}>
+                  <option value="" disabled>의뢰할 장비를 선택해주세요</option>
+                  {options.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.institution}</option>)}
+                </select>
+              </FormField>
+            </div>
+            {requirementId && !draftRequestId && equipment && (
+              <div className="request-form__ai">
+                <Sparkles size={16} aria-hidden="true" />
+                <span>AI 상담에서 정리한 조건으로 의뢰서를 자동으로 채울 수 있어요.</span>
+                <Button variant="secondary" disabled={action.busy} onClick={loadAiDraft}>AI로 채우기</Button>
+              </div>
+            )}
+          </Panel>
+
+          <Panel className="request-form__section" title="2. 일정·신청자">
+            <div className="form-grid">
+              <FormField id="request-date" label="희망 시험일 *" hint="기관과 협의 후 확정됩니다.">
+                <input id="request-date" type="date" value={content.schedule.desiredStartDate ?? ""} disabled={disabled}
+                  onChange={(e) => change("schedule", "desiredStartDate", e.target.value || null)} />
+              </FormField>
+              <FormField id="request-end-date" label="희망 종료일">
+                <input id="request-end-date" type="date" value={content.schedule.desiredEndDate ?? ""} disabled={disabled}
+                  min={content.schedule.desiredStartDate ?? undefined}
+                  onChange={(e) => change("schedule", "desiredEndDate", e.target.value || null)} />
+              </FormField>
+              <FormField id="request-company" label="기업명 *">
+                <input id="request-company" required value={content.applicant.companyName ?? ""} disabled={disabled}
+                  onChange={(e) => change("applicant", "companyName", e.target.value)} />
+              </FormField>
+              <FormField id="request-contact" label="담당자 *">
+                <input id="request-contact" required value={content.applicant.contactName ?? ""} disabled={disabled}
+                  onChange={(e) => change("applicant", "contactName", e.target.value)} />
+              </FormField>
+              <FormField id="request-email" label="이메일 *">
+                <input id="request-email" type="email" required value={content.applicant.email ?? ""} disabled={disabled}
+                  onChange={(e) => change("applicant", "email", e.target.value)} />
+              </FormField>
+              <FormField id="request-phone" label="연락처">
+                <input id="request-phone" value={content.applicant.phone ?? ""} disabled={disabled}
+                  onChange={(e) => change("applicant", "phone", e.target.value)} />
+              </FormField>
+            </div>
+          </Panel>
+
+          <Panel className="request-form__section" title="3. 시료·시험 내용">
+            <div className="form-grid">
+              <FormField id="request-sample" label="시료명 *">
+                <input id="request-sample" required value={content.sample.name ?? ""} disabled={disabled} placeholder="예: 6U 큐브위성 EM"
+                  onChange={(e) => change("sample", "name", e.target.value)} />
+              </FormField>
+              <FormField id="request-quantity" label="시료 수량 *">
+                <input id="request-quantity" type="number" min="1" step="1" required value={content.sample.quantity ?? ""} disabled={disabled}
+                  onChange={(e) => change("sample", "quantity", e.target.value === "" ? null : Number(e.target.value))} />
+              </FormField>
+              <FormField id="request-ready" label="시료 준비 완료일">
+                <input id="request-ready" type="date" value={content.sample.readyDate ?? ""} disabled={disabled}
+                  onChange={(e) => change("sample", "readyDate", e.target.value || null)} />
+              </FormField>
+              <FormField id="request-standard" label="시험 규격">
+                <input id="request-standard" value={content.test.standard ?? ""} disabled={disabled} placeholder="예: MIL-STD-810H, GEVS"
+                  onChange={(e) => change("test", "standard", e.target.value)} />
+              </FormField>
+              <FormField id="request-purpose" label="시험 목적 *" className="form-field--full">
+                <textarea id="request-purpose" required rows={3} value={content.test.purpose ?? ""} disabled={disabled}
+                  placeholder="예: 발사 인증 전 구조체 건전성 확인"
+                  onChange={(e) => change("test", "purpose", e.target.value)} />
+              </FormField>
+              <FormField id="request-condition" label="세부 시험조건" className="form-field--full">
+                <textarea id="request-condition" rows={4} value={content.notes ?? ""} disabled={disabled}
+                  placeholder="시험 대상, 시험 항목, 주파수·온도·하중 등"
+                  onChange={(e) => { setEditor({ ...content, notes: e.target.value }); setReviewed(false); }} />
+              </FormField>
+            </div>
+            {rules.data && (
+              <ConditionEditor rules={rules.data.conditionRules} conditions={content.conditions} disabled={disabled}
+                onChange={(conditions) => { setEditor({ ...content, conditions }); setReviewed(false); }} />
+            )}
+            {draftRequestId && (query.loading || query.error) && <ApiState loading={query.loading} error={query.error} onRetry={query.reload} />}
+          </Panel>
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleReservationSubmit();
-          }}
-        >
-          <div className="form-grid">
-            <FormField
-              id="request-equipment"
-              label="시험장비 *"
-              className="form-field--full"
-            >
-              <select
-                id="request-equipment"
-                value={draft?.equipment?.id ?? (canStartDraft ? selectedEquipment.id : "")}
-                disabled={Boolean(draftRequestId) || action.busy}
-                onChange={handleEquipmentChange}
-              >
-                <option value="" disabled>
-                  의뢰할 장비를 선택해주세요
-                </option>
-                {options.map((equip) => (
-                  <option key={equip.id} value={equip.id}>
-                    {equip.name}
-                  </option>
-                ))}
-              </select>
-              {!draftRequestId && (
-                <div className="form-actions">
-                  <Button
-                    disabled={!canStartDraft || action.busy}
-                    onClick={() =>
-                      action.run(async (signal) => {
-                        const body = {
-                          equipmentId: selectedEquipment.id,
-                          ...(requirementId ? { requirementId } : {}),
-                        };
-                        const result = requirementId
-                          ? await requestService.aiDraft(body, signal)
-                          : await requestService.create(body, signal);
-                        setDraftRequestId(result.requestId ?? result.id);
-                      })
-                    }
-                  >
-                    {requirementId ? "AI 의뢰서 초안 생성" : "의뢰서 작성 시작"}
-                  </Button>
-                </div>
-              )}
-            </FormField>
-            <FormField id="request-institution" label="보유기관">
-              <input
-                id="request-institution"
-                value={
-                  draft?.institution.name ??
-                  selectedEquipment?.institution ??
-                  ""
-                }
-                placeholder="장비를 선택하면 자동으로 표시됩니다"
-                disabled
-              />
-            </FormField>
-            <FormField
-              id="request-date"
-              label="희망 시험일 *"
-              hint="희망일이며, 실제 가능 일정은 기관 확인이 필요합니다."
-            >
-              <input
-                id="request-date"
-                type="date"
-                value={content?.schedule.desiredStartDate ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) =>
-                  change("schedule", "desiredStartDate", e.target.value || null)
-                }
-              />
-            </FormField>
-            <FormField id="request-end-date" label="희망 종료일">
-              <input
-                id="request-end-date"
-                type="date"
-                value={content?.schedule.desiredEndDate ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) =>
-                  change("schedule", "desiredEndDate", e.target.value || null)
-                }
-              />
-            </FormField>
-            <FormField id="request-company" label="기업명 *">
-              <input
-                id="request-company"
-                required
-                value={content?.applicant.companyName ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) =>
-                  change("applicant", "companyName", e.target.value)
-                }
-              />
-            </FormField>
-            <FormField id="request-contact" label="담당자 *">
-              <input
-                id="request-contact"
-                required
-                value={content?.applicant.contactName ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) =>
-                  change("applicant", "contactName", e.target.value)
-                }
-              />
-            </FormField>
-            <FormField id="request-email" label="이메일 *">
-              <input
-                id="request-email"
-                type="email"
-                required
-                value={content?.applicant.email ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) => change("applicant", "email", e.target.value)}
-              />
-            </FormField>
-            <FormField id="request-phone" label="연락처">
-              <input
-                id="request-phone"
-                value={content?.applicant.phone ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) => change("applicant", "phone", e.target.value)}
-              />
-            </FormField>
-            <FormField id="request-sample" label="시료명 *">
-              <input
-                id="request-sample"
-                required
-                value={content?.sample.name ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) => change("sample", "name", e.target.value)}
-              />
-            </FormField>
-            <FormField id="request-quantity" label="시료 수량 *">
-              <input
-                id="request-quantity"
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={content?.sample.quantity ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) =>
-                  change(
-                    "sample",
-                    "quantity",
-                    e.target.value === "" ? null : Number(e.target.value),
-                  )
-                }
-              />
-            </FormField>
-            <FormField id="request-ready" label="시료 준비 완료일">
-              <input
-                id="request-ready"
-                type="date"
-                value={content?.sample.readyDate ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) =>
-                  change("sample", "readyDate", e.target.value || null)
-                }
-              />
-            </FormField>
-            <FormField id="request-standard" label="시험 규격 (선택)">
-              <input
-                id="request-standard"
-                value={content?.test.standard ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) => change("test", "standard", e.target.value)}
-              />
-            </FormField>
-            <FormField
-              id="request-purpose"
-              label="시험 목적 *"
-              className="form-field--full"
-            >
-              <textarea
-                id="request-purpose"
-                required
-                rows={3}
-                value={content?.test.purpose ?? ""}
-                disabled={!content || action.busy}
-                onChange={(e) => change("test", "purpose", e.target.value)}
-              />
-            </FormField>
-            <FormField
-              id="request-condition"
-              label="세부 시험조건"
-              className="form-field--full"
-              hint="상담에서 정리한 조건을 확인하거나 직접 입력해 주세요."
-            >
-              <textarea
-                id="request-condition"
-                rows={5}
-                value={content?.notes ?? testCondition}
-                disabled={!content || action.busy}
-                onChange={(e) => {
-                  setEditor({ ...content, notes: e.target.value });
-                  setReviewed(false);
-                }}
-                placeholder="시험 대상, 시험항목, 주파수·하중 등의 조건을 입력해주세요."
-              />
-            </FormField>
-          </div>
-          {content && rules.data && (
-            <ConditionEditor
-              rules={rules.data.conditionRules}
-              conditions={content.conditions}
-              disabled={action.busy}
-              onChange={(conditions) => {
-                setEditor({ ...content, conditions });
-                setReviewed(false);
-              }}
-            />
-          )}
-          {draftRequestId && (query.loading || query.error) && (
-            <ApiState
-              loading={query.loading}
-              error={query.error}
-              onRetry={query.reload}
-            />
-          )}
-          {(rules.loading || rules.error) && (
-            <ApiState
-              loading={rules.loading}
-              error={rules.error}
-              onRetry={rules.reload}
-            />
-          )}
-          <Feedback action={action} onRetry={query.reload} />
-          {draft && (
-            <label>
-              <input
-                id="request-reviewed"
-                type="checkbox"
-                style={{ width: "auto" }}
-                checked={reviewed}
-                disabled={action.busy}
-                onChange={(e) => setReviewed(e.target.checked)}
-              />{" "}
-              의뢰 내용·미확인 조건을 검토했으며 직접 제출합니다.
+
+        <aside className="request-form__aside">
+          <Panel className="request-summary">
+            <div className="request-summary__equipment">
+              {equipment ? (
+                <>
+                  <strong>{equipment.name}</strong>
+                  <small><Building2 size={13} aria-hidden="true" />{equipment.institution}</small>
+                  {equipment.usage?.feeText && <small>이용료 {equipment.usage.feeText}</small>}
+                </>
+              ) : <small>장비를 선택하면 보유기관과 이용료가 표시됩니다.</small>}
+            </div>
+            <ul className="request-summary__checklist" aria-label="필수 항목">
+              {checklist.map((item) => (
+                <li key={item.label} className={item.done ? "is-done" : undefined}>
+                  {item.done ? <Check size={14} aria-hidden="true" /> : <Circle size={14} aria-hidden="true" />}
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+            <label className="request-summary__confirm">
+              <input type="checkbox" checked={reviewed} disabled={!ready || disabled} onChange={(e) => setReviewed(e.target.checked)} />
+              입력한 내용을 확인했습니다.
             </label>
-          )}
-          <div className="form-actions">
-            <p>* 필수 입력 · 제출 후 기관이 검토합니다.</p>
-            <Button
-              variant="secondary"
-              disabled={!draft || !content || action.busy}
-              onClick={() =>
-                action.run(async (signal) => {
-                  await requestService.save(
-                    draft.id,
-                    draft.version,
-                    content,
-                    signal,
-                  );
-                }, "초안을 저장했습니다. 아직 접수되지 않았습니다.")
-              }
-            >
-              초안 저장
+            <Button type="submit" icon={ArrowRight} className="button--full" disabled={!ready || !reviewed || disabled}>
+              {action.busy ? "제출 중…" : "의뢰서 제출"}
             </Button>
-            <Button
-              type="submit"
-              icon={ArrowRight}
-              disabled={
-                !draft || !reviewed || action.busy || draft.status !== "DRAFT"
-              }
-            >
-              의뢰서 제출
-            </Button>
-          </div>
-        </form>
-      </Panel>
+            <Feedback action={action} onRetry={query.reload} />
+          </Panel>
+        </aside>
+      </form>
     </div>
   );
 }
