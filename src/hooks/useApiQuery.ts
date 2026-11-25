@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { apiQueryKey } from "../api/cache";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { apiQueryKey, staleTimeFor } from "../api/cache";
 import { toApiError } from "../api/errors";
 
 export function useApiQuery<T>(
@@ -8,6 +8,8 @@ export function useApiQuery<T>(
   key: string,
   enabled = true,
   poll?: (data: T) => number | false,
+  /** true 면 조건이 바뀌어 새로 불러오는 동안 이전 결과를 그대로 보여 줌 (검색 목록이 깜빡이지 않게) */
+  keepPrevious = false,
 ) {
   const query = useQuery({
     queryKey: apiQueryKey(key),
@@ -19,6 +21,8 @@ export function useApiQuery<T>(
       }
     },
     enabled,
+    staleTime: staleTimeFor(key),
+    ...(keepPrevious ? { placeholderData: keepPreviousData } : {}),
     refetchInterval: (query) =>
       query.state.status === "success" && poll ? poll(query.state.data) : false,
     refetchIntervalInBackground: Boolean(poll),

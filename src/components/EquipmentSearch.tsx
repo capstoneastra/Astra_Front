@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -97,8 +97,9 @@ export default function EquipmentSearch({
   const includeMock = apiConfig.includeMock;
   const [sort, setSort] = useState(initialView?.sort ?? "externalId,asc");
   useEffect(() => {
-    onViewChange?.({ searchTerm, filterType, institutionId, page, regions, testType, availability: availabilityFilter, equipmentType, externalOnly, accreditedOnly, includeMock, sort });
-  }, [searchTerm, filterType, institutionId, page, regions, testType, availabilityFilter, equipmentType, externalOnly, accreditedOnly, includeMock, sort, onViewChange]);
+    // 입력 중인 글자(searchTerm)가 아니라 0.25초 멈춘 뒤의 검색어(queryTerm)만 저장 — 키마다 주소 이동·앱 전체 다시 그리기 방지
+    onViewChange?.({ searchTerm: queryTerm, filterType, institutionId, page, regions, testType, availability: availabilityFilter, equipmentType, externalOnly, accreditedOnly, includeMock, sort });
+  }, [queryTerm, filterType, institutionId, page, regions, testType, availabilityFilter, equipmentType, externalOnly, accreditedOnly, includeMock, sort, onViewChange]);
   const types = useApiQuery(
     (signal) => catalogService.testTypes(signal),
     "test-types",
@@ -137,12 +138,17 @@ export default function EquipmentSearch({
       return equipmentService.list({ q: institutionShortcut ? undefined : queryTerm, page, sort, ...filters }, signal);
     },
     JSON.stringify([user.id, queryTerm, page, sort, filterType, institutionShortcut, filters]),
+    true,
+    undefined,
+    true,
   );
   const filteredEquipment = listQuery.data?.content ?? [];
   const total = listQuery.data?.totalElements ?? 0;
   const totalPages = listQuery.data?.totalPages ?? 0;
   const state = listQuery;
-  const waiting = state.loading || (filterType !== "natural" && searchTerm.trim() !== queryTerm);
+  // 처음 불러올 때만 로딩 화면. 검색어·필터를 바꾸는 동안에는 이전 결과를 흐리게 유지
+  const waiting = state.loading;
+  const refreshing = state.refreshing || (filterType !== "natural" && searchTerm.trim() !== queryTerm);
   const submitSearch = () => {
     const term = searchTerm.trim();
     const sentence = /\d/.test(term) || term.split(/\s+/).filter(Boolean).length >= 3;
@@ -170,9 +176,9 @@ export default function EquipmentSearch({
     }
   };
 
-  const allRegions = [...new Set(equipmentList.map((e) => e.region).filter(Boolean))].sort((x, y) => x.localeCompare(y, "ko"));
-  const institutions = [...new Map(equipmentList.filter((e) => e.institutionId).map((e) => [e.institutionId, e.institution])).entries()]
-    .sort((x, y) => String(x[1]).localeCompare(String(y[1]), "ko"));
+  const allRegions = useMemo(() => [...new Set(equipmentList.map((e) => e.region).filter(Boolean))].sort((x, y) => x.localeCompare(y, "ko")), [equipmentList]);
+  const institutions = useMemo(() => [...new Map(equipmentList.filter((e) => e.institutionId).map((e) => [e.institutionId, e.institution])).entries()]
+    .sort((x, y) => String(x[1]).localeCompare(String(y[1]), "ko")), [equipmentList]);
   const popular = [...(types.data ?? [])].filter((t) => (t.equipmentCount ?? 0) > 0)
     .sort((x, y) => (y.equipmentCount ?? 0) - (x.equipmentCount ?? 0)).slice(0, 8);
   const filtersActive = Boolean(regions.length || institutionId || testType || availabilityFilter || equipmentType || externalOnly || accreditedOnly);
@@ -231,7 +237,7 @@ export default function EquipmentSearch({
         )}
       </section>
       {/* v16: 필터·결과 줄·장비 목록·페이지를 한 판(eq-board)으로 합침 */}
-      <div className="eq-board">
+      <div className={`eq-board${refreshing && !waiting ? " is-refreshing" : ""}`} aria-busy={refreshing || undefined}>
         <div className="eq-filterbar">
           <div className="eq-filterbar__row">
             <label className="sr-only" htmlFor="equipment-test-type">시험 종류</label>

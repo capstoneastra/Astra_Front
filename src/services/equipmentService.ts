@@ -174,8 +174,11 @@ export const equipmentService = {
         "전체 목록이 너무 큽니다. 서버 페이지 검색을 이용해주세요.",
       );
     const items = [...first.content];
-    for (let page = 1; page < first.totalPages; page++) {
-      const next = await this.list({ page }, signal);
+    // 나머지 페이지는 순서대로 기다리지 않고 한꺼번에 요청 (17번 연속 대기 → 2번)
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, first.totalPages - 1) }, (_, i) => this.list({ page: i + 1 }, signal)),
+    );
+    for (const next of rest) {
       if (next.totalElements !== first.totalElements)
         throw contractError(
           "장비 목록이 조회 중 변경되었습니다. 다시 조회해주세요.",

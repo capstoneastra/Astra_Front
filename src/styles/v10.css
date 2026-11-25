@@ -211,9 +211,9 @@
 }
 
 /* ── 한 화면 대시보드: 첫 칸을 키우고 아래 칸은 남은 높이 안에서 압축 ── */
-@media (min-width: 1024px) and (min-height: 680px) {
+@media (min-width: 1024px) and (min-height: 600px) {
   /* v11: 첫 칸을 키우되(최대 480px), 낮은 화면에서는 아래 칸에 최소 420px을 남깁니다 */
-  .work-dashboard > .hero { height: clamp(290px, min(48vh, 100dvh - 420px), 480px); }
+  .work-dashboard > .hero { height: clamp(220px, min(48vh, 100dvh - 420px), 480px); }
 
   .work-dashboard .dash-fill .dash-section .panel__header { padding: 10px 16px 4px; }
   .work-dashboard .dash-fill .dash-section .panel__header h2 { font-size: var(--fs-md); }

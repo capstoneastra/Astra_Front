@@ -41,6 +41,9 @@ import "./styles/v9.css";
 import "./styles/v10.css";
 import "./styles/palette.css";
 
+/** 장비 목록을 불러오는 동안 쓰는 빈 배열 — 렌더마다 새 []를 만들면 이를 쓰는 memo 가 매번 다시 계산됨 */
+const EMPTY_EQUIPMENT: Equipment[] = [];
+
 function Workspace() {
   const { user } = useAuth();
   const workspaceNavigation = useWorkspaceNavigation(
@@ -84,7 +87,7 @@ function Workspace() {
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
   );
-  const equipmentList = catalogQuery.data ?? [];
+  const equipmentList = catalogQuery.data ?? EMPTY_EQUIPMENT;
   // 헤더 자동 완성 후보: 장비·기관·시험 종류 (관리자는 기관만)
   const searchSources = useMemo<SearchSuggestion[]>(() => {
     const orgs = new Map<number, { name: string; region?: string; count: number }>();

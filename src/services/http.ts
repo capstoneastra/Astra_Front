@@ -10,6 +10,6 @@ export async function mutate<T = unknown>(method: Method, path: string, data: un
   const result = responseData<T>(
     await apiClient.request({ method, url: path, data, signal }),
   );
-  invalidateData();
+  invalidateData(path);
   return result;
 }

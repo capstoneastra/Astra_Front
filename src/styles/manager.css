@@ -93,3 +93,8 @@
   .mgr-row > .mgr-row__op { grid-column: 1; grid-row: 2; justify-content: flex-start; padding-left: 24px; }
   .mgr-row > .mgr-row__check { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 }
+
+/* 1181~1230px에서 표가 칸보다 넓어 오른쪽 수정·삭제 아이콘이 잘리던 문제 — 가운데 열들이 줄어들 수 있게 */
+@media (min-width: 1181px) {
+  .mgr-table { --mgr-cols: minmax(180px, 2fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1fr) minmax(0, .9fr) 84px; }
+}

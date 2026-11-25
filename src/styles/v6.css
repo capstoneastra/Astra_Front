@@ -162,15 +162,15 @@
 @media (prefers-reduced-motion: reduce) { .qsearch, .qsearch__field, .qsearch__panel { transition: none; } }
 
 /* ── v7: 대시보드를 스크롤 없이 한 화면에 ───────────────────────────
- * 데스크톱(가로 1024 / 세로 680 이상)에서는 대시보드 높이를 화면에 맞추고,
+ * 데스크톱·노트북(가로 1024 / 세로 600 이상 — 1366×768, 150% 배율 노트북 포함)에서는 대시보드 높이를 화면에 맞추고,
  * 마지막 줄(.dash-fill)이 남은 높이를 채운 뒤 카드 안에서만 스크롤합니다.
  * 내용이 적으면 카드도 짧게(빈 공간 X), 많으면 페이지 대신 카드 안에서 넘김.
  */
-@media (min-width: 1024px) and (min-height: 680px) {
+@media (min-width: 1024px) and (min-height: 600px) {
   .work-dashboard {
     display: flex !important; flex-direction: column; gap: var(--stack);
     height: calc(100dvh - var(--header-h) - var(--page-pad-top) - var(--page-pad-bottom));
-    min-height: 560px;
+    min-height: 480px;
   }
   .work-dashboard > * { flex-shrink: 0; }
   .work-dashboard > .dash-fill { flex: 1 1 0; min-height: 0; align-items: stretch; }

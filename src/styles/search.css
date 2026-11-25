@@ -223,3 +223,13 @@
 
 /* 시험유형이 없는 장비(가공·지원 등)·사양 미등록 — 빈칸 대신 옅은 글자로 */
 .eq-row__muted { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 400; }
+
+/* 검색어·필터를 바꾸는 동안 이전 결과를 흐리게 유지 (목록을 지웠다 다시 그리지 않음) */
+.eq-board .eq-list, .eq-board .eq-board__state { transition: opacity .18s ease; }
+.eq-board.is-refreshing .eq-list { opacity: .55; }
+
+/* 1281~1360px(예: 1680px 모니터 125% 배율 + 사이드바 펼침)에서 표가 칸보다 넓어 오른쪽 '의뢰' 버튼이 잘리던 문제
+   — 사양·이름 열이 줄어들 수 있게(최소 0) 하고, 버튼 열은 내용 너비만큼 */
+@media (min-width: 1281px) {
+  .eq-list { --eq-cols: 34px minmax(150px, 1.2fr) minmax(96px, .75fr) 100px minmax(0, 1.8fr) 100px max-content; }
+}
