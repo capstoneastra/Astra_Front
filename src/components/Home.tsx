@@ -261,7 +261,7 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
             {!loading && (
               <div className="dash-tasks__foot" aria-label="이번 주 요약">
                 <span><b>{weekCount}</b>건 이번 주 시험 예정</span>
-                {staleCount > 0 && <button type="button" onClick={openManager}><b>{staleCount}</b>대 장비 정보 갱신 필요</button>}
+                {staleCount > 0 && <button type="button" onClick={() => openManager(true)}><b>{staleCount}</b>대 장비 정보 갱신 필요</button>}
               </div>
             )}
           </Section>
