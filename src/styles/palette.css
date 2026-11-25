@@ -47,7 +47,7 @@
 :root[data-theme="light"] .ai-assistant { box-shadow: -12px 12px 55px #1d222624; }
 :root[data-theme="light"] .ai-launcher { box-shadow: 0 8px 28px #1d22261f; }
 :root[data-theme="light"] .sticky-note { box-shadow: 0 1px 0 #0000000f, 0 4px 10px #1d22261a; }
-:root[data-theme="light"] .qsearch__panel, :root[data-theme="light"] .sched-pop, :root[data-theme="light"] .compare-prompt { box-shadow: 0 16px 40px #1d222624; }
+:root[data-theme="light"] .qsearch__panel, :root[data-theme="light"] .compare-prompt { box-shadow: 0 16px 40px #1d222624; }
 :root[data-theme="light"] .qsearch.is-open .qsearch__field { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 18%, transparent), 0 12px 30px #1d22261f; }
 :root[data-theme="light"] .line-chart__tip { box-shadow: 0 8px 20px #1d22261c; }
 :root[data-theme="light"] .dialog { box-shadow: 0 30px 110px #1d222638; }

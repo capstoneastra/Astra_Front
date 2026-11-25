@@ -158,11 +158,13 @@
 @media (prefers-reduced-motion: reduce) { .qsearch, .qsearch__field, .qsearch__panel { transition: none; } }
 
 /* ── v7: 대시보드를 스크롤 없이 한 화면에 ───────────────────────────
- * 데스크톱·노트북(가로 1024 / 세로 600 이상 — 1366×768, 150% 배율 노트북 포함)에서는 대시보드 높이를 화면에 맞추고,
+ * 데스크톱·노트북(가로 1024 / 세로 720 이상)에서는 대시보드를 한 화면에 맞춥니다.
+ * 그보다 낮은 화면(1366×768 노트북, 150% 배율 등)에서는 카드가 너무 작아져 읽기 어려우므로 페이지 스크롤로 둡니다.
+ * 한 화면일 때는 대시보드 높이를 화면에 맞추고,
  * 마지막 줄(.dash-fill)이 남은 높이를 채운 뒤 카드 안에서만 스크롤합니다.
  * 내용이 적으면 카드도 짧게(빈 공간 X), 많으면 페이지 대신 카드 안에서 넘김.
  */
-@media (min-width: 1024px) and (min-height: 600px) {
+@media (min-width: 1024px) and (min-height: 720px) {
   .work-dashboard {
     display: flex !important; flex-direction: column; gap: var(--stack);
     height: calc(var(--vh-full) - var(--header-h) - var(--page-pad-top) - var(--page-pad-bottom));
