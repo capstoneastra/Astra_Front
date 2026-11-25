@@ -10,7 +10,6 @@ import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
 import { seoulDate } from "../domain/calendar";
 import type { RequestBox, RequestSummary } from "../services/contracts";
-import "../styles/requests.css";
 
 /** 상태 묶음 — 목록 상단의 탭(칩)으로 표시합니다. */
 const groups: { id: string; label: string; statuses: string[] }[] = [

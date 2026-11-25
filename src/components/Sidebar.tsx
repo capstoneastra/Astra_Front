@@ -4,6 +4,7 @@ import { menuLabel, navigation, parentMenu } from "../data/navigation";
 import { useAuth } from "../auth/context";
 import { canAccessMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
+import { appZoom } from "../theme/appZoom";
 import AstraBrand from "./ui/AstraBrand";
 
 export default function Sidebar({
@@ -95,8 +96,10 @@ export default function Sidebar({
     if (!collapsed || open) return;
     hideHint();
     const show = () => {
+      // 큰 화면 배율(zoom) 중에는 측정값이 확대돼 있으므로 CSS px 로 되돌림
+      const zoom = appZoom();
       const { top, height } = button.getBoundingClientRect();
-      setHint({ label, top: Math.max(18, Math.min(window.innerHeight - 18, top + height / 2)) });
+      setHint({ label, top: Math.max(18, Math.min(window.innerHeight / zoom - 18, (top + height / 2) / zoom)) });
     };
     if (keyboard) show();
     else hintTimer.current = window.setTimeout(show, 320);

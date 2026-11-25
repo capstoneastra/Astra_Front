@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ArrowRight, FileText, Plus, Sparkles, X } from "lucide-react";
 import type { HeroFile } from "../../domain/quickPrefill";
 
@@ -175,6 +175,24 @@ function RegisterArt() {
 const READABLE = /\.(txt|csv|md|json|tsv)$/i;
 const MAX_FILES = 5;
 
+/** 장식 그림 칸 — 화면 밖으로 스크롤됐거나 탭이 가려져 있으면 애니메이션을 멈춰 다시 그리는 비용을 없앰 */
+function HeroArt({ children }: { children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    let visible = true;
+    const sync = () => { el.dataset.paused = visible && !document.hidden ? "false" : "true"; };
+    const observer = "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); })
+      : null;
+    observer?.observe(el);
+    document.addEventListener("visibilitychange", sync);
+    return () => { observer?.disconnect(); document.removeEventListener("visibilitychange", sync); };
+  }, []);
+  return <div ref={box} className="hero__art">{children}</div>;
+}
+
 function useHeroFiles() {
   const [files, setFiles] = useState<HeroFile[]>([]);
   const add = async (list: FileList | null) => {
@@ -232,7 +250,7 @@ export function RequestHero({ popular, onSearch, onAiRequest }: {
         <h2 id="hero-request-title">어떤 시험이 필요하세요?</h2>
         <p>시험 이름·장비·조건으로 찾거나, 말로 설명하면 AI가 조건·장비·의뢰서까지 차례로 도와 드려요.</p>
       </div>
-      <div className="hero__art"><RequestArt /></div>
+      <HeroArt><RequestArt /></HeroArt>
       <div className="hero__dock">
         <form className="hero-input" role="search" onSubmit={(e) => { e.preventDefault(); onSearch(query.trim()); }}>
           <FileTabs files={files} onRemove={remove} hint="AI 간편 의뢰에 함께 전달돼요" />
@@ -276,7 +294,7 @@ export function RegisterHero({ stats, onRegister, onOpenManager }: {
           <button type="button" className={stats.stale ? "is-warn" : undefined} onClick={() => onOpenManager(true)}>정보 갱신 필요 <b>{stats.stale}</b></button>
         </div>
       </div>
-      <div className="hero__art"><RegisterArt /></div>
+      <HeroArt><RegisterArt /></HeroArt>
       <div className="hero__dock">
         {/* v12: 여러 줄 입력칸이 포커스 때 늘어나 그림·문구를 밀던 문제 → 시험 검색칸과 같은 한 줄 입력칸 */}
         <form className="hero-input" onSubmit={(e) => { e.preventDefault(); submit(); }}>

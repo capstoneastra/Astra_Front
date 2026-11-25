@@ -11,7 +11,6 @@ import ConditionEditor from "./workflow/ConditionEditor";
 import { Feedback } from "./workflow/Feedback";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
-import "../styles/request-form.css";
 
 type Content = RequestContent & { notes?: string; test: RequestContent["test"] & { standard?: string } };
 

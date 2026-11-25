@@ -27,7 +27,6 @@ import { needsUpdate } from "./dashboard/ProviderParts";
 import { FlowStack, VerificationRing, useAdminInsights } from "./dashboard/AdminInsights";
 import BarChart from "./dashboard/BarChart";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
-import "../styles/dashboard.css";
 
 interface HomeProps {
   view: DashboardView;

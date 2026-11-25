@@ -1,6 +1,5 @@
 import { PageHeader } from "./ui/index";
 import QuickSimulation from "./simulation/QuickSimulation";
-import "../styles/quick-sim.css";
 
 /**
  * 가상 시뮬레이션 (v9)

@@ -24,7 +24,7 @@ export default function TestInformation({ setActiveMenu }) {
     `test-type:${selected}`,
   );
   return (
-    <div className="content-page page-enter">
+    <div className="content-page content-page--reading page-enter">
       <PageHeader
         
         title="시험 정보 안내"

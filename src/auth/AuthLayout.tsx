@@ -2,7 +2,6 @@ import { Link, Outlet, useLocation } from "react-router";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import AstraBrand from "../components/ui/AstraBrand";
 import LoginOrbit from "./LoginOrbit";
-import "./login.css";
 
 // v9: 로그인 화면의 '이용 안내' 버튼과 안내 화면을 삭제했습니다.
 export default function AuthLayout() {

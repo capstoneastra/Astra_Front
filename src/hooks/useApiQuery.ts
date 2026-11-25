@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiQueryKey, staleTimeFor } from "../api/cache";
 import { toApiError } from "../api/errors";
@@ -37,12 +37,11 @@ export function useApiQuery<T>(
   let status: "idle" | "loading" | "ready" | "error" = "idle";
   if (enabled) status = waiting ? "loading" : error ? "error" : "ready";
 
-  return {
-    status,
-    data,
-    error,
-    loading: waiting && data === null,
-    refreshing: waiting && data !== null,
-    reload,
-  };
+  const loading = waiting && data === null;
+  const refreshing = waiting && data !== null;
+  // 값이 같으면 같은 객체를 돌려줌 — 이 결과를 context·memo 에 넣어도 렌더마다 바뀌지 않게
+  return useMemo(
+    () => ({ status, data, error, loading, refreshing, reload }),
+    [status, data, error, loading, refreshing, reload],
+  );
 }

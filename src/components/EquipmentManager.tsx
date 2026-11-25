@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useDeferredValue, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ChevronDown, Database, Pencil, Search, Trash2 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
@@ -8,25 +8,29 @@ import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
-import { testTypeLabel } from "../services/equipmentService";
+import { specLabel, testTypeLabel } from "../services/equipmentService";
+import { useApiQuery } from "../hooks/useApiQuery";
 import type { Equipment } from "../services/equipmentService";
 import { valueText } from "../domain/constants";
 import { needsUpdate } from "./dashboard/ProviderParts";
-import "../styles/manager.css";
 
 const OPERATION: Record<string, [string, string]> = { AVAILABLE: ["운영 중", "green"], LIMITED: ["일정 제한", "amber"], MAINTENANCE: ["점검 중", "red"] };
 const operation = (item: Equipment) => OPERATION[item.availability ?? item.usage?.availability ?? ""] ?? ["상태 미등록", "neutral"];
 type StatusFilter = "all" | "AVAILABLE" | "LIMITED" | "MAINTENANCE" | "stale";
+/** 한 번에 그리는 행 수 — 관리자는 전체 장비(수백 대)를 보므로 나눠서 그림 */
+const PAGE_ROWS = 50;
+const availabilityOf = (e: Equipment) => e.availability ?? e.usage?.availability;
 
 export default function EquipmentManager() {
   const { equipmentList, user, catalogQuery } = useWorkspace();
   const admin = user.role === "ADMIN";
-  const managedEquipment =
-    user.role === "INSTITUTION_MANAGER"
-      ? equipmentList.filter(
-          (item) => item.institutionId === user.organization?.id,
-        )
-      : equipmentList;
+  const orgId = user.organization?.id;
+  const managedEquipment = useMemo(
+    () => user.role === "INSTITUTION_MANAGER" ? equipmentList.filter((item) => item.institutionId === orgId) : equipmentList,
+    [equipmentList, user.role, orgId],
+  );
+  // 시험유형 한글 이름표 (5분 캐시 — 다른 화면에서 이미 받았으면 요청 없음)
+  useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
   const [open, setOpen] = useState<number | null>(null);
   // 대시보드의 '정보 갱신 필요'를 눌러 들어오면 해당 장비만 먼저 보여줍니다.
   const [status, setStatus] = useState<StatusFilter>(() => {
@@ -36,21 +40,31 @@ export default function EquipmentManager() {
       return saved === "stale" ? "stale" : "all";
     } catch { return "all"; }
   });
-  const now = Date.now();
-  const stale = (item: Equipment) => needsUpdate(item, now).reasons.length > 0;
-  const statusCounts: { key: StatusFilter; label: string; count: number }[] = [
-    { key: "all", label: "전체", count: managedEquipment.length },
-    { key: "AVAILABLE", label: "운영 중", count: managedEquipment.filter((e) => (e.availability ?? e.usage?.availability) === "AVAILABLE").length },
-    { key: "LIMITED", label: "일정 제한", count: managedEquipment.filter((e) => (e.availability ?? e.usage?.availability) === "LIMITED").length },
-    { key: "MAINTENANCE", label: "점검 중", count: managedEquipment.filter((e) => (e.availability ?? e.usage?.availability) === "MAINTENANCE").length },
-    { key: "stale", label: "정보 갱신 필요", count: managedEquipment.filter(stale).length },
-  ];
+  const [now] = useState(() => Date.now());
+  // 장비마다 '갱신 필요' 판정은 한 번만 계산해 두고 재사용 (키 입력마다 수백 대를 다시 계산하지 않음)
+  const checks = useMemo(() => new Map(managedEquipment.map((e) => [e.id, needsUpdate(e, now)])), [managedEquipment, now]);
+  const statusCounts = useMemo<{ key: StatusFilter; label: string; count: number }[]>(() => {
+    const count = (state: string) => managedEquipment.filter((e) => availabilityOf(e) === state).length;
+    return [
+      { key: "all", label: "전체", count: managedEquipment.length },
+      { key: "AVAILABLE", label: "운영 중", count: count("AVAILABLE") },
+      { key: "LIMITED", label: "일정 제한", count: count("LIMITED") },
+      { key: "MAINTENANCE", label: "점검 중", count: count("MAINTENANCE") },
+      { key: "stale", label: "정보 갱신 필요", count: managedEquipment.filter((e) => (checks.get(e.id)?.reasons.length ?? 0) > 0).length },
+    ];
+  }, [managedEquipment, checks]);
   // v10: 시험 의뢰 관리처럼 오른쪽 위 검색 — 장비명·모델·장비번호·시험 종류로 찾기
   const [keyword, setKeyword] = useState("");
-  const term = keyword.trim().toLowerCase().replace(/\s+/g, "");
-  const matches = (e: Equipment) => !term || [e.name, e.model, e.externalId, e.testItem]
-    .filter(Boolean).join(" ").toLowerCase().replace(/\s+/g, "").includes(term);
-  const visible = managedEquipment.filter((e) => (status === "all" || (status === "stale" ? stale(e) : (e.availability ?? e.usage?.availability) === status)) && matches(e));
+  // 입력은 바로 반영하고, 목록 거르기는 한 박자 늦게 (입력이 버벅이지 않게)
+  const deferredKeyword = useDeferredValue(keyword);
+  const term = deferredKeyword.trim().toLowerCase().replace(/\s+/g, "");
+  const [limit, setLimit] = useState(PAGE_ROWS);
+  const visible = useMemo(() => {
+    const matches = (e: Equipment) => !term || [e.name, e.model, e.externalId, e.testItem]
+      .filter(Boolean).join(" ").toLowerCase().replace(/\s+/g, "").includes(term);
+    return managedEquipment.filter((e) => (status === "all" || (status === "stale" ? (checks.get(e.id)?.reasons.length ?? 0) > 0 : availabilityOf(e) === status)) && matches(e));
+  }, [managedEquipment, checks, status, term]);
+  const shown = visible.slice(0, limit);
   const [editing, setEditing] = useState(null),
     action = useAction();
   const handleDelete = (id) => {
@@ -71,7 +85,7 @@ export default function EquipmentManager() {
         <div className="manager-status" role="group" aria-label="장비 상태로 보기">
           {statusCounts.map((item) => (
             <button type="button" key={item.key} aria-pressed={status === item.key} disabled={catalogQuery.status !== "ready"}
-              className={item.key === "stale" && item.count ? "is-attention" : undefined} onClick={() => { setStatus(item.key); setOpen(null); }}>
+              className={item.key === "stale" && item.count ? "is-attention" : undefined} onClick={() => { setStatus(item.key); setOpen(null); setLimit(PAGE_ROWS); }}>
               {item.label}<b>{catalogQuery.status === "ready" ? item.count : "—"}</b>
             </button>
           ))}
@@ -79,7 +93,7 @@ export default function EquipmentManager() {
         <label className="mgr-search">
           <Search size={15} aria-hidden="true" />
           <span className="sr-only">{admin ? "등록 장비 검색" : "보유 장비 검색"}</span>
-          <input type="search" value={keyword} onChange={(e) => { setKeyword(e.target.value); setOpen(null); }} placeholder="장비명·모델·번호 검색" />
+          <input type="search" value={keyword} onChange={(e) => { setKeyword(e.target.value); setOpen(null); setLimit(PAGE_ROWS); }} placeholder="장비명·모델·번호 검색" />
         </label>
       </div>
       {catalogQuery.loading || catalogQuery.error ? (
@@ -94,9 +108,9 @@ export default function EquipmentManager() {
             <span role="columnheader">이용료</span>
             <span role="columnheader"><span className="sr-only">작업</span></span>
           </div>
-          {visible.map((equip, index) => {
+          {shown.map((equip, index) => {
             const [opLabel, opTone] = operation(equip);
-            const check = needsUpdate(equip, now);
+            const check = checks.get(equip.id) ?? needsUpdate(equip, now);
             const expanded = open === equip.id;
             return (
               <Fragment key={equip.id}>
@@ -106,7 +120,9 @@ export default function EquipmentManager() {
                     <ChevronDown size={15} aria-hidden="true" className="mgr-row__chevron" />
                     <span><strong>{equip.name}</strong><small>{[equip.model, equip.externalId].filter(Boolean).join(" · ") || "모델 미입력"}</small></span>
                   </button>
-                  <span role="cell" className="mgr-row__types">{equip.testTypes.map((code) => <span key={code} className="type-chip">{testTypeLabel(code)}</span>)}</span>
+                  <span role="cell" className="mgr-row__types">{equip.testTypes.length
+                    ? equip.testTypes.map((code) => <span key={code} className="type-chip">{testTypeLabel(code)}</span>)
+                    : <span className="mgr-row__muted">—</span>}</span>
                   <span role="cell" className="mgr-row__op"><span className={`status-chip status-chip--${opTone}`}><i aria-hidden="true" />{opLabel}</span></span>
                   <span role="cell" className="mgr-row__check">
                     {check.reasons.length ? <span className="warn-chip" title={check.reasons.join(", ")}>갱신 필요</span> : <span className="ok-chip">최신</span>}
@@ -126,7 +142,7 @@ export default function EquipmentManager() {
                         <dl className="mgr-specs">
                           {equip.specs.map((spec) => (
                             <div key={spec.key}>
-                              <dt>{spec.label ?? spec.key}</dt>
+                              <dt>{specLabel(spec)}</dt>
                               <dd>{valueText(spec)}{spec.verificationStatus !== "CONFIRMED" && <em>미확인</em>}</dd>
                             </div>
                           ))}
@@ -158,6 +174,13 @@ export default function EquipmentManager() {
               </Fragment>
             );
           })}
+          {visible.length > shown.length && (
+            <div className="mgr-more">
+              <Button variant="secondary" onClick={() => setLimit((n) => n + PAGE_ROWS)}>
+                더 보기 <small>{shown.length} / {visible.length}대</small>
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <Panel>

@@ -42,7 +42,7 @@
   right: 20px;
   bottom: 94px;
   z-index: 70;
-  width: min(560px, calc(100vw - 40px));
+  width: min(560px, calc(var(--vw-full) - 40px));
   display: flex;
   flex-direction: column;
   min-height: 0;

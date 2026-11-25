@@ -3,7 +3,8 @@
  * 가상 시뮬레이션(.sim-card)의 모양을 그대로 쓰고, 왼쪽 단계 · 가운데 작업 · 오른쪽 '지금까지 정한 것' 3단으로 배치합니다.
  */
 .qr-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr) 300px; gap: var(--stack); align-items: start; }
-@media (max-width: 1280px) { .qr-layout { grid-template-columns: 200px minmax(0, 1fr); } .qr-summary { grid-column: 2; } }
+/* 1281~1400px 에서 가운데 작업 칸이 450px 정도로 좁아지던 문제 — 오른쪽 요약을 아래로 내리는 기준을 1400px 로 */
+@media (max-width: 1400px) { .qr-layout { grid-template-columns: 200px minmax(0, 1fr); } .qr-summary { grid-column: 2; } }
 @media (max-width: 900px) { .qr-layout { grid-template-columns: minmax(0, 1fr); } .qr-summary { grid-column: auto; } }
 
 /* 왼쪽 단계 */

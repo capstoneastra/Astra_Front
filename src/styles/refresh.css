@@ -8,7 +8,7 @@
 :root {
   --page-max: 1640px;
   --gutter: clamp(16px, 2.2vw, 40px);
-  --gutter-x: max(var(--gutter), calc((100vw - var(--sidebar-width) - var(--page-max)) / 2));
+  --gutter-x: max(var(--gutter), calc((var(--vw-full) - var(--sidebar-width) - var(--page-max)) / 2));
   --header-h: 58px;
   --page-pad-top: clamp(16px, 1.8vw, 28px);
   --page-pad-bottom: clamp(20px, 2.2vw, 36px);
@@ -20,7 +20,7 @@
   --fs-h1: clamp(22px, 0.9vw + 13px, 31px);
   --ease-out: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
-.app-shell { --gutter-x: max(var(--gutter), calc((100vw - var(--sidebar-width) - var(--page-max)) / 2)); }
+.app-shell { --gutter-x: max(var(--gutter), calc((var(--vw-full) - var(--sidebar-width) - var(--page-max)) / 2)); }
 @media (max-width: 1023px) {
   :root, .app-shell { --gutter-x: var(--gutter); }
 }
@@ -29,7 +29,7 @@ body { font-size: var(--fs-md); }
 html { scroll-padding-top: calc(var(--header-h) + 12px); }
 
 /* ── 셸: 헤더 고정, 동일한 좌우 여백 ─────────────────────────────── */
-.app-body { min-height: 100dvh; }
+.app-body { min-height: var(--vh-full); }
 .app-header {
   position: sticky;
   top: 0;
@@ -37,7 +37,8 @@ html { scroll-padding-top: calc(var(--header-h) + 12px); }
   min-height: var(--header-h);
   --app-header-inline: var(--gutter-x);
   padding-inline: var(--gutter-x);
-  backdrop-filter: blur(14px);
+  /* 흐림(backdrop-filter)은 스크롤할 때마다 뒤 내용을 다시 흐리게 계산해 저사양 노트북에서 버벅임 → 뺌.
+     배경(--surface-glass)이 이미 93~94% 불투명이라 보이는 차이는 거의 없음 */
 }
 .main-content,
 .main-content:is(*) {
@@ -135,7 +136,7 @@ td small { font-size: var(--fs-xs); }
 .header-account .user-avatar[aria-expanded="true"] { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 22%, transparent); }
 .profile-menu {
   position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
-  width: min(300px, calc(100vw - 24px));
+  width: min(300px, calc(var(--vw-full) - 24px));
   border: 1px solid var(--border-strong); border-radius: 14px;
   background: var(--surface-glass); backdrop-filter: blur(20px);
   box-shadow: 0 18px 50px #0000004d;
@@ -204,7 +205,7 @@ td small { font-size: var(--fs-xs); }
 .header-menu { position: static; }
 .header-dropdown {
   position: absolute; top: 100%; right: var(--gutter-x); z-index: 29;
-  width: min(340px, calc(100vw - 24px));
+  width: min(340px, calc(var(--vw-full) - 24px));
   border: 1px solid var(--border-strong); border-top: 0; border-radius: 0 0 14px 14px;
   background: var(--surface-glass); backdrop-filter: blur(20px);
   box-shadow: 0 22px 40px -12px #00000059;
@@ -217,14 +218,14 @@ td small { font-size: var(--fs-xs); }
   from { clip-path: inset(0 0 100% 0); transform: translateY(-6px); opacity: .6; }
   to { clip-path: inset(0 0 0 0); transform: none; }
 }
-.profile-menu { width: min(300px, calc(100vw - 24px)); }
+.profile-menu { width: min(300px, calc(var(--vw-full) - 24px)); }
 .header-dropdown.profile-menu { top: 100%; border-radius: 0 0 14px 14px; }
-.notice-menu { width: min(400px, calc(100vw - 24px)); }
+.notice-menu { width: min(400px, calc(var(--vw-full) - 24px)); }
 .notice-menu__head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .notice-menu__head strong { font-size: var(--fs-md); }
 .notice-menu__head span { color: var(--amber); font-size: var(--fs-xs); font-weight: 600; }
 .notice-menu__head .text-link { margin-left: auto; }
-.notice-menu ul { list-style: none; margin: 0; padding: 6px; max-height: min(60dvh, 420px); overflow-y: auto; }
+.notice-menu ul { list-style: none; margin: 0; padding: 6px; max-height: min(calc(var(--vh-full) * 0.6), 420px); overflow-y: auto; }
 .notice-menu li > button {
   display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 10px; border: 0; border-radius: 10px;
   background: transparent; color: inherit; text-align: left; animation: rise-in .3s var(--ease-out) both;
@@ -345,3 +346,7 @@ td small { font-size: var(--fs-xs); }
   .table-scroll > table { min-width: 600px; }
   .table-scroll td { padding-inline: 14px; }
 }
+
+/* 글 위주 화면(알림·시험 정보·로그인 대기 안내)은 넓은 모니터에서 한 줄이 너무 길어지지 않게 — 왼쪽 정렬은 다른 화면과 같게 유지 */
+.content-page.content-page--reading { max-width: 1120px; }
+.content-page.content-page--narrow { max-width: 760px; }

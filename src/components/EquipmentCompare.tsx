@@ -10,7 +10,6 @@ import type { Equipment } from "../services/equipmentService";
 import type { EquipmentSpec } from "../services/contracts";
 import ApiState from "./ui/ApiState";
 import { valueText } from "../domain/constants";
-import "../styles/compare.css";
 
 const availabilityLabels: Record<string, { label: string; tone: string }> = {
   AVAILABLE: { label: "이용 가능", tone: "green" },

@@ -75,7 +75,7 @@
 .status-chip--green { color: var(--tone-ok); border-color: color-mix(in srgb, var(--tone-ok) 40%, transparent); background: color-mix(in srgb, var(--tone-ok) 12%, transparent); }
 .status-chip--amber { color: var(--tone-warn); border-color: color-mix(in srgb, var(--tone-warn) 42%, transparent); background: color-mix(in srgb, var(--tone-warn) 12%, transparent); }
 .status-chip--red { color: var(--tone-danger); border-color: color-mix(in srgb, var(--tone-danger) 42%, transparent); background: color-mix(in srgb, var(--tone-danger) 12%, transparent); }
-.status-note { color: var(--violet); font-size: 10.5px; font-weight: 600; }
+
 @media (max-width: 1280px) {
   .eq-list { --eq-cols: 34px minmax(170px, 1.3fr) minmax(110px, .9fr) 92px minmax(0, 1.3fr) 132px; }
   .eq-list__head > :nth-child(6), .eq-row__fee { display: none; }
@@ -94,7 +94,7 @@
 
 .compare-prompt {
   position: fixed; left: 50%; bottom: 26px; z-index: 50; display: flex; align-items: center; gap: 12px;
-  max-width: min(640px, calc(100vw - 32px)); padding: 10px 10px 10px 14px; border-radius: 14px;
+  max-width: min(640px, calc(var(--vw-full) - 32px)); padding: 10px 10px 10px 14px; border-radius: 14px;
   border: 1px solid var(--blue-border); background: color-mix(in srgb, var(--surface-raised) 94%, var(--blue));
   box-shadow: 0 18px 48px #0000005c; backdrop-filter: blur(10px);
   opacity: 0; transform: translate(-50%, 24px) scale(.97); pointer-events: none; visibility: hidden;
@@ -189,9 +189,9 @@
 .eq-region__menu label:hover { background: var(--control-hover); }
 .eq-region__menu button { margin-top: 2px; padding: 6px 8px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text-muted); font-size: var(--fs-xs); text-align: left; }
 .eq-region__menu button:hover { color: var(--text); }
-.eq-filterbar__checks { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-left: 4px; }
-.eq-filterbar__checks label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: var(--fs-sm); cursor: pointer; white-space: nowrap; }
-.eq-filterbar__checks input, .eq-region__menu input { width: 15px; height: 15px; margin: 0; accent-color: var(--blue); }
+
+
+.eq-region__menu input { width: 15px; height: 15px; margin: 0; accent-color: var(--blue); }
 .eq-filterbar__reset { padding: 2px 4px; border: 0; background: none; color: var(--text-muted); font-size: var(--fs-xs); text-decoration: underline; text-underline-offset: 2px; }
 .eq-filterbar__reset:hover { color: var(--text); }
 .eq-filterbar__result { margin: 0; padding: 8px 12px; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
@@ -206,14 +206,14 @@
   .eq-popular { justify-content: flex-start; }
   .eq-filterbar__row select, .eq-region, .eq-region__btn { flex: 1 1 calc(50% - 4px); }
   .eq-filterbar__row select.eq-filterbar__wide { width: auto; flex-basis: 100%; }
-  .eq-filterbar__checks { margin-left: 0; }
+  
   .eq-filterbar__tools { width: 100%; margin-left: 0; justify-content: flex-end; }
 }
 
 /* v17: 1000px 이하(태블릿)에서 '상세·의뢰' 칸이 좁아 글자가 세로로 꺾이던 문제 — 버튼 칸은 내용 너비만큼 */
 .eq-row__actions > * { flex-shrink: 0; white-space: nowrap; }
 @media (max-width: 1000px) {
-  .eq-list { --eq-cols: 34px minmax(150px, 1.3fr) minmax(96px, 1fr) 100px max-content; }
+  .eq-list { --eq-cols: 34px minmax(150px, 1.3fr) minmax(96px, 1fr) 100px 140px; } /* max-content 쓰면 제목 줄과 어긋남 — 고정 너비 */
 }
 /* v17: 1366px 이하에서 '주요 사양' 두 번째 값이 글자 중간에서 잘리던 문제 — 칸이 좁으면 두 줄로 */
 @media (max-width: 1366px) and (min-width: 1001px) {
@@ -229,7 +229,8 @@
 .eq-board.is-refreshing .eq-list { opacity: .55; }
 
 /* 1281~1360px(예: 1680px 모니터 125% 배율 + 사이드바 펼침)에서 표가 칸보다 넓어 오른쪽 '의뢰' 버튼이 잘리던 문제
-   — 사양·이름 열이 줄어들 수 있게(최소 0) 하고, 버튼 열은 내용 너비만큼 */
+   — 사양·이름 열이 줄어들 수 있게(최소 0) 함.
+   주의: 제목 줄과 각 행은 따로 계산되는 그리드라, 열 너비가 내용에 따라 달라지면(auto·max-content) 제목과 내용이 어긋남 → 모든 열은 고정값 또는 minmax(…, fr) 만 사용 */
 @media (min-width: 1281px) {
-  .eq-list { --eq-cols: 34px minmax(150px, 1.2fr) minmax(96px, .75fr) 100px minmax(0, 1.8fr) 100px max-content; }
+  .eq-list { --eq-cols: 34px minmax(150px, 1.2fr) minmax(96px, .75fr) 100px minmax(0, 1.8fr) 100px 136px; }
 }

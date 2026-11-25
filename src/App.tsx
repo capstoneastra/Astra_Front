@@ -1,11 +1,20 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, lazy, Suspense } from "react";
+// 화면별 CSS — 화면 코드는 필요할 때 따로 받지만(lazy), CSS 는 적용 순서가 바뀌지 않도록 여기서 이 순서대로 한 번에 불러옵니다.
+import "./styles/dashboard.css";
+import "./styles/search.css";
+import "./styles/request-form.css";
+import "./styles/requests.css";
+import "./styles/manager.css";
+import "./auth/login.css";
+import "./styles/compare.css";
+import "./styles/quick-sim.css";
+import "./styles/quick-request.css";
+import "./styles/admin.css";
+import "./styles/calendar.css";
 import { useLocation, useNavigationType } from "react-router";
 import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import EquipmentSearch from "./components/EquipmentSearch";
-import Reservation from "./components/Reservation";
-import ReservationCheck from "./components/ReservationCheck";
-import EquipmentManager from "./components/EquipmentManager";
 import AppHeader from "./components/layout/AppHeader";
 import { AppContext } from "./context/AppContext";
 import type { Equipment } from "./services/equipmentService";
@@ -20,16 +29,7 @@ import type { SearchSuggestion } from "./components/layout/QuickSearch";
 import { defaultDashboardView } from "./services/dashboardService";
 import { ApiError } from "./api/errors";
 import ApiState from "./components/ui/ApiState";
-import Matching from "./components/Matching";
-import EquipmentCompare from "./components/EquipmentCompare";
-import TestInformation from "./components/TestInformation";
 import AiAssistant from "./components/assistant/AiAssistant";
-import Simulation from "./components/Simulation";
-import QuickRequest from "./components/QuickRequest";
-import AdminManagement from "./components/AdminManagement";
-import AdminStats from "./components/AdminStats";
-import Notifications from "./components/Notifications";
-import ReservationCalendar from "./components/ReservationCalendar";
 import RequestDetailDialog from "./components/workflow/RequestDetailDialog";
 import type { NotificationTarget } from "./domain/notificationTarget";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
@@ -41,10 +41,45 @@ import "./styles/v9.css";
 import "./styles/v10.css";
 import "./styles/palette.css";
 
+/** 처음 화면(홈·장비 검색) 밖의 화면은 들어갈 때 받는다. 로그인 직후 여유 시간에 미리 받아 두어 이동은 바로 열림 */
+const screenLoaders = {
+  Reservation: () => import("./components/Reservation"),
+  ReservationCheck: () => import("./components/ReservationCheck"),
+  EquipmentManager: () => import("./components/EquipmentManager"),
+  Matching: () => import("./components/Matching"),
+  EquipmentCompare: () => import("./components/EquipmentCompare"),
+  TestInformation: () => import("./components/TestInformation"),
+  Simulation: () => import("./components/Simulation"),
+  QuickRequest: () => import("./components/QuickRequest"),
+  AdminManagement: () => import("./components/AdminManagement"),
+  AdminStats: () => import("./components/AdminStats"),
+  Notifications: () => import("./components/Notifications"),
+  ReservationCalendar: () => import("./components/ReservationCalendar"),
+};
+const Reservation = lazy(screenLoaders.Reservation);
+const ReservationCheck = lazy(screenLoaders.ReservationCheck);
+const EquipmentManager = lazy(screenLoaders.EquipmentManager);
+const Matching = lazy(screenLoaders.Matching);
+const EquipmentCompare = lazy(screenLoaders.EquipmentCompare);
+const TestInformation = lazy(screenLoaders.TestInformation);
+const Simulation = lazy(screenLoaders.Simulation);
+const QuickRequest = lazy(screenLoaders.QuickRequest);
+const AdminManagement = lazy(screenLoaders.AdminManagement);
+const AdminStats = lazy(screenLoaders.AdminStats);
+const Notifications = lazy(screenLoaders.Notifications);
+const ReservationCalendar = lazy(screenLoaders.ReservationCalendar);
+
+function prefetchScreens() {
+  const run = () => Object.values(screenLoaders).forEach((load) => void load().catch(() => undefined));
+  if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 2000);
+}
+
 /** 장비 목록을 불러오는 동안 쓰는 빈 배열 — 렌더마다 새 []를 만들면 이를 쓰는 memo 가 매번 다시 계산됨 */
 const EMPTY_EQUIPMENT: Equipment[] = [];
 
 function Workspace() {
+  useEffect(() => prefetchScreens(), []);
   const { user } = useAuth();
   const workspaceNavigation = useWorkspaceNavigation(
     `${user.id}:${user.role}:${user.organization?.id ?? ""}`,
@@ -265,9 +300,10 @@ function Workspace() {
     }
   };
 
-  return (
-    <AppContext.Provider
-      value={{
+  // 전역 상태 — 값이 바뀔 때만 새 객체를 만들어, 이 값을 쓰는 화면들이 쓸데없이 다시 그려지지 않게
+  const navigateRef = useRef(navigate);
+  useEffect(() => { navigateRef.current = navigate; });
+  const contextValue = useMemo(() => ({
         testCondition,
         setTestCondition,
         selectedEquipment,
@@ -294,14 +330,19 @@ function Workspace() {
         setAutoRunId,
         openSimulation: (id) => {
           setSimulationEquipmentId(id);
-          navigate("simulation");
+          navigateRef.current("simulation");
         },
         openTestInfo: (code) => {
           setTestTypeCode(code);
-          navigate("testInfo");
+          navigateRef.current("testInfo");
         },
-      }}
-    >
+      }), [
+    testCondition, selectedEquipment, equipmentList, catalogQuery, user, requirementId, chatSessionId, matchRun,
+    draftRequestId, comparisonIds, testTypeCode, simulationEquipmentId, autoRunId,
+  ]);
+
+  return (
+    <AppContext.Provider value={contextValue}>
       <div className="app-shell" data-sidebar-collapsed={sidebar.collapsed}>
         <a
           className="skip-link"
@@ -345,7 +386,7 @@ function Workspace() {
             onOpenTarget={openTarget}
           />
           <main id="main-content" className="main-content" tabIndex={-1}>
-            {renderContent()}
+            <Suspense fallback={<ApiState loading />}>{renderContent()}</Suspense>
           </main>
           {requestDialog && <RequestDetailDialog key={requestDialog.id} requestId={requestDialog.id}
             requestBox={requestDialog.box} onClose={() => setRequestDialog(null)} />}

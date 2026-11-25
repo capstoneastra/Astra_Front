@@ -6,7 +6,6 @@ import ApiState from "./ui/ApiState";
 import BarChart from "./dashboard/BarChart";
 import { Pipeline, Section, Skeleton } from "./dashboard/DashboardParts";
 import { useAdminInsights } from "./dashboard/AdminInsights";
-import "../styles/dashboard.css";
 
 /**
  * 관리자 운영 통계 (사이드바 > 운영 관리 > 운영 통계)

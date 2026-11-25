@@ -18,7 +18,7 @@ export default function Notifications({ onOpenTarget }: { onOpenTarget?: (target
   const items = [...(query.data?.content ?? [])].sort((a, b) => Number(a.isRead) - Number(b.isRead));
   const unread = items.filter((n) => !n.isRead).length;
   return (
-    <div className="content-page page-enter">
+    <div className="content-page content-page--reading page-enter">
       <PageHeader title="업무 알림" description={unread ? `읽지 않은 알림 ${unread}건` : "모든 알림을 확인했습니다."}>
         <Button variant="secondary" icon={Check} disabled={action.busy || !unread} onClick={() => action.run(() => notificationService.readAll())}>
           모두 읽음

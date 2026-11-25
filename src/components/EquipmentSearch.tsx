@@ -24,7 +24,6 @@ import {
 import { useApiQuery } from "../hooks/useApiQuery";
 import { equipmentService, equipmentView, specLabel, testTypeLabel } from "../services/equipmentService";
 import { valueText } from "../domain/constants";
-import "../styles/search.css";
 import { catalogService } from "../services/catalogService";
 import { canAccessMenu } from "../auth/permissions";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";

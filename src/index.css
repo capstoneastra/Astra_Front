@@ -3,6 +3,14 @@
 @import "tailwindcss/utilities.css" layer(utilities) prefix(tw);
 @import "./styles/tokens.css";
 
+/* 큰 화면 자동 배율 — 값은 src/theme/appZoom.ts 가 화면 크기로 계산해 넣음 */
+:root {
+  --app-zoom: 1;
+  --vh-full: calc(100dvh / var(--app-zoom));
+  --vw-full: calc(100vw / var(--app-zoom));
+}
+html { zoom: var(--app-zoom); }
+
 * {
   box-sizing: border-box;
 }
@@ -138,11 +146,11 @@ option {
   top: 12px;
 }
 .app-shell {
-  min-height: 100vh;
+  min-height: var(--vh-full);
 }
 .app-body {
   margin-left: var(--sidebar-width);
-  min-height: 100vh;
+  min-height: var(--vh-full);
   display: flex;
   flex-direction: column;
 }
@@ -286,7 +294,7 @@ option {
   flex-shrink: 0;
   margin-left: auto;
   color: var(--text-muted);
-  font-size: 8px;
+  font-size: 10px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0 4px;
@@ -359,7 +367,7 @@ option {
 kbd {
   display: inline-flex;
   align-items: center;
-  font-size: 9px;
+  font-size: 10px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   font-family: inherit;
   gap: 2px;
   border: 1px solid var(--border);
@@ -409,7 +417,7 @@ kbd {
 .eyebrow {
   display: block;
   color: var(--text-muted);
-  font-size: 8px;
+  font-size: 10.5px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   letter-spacing: 2px;
   font-weight: 600;
   margin-bottom: 7px;
@@ -484,7 +492,7 @@ kbd {
   border: 1px solid var(--border);
   background: var(--surface-raised);
   color: var(--text-secondary);
-  font-size: 9px;
+  font-size: 10.5px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   line-height: 1.5;
   font-weight: 500;
   white-space: nowrap;
@@ -640,7 +648,7 @@ td > strong {
 }
 td small {
   display: block;
-  font-size: 9px;
+  font-size: 11px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   color: var(--text-muted);
   margin-top: 3px;
 }
@@ -652,11 +660,11 @@ td:nth-child(2) {
   padding: 27px;
   border: 1px solid var(--border-strong);
   border-radius: 16px;
-  width: min(520px, calc(100vw - 32px));
+  width: min(520px, calc(var(--vw-full) - 32px));
   color: var(--text);
   background: var(--panel-background);
   box-shadow: 0 35px 130px #0009;
-  max-height: calc(100dvh - 48px);
+  max-height: calc(var(--vh-full) - 48px);
   overflow-y: auto;
 }
 .dialog::backdrop {
@@ -1045,7 +1053,7 @@ td:nth-child(2) {
     font-size: 11px;
   }
   .eyebrow {
-    font-size: 7px;
+    font-size: 10px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   }
 
   .panel__header h2 {
@@ -1073,7 +1081,7 @@ td:nth-child(2) {
   }
 
   .results-heading small {
-    font-size: 9px;
+    font-size: 11px; /* 125% 배율·프로젝터에서도 읽히도록 최소 10px 이상 */
   }
 
   .form-panel {

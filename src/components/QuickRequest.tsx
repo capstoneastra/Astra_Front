@@ -14,8 +14,6 @@ import type { ConditionRule, MatchRun, RequirementCondition } from "../services/
 import { takeQuickPrefill } from "../domain/quickPrefill";
 import { Button, PageHeader } from "./ui";
 import ApiState from "./ui/ApiState";
-import "../styles/quick-sim.css";
-import "../styles/quick-request.css";
 
 /**
  * AI 간편 의뢰 (v15)

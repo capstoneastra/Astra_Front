@@ -1,4 +1,5 @@
-.reservation-calendar { --schedule-grid-line: var(--border); max-width: 1560px; }
+/* max-width 1560px 삭제 — 1920px 이상에서 다른 화면보다 오른쪽 끝이 짧게 끝나던 문제 */
+.reservation-calendar { --schedule-grid-line: var(--border); }
 .reservation-calendar > .page-header { margin-bottom: 18px; }
 
 .schedule-legend__note { color: var(--text-muted); font-size: 12px; margin-left: auto; }
@@ -64,7 +65,7 @@
 .schedule-upcoming__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
 .schedule-upcoming__note { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 17px; color: var(--text-secondary); font-size: 14px; }
 .schedule-upcoming__note p { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
-.schedule-detail { width: min(1060px, calc(100vw - 48px)); padding: 0; background: var(--surface); border-color: var(--border-strong); }
+.schedule-detail { width: min(1060px, calc(var(--vw-full) - 48px)); padding: 0; background: var(--surface); border-color: var(--border-strong); }
 .schedule-detail__header { display: flex; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid var(--border); background: linear-gradient(110deg, color-mix(in srgb, var(--cyan) 5%, transparent), transparent); }
 .schedule-detail__header h2 { font-size: 23px; margin: 7px 0; }
 .schedule-detail__header > div > span:last-child { font-size: 13px; color: var(--text-secondary); }
@@ -113,14 +114,14 @@
   .calendar__toolbar h2 { font-size: 19px; }.calendar__toolbar .eyebrow { font-size: 9px; }.calendar__navigation { gap: 4px; }.calendar__navigation .button { padding: 6px 10px; min-height: 34px; }
   .calendar-day { min-height: 102px; }.calendar-day__select > span { width: 25px; height: 25px; }.schedule-card--compact .schedule-card__title { font-size: 12px; letter-spacing: -.5px; }
 .schedule-legend__note { margin-left: 0; width: 100%; }.schedule-upcoming { padding: 18px; }
-  .schedule-detail { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }.schedule-detail__facts > div { grid-template-columns: 100px minmax(0, 1fr); }.schedule-detail__controls .form-grid { grid-template-columns: minmax(0, 1fr); }.schedule-detail__eligible > div { align-items: flex-start; flex-direction: column; }
+  .schedule-detail { width: calc(var(--vw-full) - 20px); max-height: calc(var(--vh-full) - 20px); }.schedule-detail__facts > div { grid-template-columns: 100px minmax(0, 1fr); }.schedule-detail__controls .form-grid { grid-template-columns: minmax(0, 1fr); }.schedule-detail__eligible > div { align-items: flex-start; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { .schedule-card, .calendar-day { transition: none; }.schedule-detail[open] { animation: none; } }
 
 /* 2026-11: 화면 높이에 맞춰 달력 칸 높이를 조절하고, 필터는 필요할 때만 펼칩니다. */
 .reservation-calendar .eyebrow, .reservation-calendar .calendar__timezone { display: none; }
 
-.reservation-calendar .calendar-day { min-height: clamp(78px, calc((100dvh - 430px) / 6), 140px); }
+.reservation-calendar .calendar-day { min-height: clamp(78px, calc((var(--vh-full) - 430px) / 6), 140px); }
 
 .reservation-calendar .calendar__toolbar { padding-block: 14px; }
 .reservation-calendar .schedule-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 10px; color: var(--text-secondary); font-size: var(--fs-sm); }
@@ -129,14 +130,14 @@
 .schedule-summary__item b { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
 .schedule-summary__item.is-attention b, .schedule-summary__item.is-attention svg { color: var(--amber); }
 .schedule-summary__legend { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; margin-left: auto; }
-.reservation-calendar .calendar-day { min-height: clamp(84px, calc((100dvh - 330px) / 6), 150px); }
+.reservation-calendar .calendar-day { min-height: clamp(84px, calc((var(--vh-full) - 330px) / 6), 150px); }
 
 /* ── v7: 칸은 모두 같은 크기로 고정 + 일정은 포스트잇처럼 ─────────────────── */
 .reservation-calendar .calendar-day, .calendar-day {
   height: var(--cal-cell, 108px); min-height: 0; overflow: hidden;
   display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 6px 6px 6px;
 }
-@media (min-width: 1024px) { .reservation-calendar { --cal-cell: clamp(92px, calc((100dvh - 340px) / 6), 118px); } }
+@media (min-width: 1024px) { .reservation-calendar { --cal-cell: clamp(92px, calc((var(--vh-full) - 340px) / 6), 118px); } }
 .calendar-day__notes { position: relative; display: grid; align-content: start; gap: 0; min-height: 0; padding: 2px 2px 0; }
 .sticky-note {
   --paper: #e9d9a6; --ink: #3d3420;

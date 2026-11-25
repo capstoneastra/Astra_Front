@@ -10,7 +10,6 @@ import { Feedback } from "./workflow/Feedback";
 import { accountStatusLabels, roleLabels } from "../domain/constants";
 import ApiState from "./ui/ApiState";
 import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
-import "../styles/admin.css";
 
 const organizationTypeLabels: Record<string, string> = { COMPANY: "기업", INSTITUTION: "기관", UNIVERSITY: "대학" };
 const statusTone: Record<string, string> = { ACTIVE: "green", PENDING: "amber", REJECTED: "neutral", SUSPENDED: "violet" };

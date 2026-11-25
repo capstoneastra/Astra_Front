@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addDays, monthDays, monthOf, moveMonth, seoulDate, timeLabel } from "../../domain/calendar";
+import { appZoom } from "../../theme/appZoom";
 import type { UpcomingItem } from "./CompanyParts";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -49,7 +50,9 @@ export function ScheduleCalendar({ items, today, colorBy, equipmentNames = [], o
     const x = Math.min(Math.max(cell.left - root.left + cell.width / 2, half), root.width - half);
     const below = cell.bottom - root.top;
     const flip = below > root.height * 0.62;
-    setHover({ day, x, y: flip ? cell.top - root.top - 6 : below + 6, flip });
+    // 큰 화면 배율(zoom) 중에는 측정값이 확대돼 있으므로 CSS px 로 되돌림
+    const zoom = appZoom();
+    setHover({ day, x: x / zoom, y: (flip ? cell.top - root.top - 6 : below + 6) / zoom, flip });
   };
   const hide = () => {
     if (leaveTimer.current) window.clearTimeout(leaveTimer.current);

@@ -98,3 +98,8 @@
 @media (min-width: 1181px) {
   .mgr-table { --mgr-cols: minmax(180px, 2fr) minmax(0, 1fr) minmax(0, .9fr) minmax(0, 1fr) minmax(0, .9fr) 84px; }
 }
+
+/* 장비가 많을 때 50대씩 나눠 그림 — 표 아래 '더 보기' */
+.mgr-more { display: flex; justify-content: center; padding: 12px; border-top: 1px solid var(--border); }
+.mgr-more small { margin-left: 6px; color: var(--text-muted); font-weight: 500; }
+.mgr-row__muted { color: var(--text-muted); font-size: var(--fs-xs); }
