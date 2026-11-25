@@ -5,6 +5,9 @@ import {
   Database,
   ShieldCheck,
   CalendarDays,
+  ChartColumn,
+  FlaskConical,
+  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -22,8 +25,16 @@ export const navigation: { label: string; items: { id: string; label: string; ic
   {
     label: "시험 업무",
     items: [
+      { id: "quickRequest", label: "AI 간편 의뢰", icon: Sparkles },
       { id: "reservationCheck", label: "시험 의뢰 관리", icon: ClipboardList },
       { id: "calendar", label: "시험 예약 캘린더", icon: CalendarDays },
+    ],
+  },
+  {
+    // v7: 시뮬레이션은 '장비 찾기'가 아니라 의뢰 전 검토 도구라 별도 묶음으로 분리
+    label: "분석 도구",
+    items: [
+      { id: "simulation", label: "가상 시뮬레이션", icon: FlaskConical },
     ],
   },
   {
@@ -31,30 +42,21 @@ export const navigation: { label: string; items: { id: string; label: string; ic
     items: [
       { id: "manager", label: "보유 장비 관리", icon: Database },
       { id: "admin", label: "회원·기관 승인", icon: ShieldCheck },
+      { id: "stats", label: "운영 통계", icon: ChartColumn },
     ],
   },
 ];
 
-export const menuLabels: Record<string, string> = {
-  ...Object.fromEntries(navigation.flatMap((group) =>
-    group.items.map((item) => [item.id, item.label]),
-  )),
-  matching: "AI 자동 매칭",
-  compare: "장비 비교",
-  testInfo: "시험 정보 안내",
-  reservation: "시험 의뢰하기",
-  review: "시험 의뢰 관리",
-  duplicates: "중복·유사 장비 조회",
-  simulation: "가상 시뮬레이션",
-  notifications: "업무 알림",
-};
+/** 역할에 따라 메뉴 이름이 다른 경우 (v11: 관리자는 기관들이 등록한 장비 전체를 관리하므로 '등록 장비 관리') */
+export function menuLabel(id: string, role: string | undefined, fallback: string) {
+  if (id === "manager" && role === "ADMIN") return "등록 장비 관리";
+  return fallback;
+}
 
 export const parentMenu: Record<string, string> = {
   matching: "search",
   compare: "search",
   testInfo: "search",
-  duplicates: "search",
-  simulation: "search",
   reservation: "reservationCheck",
   review: "reservationCheck",
 };

@@ -14,6 +14,10 @@ interface RequestHistoryEntry {
 interface DraftResult {
   requestId: number;
   id?: number;
+  requestNo?: string;
+  status?: string;
+  revision?: { revisionNo: number; isAiGenerated?: boolean; content: object };
+  aiNotes?: string[];
 }
 
 export const requestService = {

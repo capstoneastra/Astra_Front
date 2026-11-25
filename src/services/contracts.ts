@@ -124,9 +124,12 @@ export interface ConditionRule {
   conditionKey: string;
   label: string;
   unit?: string | null;
+  /** NUMBER · RANGE · TEXT */
   valueType: string;
+  /** MAX_LIMIT · MIN_LIMIT · RANGE_WITHIN · NONE */
   comparator: string;
   isRequired: boolean;
+  specKey?: string | null;
 }
 
 export interface TestTypeDetail extends TestType {
@@ -135,24 +138,28 @@ export interface TestTypeDetail extends TestType {
     region?: string | null;
     equipmentCount: number;
     estCostMin?: number | null;
+    estCostMax?: number | null;
     estDurationDays?: number | null;
     accessScope?: string | null;
   })[];
 }
 
 export interface MatchRun {
+  id?: number;
   requirementId: number;
   disclaimer: string;
   results: {
     id: number;
     rank: number;
-    equipment: NamedResource & { externalId?: string; institutionName?: string };
+    equipment: NamedResource & { externalId?: string; institutionName?: string; region?: string | null; availability?: string | null;
+      availabilityNeedsConfirmation?: boolean; accessScope?: string | null; feeText?: string | null; utilizationRate?: number | null };
     verdict: string;
     reason: string;
     score: number;
     usedMockData: boolean;
     checks: {
       conditionKey: string;
+      label?: string;
       result: string;
       requiredText?: string;
       equipmentText?: string;

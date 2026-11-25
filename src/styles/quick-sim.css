@@ -1,0 +1,167 @@
+/* ── 간이 가상 시뮬레이션 (v8: 가독성 개편) ────────────────────────────
+ * 왼쪽: ①시험 종류 → ②장비 → ③조건 (각 입력에 쉬운 설명 + 장비 한계)
+ * 오른쪽: 결과 한 줄 → 핵심 숫자 → 점검 표(사용률 %) → 그래프
+ */
+.quick-sim { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); gap: var(--stack); align-items: start; }
+@media (max-width: 1100px) { .quick-sim { grid-template-columns: minmax(0, 1fr); } }
+
+.qs-verdict {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 18px;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-background);
+  transition: border-color .3s var(--ease-soft), background .3s var(--ease-soft);
+}
+.qs-verdict__icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; }
+.qs-verdict__text { display: grid; gap: 3px; min-width: 0; }
+.qs-verdict__label { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.qs-verdict strong { font-size: clamp(17px, .5vw + 12px, 21px); font-weight: 700; letter-spacing: -0.02em; }
+.qs-verdict p { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.55; }
+.qs-verdict--ok { border-color: color-mix(in srgb, var(--tone-ok) 45%, transparent); background: color-mix(in srgb, var(--tone-ok) 7%, var(--panel-background)); }
+.qs-verdict--ok .qs-verdict__icon { color: var(--tone-ok); background: color-mix(in srgb, var(--tone-ok) 15%, transparent); }
+.qs-verdict--tight { border-color: color-mix(in srgb, var(--tone-warn) 50%, transparent); background: color-mix(in srgb, var(--tone-warn) 7%, var(--panel-background)); }
+.qs-verdict--tight .qs-verdict__icon { color: var(--tone-warn); background: color-mix(in srgb, var(--tone-warn) 15%, transparent); }
+.qs-verdict--over { border-color: color-mix(in srgb, var(--tone-danger) 55%, transparent); background: color-mix(in srgb, var(--tone-danger) 8%, var(--panel-background)); }
+.qs-verdict--over .qs-verdict__icon { color: var(--tone-danger); background: color-mix(in srgb, var(--tone-danger) 16%, transparent); }
+@media (max-width: 900px) { .qs-verdict { grid-template-columns: auto minmax(0, 1fr); } .qs-verdict > .button { grid-column: 1 / -1; justify-content: center; } }
+.qs-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--stack); }
+.qs-kpi { display: grid; gap: 4px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-background); }
+.qs-kpi span { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.qs-kpi strong { font-size: clamp(19px, .6vw + 13px, 24px); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .qs-kpis { grid-template-columns: minmax(0, 1fr); } }
+.qs-checks table { width: calc(100% - 32px); margin: 0 16px 14px; border-collapse: collapse; font-size: var(--fs-sm); }
+.qs-checks th, .qs-checks td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+.qs-checks thead th { padding-block: 8px; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; border-bottom-color: var(--border-strong); }
+.qs-checks tbody tr:last-child > * { border-bottom: 0; }
+.qs-checks tbody th { font-weight: 600; }
+.qs-checks tbody th small { display: block; margin-top: 2px; color: var(--tone-danger); font-size: 11px; font-weight: 500; }
+.qs-checks .is-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.qs-checks .is-center { text-align: center; }
+.qs-use { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+.qs-use__bar { position: relative; flex: 1; height: 8px; border-radius: 99px; background: var(--surface-sunken); }
+.qs-use__bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--tone-ok); transition: width .45s var(--ease-soft), background .3s; }
+.qs-use__bar b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-muted); opacity: .6; }
+.qs-use em { width: 40px; text-align: right; font-style: normal; font-weight: 650; font-variant-numeric: tabular-nums; }
+tr.is-tight .qs-use__bar i { background: var(--tone-warn); }
+tr.is-over .qs-use__bar i { background: var(--tone-danger); }
+.qs-dash { color: var(--text-muted); font-size: var(--fs-xs); }
+.qs-state { display: inline-block; min-width: 64px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; text-align: center; border: 1px solid; }
+.qs-state--ok { color: var(--tone-ok); border-color: color-mix(in srgb, var(--tone-ok) 40%, transparent); background: color-mix(in srgb, var(--tone-ok) 12%, transparent); }
+.qs-state--tight { color: var(--tone-warn); border-color: color-mix(in srgb, var(--tone-warn) 45%, transparent); background: color-mix(in srgb, var(--tone-warn) 13%, transparent); }
+.qs-state--over { color: var(--tone-danger); border-color: color-mix(in srgb, var(--tone-danger) 48%, transparent); background: color-mix(in srgb, var(--tone-danger) 14%, transparent); }
+.qs-state--na { color: var(--text-muted); border-color: var(--border-strong); }
+.qs-chart { padding-bottom: 14px; }
+.qs-chart .panel__header p, .qs-checks .panel__header p { margin-top: 2px; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 400; }
+.qs-basis { padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; color: var(--text-secondary); font-size: var(--fs-sm); }
+.qs-basis summary { cursor: pointer; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.qs-basis ul { margin: 8px 0 2px; padding-left: 18px; display: grid; gap: 4px; font-size: var(--fs-xs); line-height: 1.6; }
+
+/* SVG 선 그래프 */
+.line-chart { position: relative; padding: 0 8px; }
+.line-chart svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; }
+.line-chart__grid { stroke: var(--border); stroke-width: 1; }
+.line-chart__axis { stroke: var(--border-strong); stroke-width: 1; }
+.line-chart__tick { fill: var(--text-muted); font-size: 12.5px; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.line-chart__label { fill: var(--text-secondary); font-size: 12.5px; font-family: var(--font); }
+.line-chart__line { fill: none; stroke: var(--cyan); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: line-draw 1s var(--ease-soft) forwards; }
+@keyframes line-draw { to { stroke-dashoffset: 0; } }
+.line-chart__limit line { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.line-chart__limit text { fill: var(--amber); font-size: 13px; font-weight: 600; font-family: var(--font); }
+.line-chart__cross { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 3; }
+.line-chart__dot { fill: var(--cyan); stroke: var(--surface); stroke-width: 2; }
+.line-chart__tip {
+  position: absolute; transform: translate(-50%, calc(-100% - 12px)); padding: 4px 8px; border-radius: 7px; pointer-events: none;
+  background: var(--surface-raised); border: 1px solid var(--border-strong); box-shadow: 0 8px 20px #00000040;
+  color: var(--text-secondary); font-size: var(--fs-xs); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.line-chart__tip b { color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .line-chart__line { animation: none; stroke-dashoffset: 0; } }
+
+.qs-checks th, .qs-checks thead th { background: transparent; text-transform: none; letter-spacing: 0; }
+.qs-checks td { color: var(--text-secondary); }
+
+/* ── v9: 단계별 입력 (한 번에 한 카드) ─────────────────────────────── */
+.sim-wizard { display: grid; gap: 12px; width: min(100%, 860px); margin: 0 auto; }
+.sim-progress { list-style: none; margin: 0 0 4px; padding: 0; display: flex; gap: 4px; }
+.sim-progress li { flex: 1; min-width: 0; }
+.sim-progress button {
+  display: grid; gap: 6px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--text-muted); text-align: left; font-size: 11.5px;
+}
+.sim-progress button::before { content: ""; height: 4px; border-radius: 99px; background: var(--surface-sunken); box-shadow: inset 0 0 0 1px var(--border); transition: background .35s var(--ease-soft); }
+.sim-progress li.is-done button::before { background: color-mix(in srgb, var(--cyan) 60%, var(--surface)); box-shadow: none; }
+.sim-progress li.is-current button::before { background: var(--cyan); box-shadow: none; }
+.sim-progress button > span { display: none; }
+.sim-progress em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-progress li.is-current em { color: var(--text); font-weight: 650; }
+.sim-progress li.is-done button:hover em { color: var(--text); }
+.sim-card {
+  padding: clamp(18px, 2vw, 26px); border-radius: var(--radius); border: 1px solid var(--accent-border);
+  background: var(--panel-background); box-shadow: var(--panel-shadow); animation: v6-rise .45s var(--ease-soft) both;
+}
+.sim-card__head { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+.sim-card__num { flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--cyan); color: var(--primary-ink); font-size: 20px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+.sim-card__head h2 { margin: 2px 0 4px; font-size: clamp(18px, .5vw + 13px, 22px); font-weight: 700; letter-spacing: -0.02em; }
+.sim-card__head p { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.6; }
+.sim-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sim-kinds button {
+  display: grid; gap: 4px; padding: 16px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface-sunken); color: inherit; text-align: left;
+  transition: border-color .22s var(--ease-soft), background .22s, transform .22s var(--ease-soft), box-shadow .22s;
+}
+.sim-kinds button strong { font-size: var(--fs-md); font-weight: 650; }
+.sim-kinds button small { color: var(--text-muted); font-size: var(--fs-xs); }
+.sim-kinds button:hover { transform: translateY(-2px); border-color: var(--accent-border); }
+.sim-kinds button[aria-checked="true"] { border-color: var(--cyan); background: var(--accent-background); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent); }
+@media (max-width: 700px) { .sim-kinds { grid-template-columns: minmax(0, 1fr); } }
+.sim-equip__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 320px; overflow-y: auto; }
+.sim-equip__list button {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface-sunken); color: inherit; text-align: left; transition: border-color .2s, background .2s;
+}
+.sim-equip__list button:hover { border-color: var(--accent-border); }
+.sim-equip__list button[aria-checked="true"] { border-color: var(--cyan); background: var(--accent-background); box-shadow: inset 3px 0 0 var(--cyan); }
+.sim-equip__name { display: grid; gap: 2px; min-width: 0; }
+.sim-equip__name strong { font-size: var(--fs-md); font-weight: 600; }
+.sim-equip__name small { color: var(--text-muted); font-size: var(--fs-xs); }
+.sim-equip__specs { display: flex; gap: 16px; flex-shrink: 0; font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sim-equip__specs > span { display: grid; gap: 1px; text-align: right; }
+.sim-equip__specs small { color: var(--text-muted); font-size: 11px; font-weight: 400; }
+@media (max-width: 700px) { .sim-equip__specs { display: none; } }
+.sim-hint { margin: 10px 2px 0; color: var(--text-muted); font-size: var(--fs-xs); }
+.sim-empty { color: var(--text-muted); }
+.sim-fields { display: grid; gap: 4px; }
+.sim-field { display: grid; grid-template-columns: minmax(0, 1fr) 220px; align-items: center; gap: 20px; padding: 12px 4px; border-bottom: 1px solid var(--border); }
+.sim-field:last-child { border-bottom: 0; }
+.sim-field__label { display: grid; gap: 3px; }
+.sim-field__label b { font-size: var(--fs-md); font-weight: 600; }
+.sim-field__label small { color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.5; }
+.sim-field__control { display: grid; gap: 4px; justify-items: end; }
+.sim-field__input { display: flex; align-items: center; width: 100%; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface-sunken); transition: border-color .2s, box-shadow .2s; }
+.sim-field__input:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent); }
+.sim-field__input input { flex: 1; width: 0; min-width: 0; height: 42px; padding: 0 0 0 12px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--text); font-size: 17px; font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; outline: none; }
+.sim-field__input input:focus { box-shadow: none; outline: none; }
+.sim-field__input small { min-width: 56px; padding: 0 12px 0 8px; color: var(--text-muted); font-size: var(--fs-xs); white-space: nowrap; }
+.sim-field__limit { color: var(--blue); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .sim-field { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.sim-error { margin: 12px 0 0; padding: 9px 12px; border-radius: 10px; background: var(--tone-danger-bg); color: var(--tone-danger); font-size: var(--fs-sm); font-weight: 600; animation: v6-rise .25s ease both; }
+.sim-card__actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+.sim-card__actions .button { min-width: 108px; justify-content: center; }
+.sim-result { display: grid; gap: var(--stack); animation: v6-rise .45s var(--ease-soft) both; }
+.sim-result__again { display: flex; justify-content: center; gap: 8px; }
+.simulation-page { padding-bottom: 24px; }
+.sim-field__input input::-webkit-inner-spin-button, .sim-field__input input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.sim-field__input input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* v10: 결과 화면 위 '입력한 조건' 한 줄 요약 (지난 단계 카드 대신) */
+.sim-recap { margin: 0; display: flex; flex-wrap: wrap; gap: 1px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--border); }
+.sim-recap > div { flex: 1 1 180px; padding: 9px 14px; background: var(--surface); min-width: 0; }
+.sim-recap dt { color: var(--text-muted); font-size: 11px; }
+.sim-recap dd { margin: 2px 0 0; font-size: var(--fs-sm); font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.qs-verdict__own { color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* v12: 시험 종류 8가지까지 — 4열 격자, 아래 안내 / 장비 추천 순위·예약률 */
+.sim-kinds { grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); }
+.sim-note { grid-column: 1 / -1; margin: 4px 2px 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-sunken); color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.6; }
+.sim-equip__list { max-height: none; }
+.sim-equip__list button { justify-content: flex-start; }
+.sim-equip__name { flex: 1; }
+.sim-equip__rank { flex-shrink: 0; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-secondary); font-size: 12px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.sim-equip__list li:first-child .sim-equip__rank { background: color-mix(in srgb, var(--cyan) 20%, transparent); border-color: color-mix(in srgb, var(--cyan) 50%, transparent); color: var(--cyan); }
+.sim-equip__busy b, .sim-equip__busy { color: var(--text); }

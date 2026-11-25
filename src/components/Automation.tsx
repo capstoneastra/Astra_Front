@@ -5,7 +5,7 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { automationService } from "../services/automationService";
 import { invalidateData } from "../api/cache";
-import { DemoNotice, Feedback } from "./workflow/Feedback";
+import { PageNotice, Feedback } from "./workflow/Feedback";
 import RequirementWorkbench from "./workflow/RequirementWorkbench";
 import ApiState from "./ui/ApiState";
 export default function Automation({ setActiveMenu, embedded = false }) {
@@ -31,14 +31,13 @@ export default function Automation({ setActiveMenu, embedded = false }) {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="AI MISSION WORKFLOW"
+        
         title="AI 자동 추진"
         description="조건 분석부터 의뢰서 초안까지, 각 단계의 진행 상황을 확인하세요."
       />
-      <DemoNotice>
-        최종 결과는 DRAFT 초안입니다. 사용자 승인 없이 의뢰를 제출하거나 예약을
-        확정하지 않습니다.
-      </DemoNotice>
+      <PageNotice>
+        결과는 초안으로 저장되며, 직접 확인하기 전에는 제출되지 않습니다.
+      </PageNotice>
       <Panel className="form-panel">
         <FormField id="auto-input" label="시험 목적과 조건">
           <textarea

@@ -4,26 +4,24 @@ import { useAuth } from "./context";
 import AuthLayout from "./AuthLayout";
 import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
+import RecoverPage from "./RecoverPage";
 import ApiState from "../components/ui/ApiState";
 import { Button, Panel } from "../components/ui";
-import type { LocalWorkspaceAccount } from "./localWorkspace";
 
-export default function AuthGate({ children, onEnterLocal }: {
-  children: ReactNode;
-  onEnterLocal?: (account: LocalWorkspaceAccount) => void;
-}) {
+export default function AuthGate({ children }: { children: ReactNode }) {
   const { status, error, checkSession, logout } = useAuth();
-  if (status === "anonymous" || (status === "error" && onEnterLocal))
+  if (status === "anonymous")
     return (
       <Routes>
         <Route element={<AuthLayout />}>
-          <Route path="/auth/login" element={<LoginPage onEnterLocal={onEnterLocal} />} />
+          <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/signup" element={<SignupPage />} />
+          <Route path="/auth/recover" element={<RecoverPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/auth/login" replace />} />
       </Routes>
     );
-  if (status !== "authenticated" && status !== "local")
+  if (status !== "authenticated")
     return (
       <main className="main-content">
         <div className="content-page content-page--narrow">

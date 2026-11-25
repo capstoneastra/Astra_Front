@@ -104,6 +104,30 @@ export const authService = {
       throw contractError("가입용 기관·대학 목록의 응답 형식이 명세와 다릅니다.");
     return data;
   },
+  // ── 계정 찾기 (v17, docs/api-spec.md 1-1) ──
+  /** 이름·연락처로 가입한 이메일(아이디)을 찾습니다. 서버는 가려진 이메일만 돌려줍니다. */
+  async findEmail(name: string, phone: string, signal?: AbortSignal) {
+    const data = await publicPost<{ emails: string[] }>("/auth/find-email", { name, phone }, signal);
+    if (!Array.isArray(data?.emails) || data.emails.some((item) => typeof item !== "string"))
+      throw contractError("이메일 찾기 응답 형식이 명세와 다릅니다.");
+    return data.emails;
+  },
+  /** 비밀번호 재설정 코드 발송. 가입하지 않은 이메일이어도 같은 응답을 받습니다. */
+  async sendPasswordReset(email: string, signal?: AbortSignal) {
+    const data = await publicPost<{ expiresIn: number; resendAvailableIn: number }>("/auth/password-resets", { email }, signal);
+    if (!isDuration(data?.expiresIn) || !Number.isSafeInteger(data.resendAvailableIn) || data.resendAvailableIn < 0)
+      throw contractError("재설정 코드 발송 응답의 유효 시간을 확인할 수 없습니다.");
+    return data;
+  },
+  async confirmPasswordReset(email: string, code: string, signal?: AbortSignal) {
+    const data = await publicPost<{ resetToken: string; expiresIn: number }>("/auth/password-resets/confirm", { email, code }, signal);
+    if (typeof data?.resetToken !== "string" || !data.resetToken.trim() || !isDuration(data.expiresIn))
+      throw contractError("재설정 코드 확인 응답에서 토큰을 확인할 수 없습니다.");
+    return data;
+  },
+  async completePasswordReset(resetToken: string, newPassword: string, signal?: AbortSignal) {
+    await publicPost("/auth/password-resets/complete", { resetToken, newPassword }, signal);
+  },
   async me(signal?: AbortSignal) {
     return validateUser(
       responseData<User>(await apiClient.get("/users/me", { signal })),

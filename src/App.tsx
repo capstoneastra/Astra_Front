@@ -1,6 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useLocation, useNavigate, useNavigationType } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useLocation, useNavigationType } from "react-router";
 import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import EquipmentSearch from "./components/EquipmentSearch";
@@ -13,28 +12,34 @@ import type { Equipment } from "./services/equipmentService";
 import type { MatchRun, RequestBox } from "./services/contracts";
 import AuthProvider from "./auth/AuthProvider";
 import AuthGate from "./auth/AuthGate";
-import { AuthContext, useAuth } from "./auth/context";
-import { canOpenLocalWorkspace, localWorkspaceAccounts } from "./auth/localWorkspace";
-import type { LocalWorkspaceAccount } from "./auth/localWorkspace";
+import { useAuth } from "./auth/context";
 import { canAccessMenu } from "./auth/permissions";
 import { useApiQuery } from "./hooks/useApiQuery";
-import { equipmentService } from "./services/equipmentService";
+import { equipmentService, testTypeLabel } from "./services/equipmentService";
+import type { SearchSuggestion } from "./components/layout/QuickSearch";
 import { defaultDashboardView } from "./services/dashboardService";
-import { queryClient } from "./api/cache";
-import { blockLocalWorkspaceRequests } from "./api/client";
 import { ApiError } from "./api/errors";
 import ApiState from "./components/ui/ApiState";
 import Matching from "./components/Matching";
 import EquipmentCompare from "./components/EquipmentCompare";
 import TestInformation from "./components/TestInformation";
-import DuplicateEquipment from "./components/DuplicateEquipment";
 import AiAssistant from "./components/assistant/AiAssistant";
 import Simulation from "./components/Simulation";
+import QuickRequest from "./components/QuickRequest";
 import AdminManagement from "./components/AdminManagement";
+import AdminStats from "./components/AdminStats";
 import Notifications from "./components/Notifications";
 import ReservationCalendar from "./components/ReservationCalendar";
+import RequestDetailDialog from "./components/workflow/RequestDetailDialog";
+import type { NotificationTarget } from "./domain/notificationTarget";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
+import { addRecentSearch } from "./domain/recentSearches";
 import { useSidebarCollapse } from "./hooks/useSidebarCollapse";
+// v6 공통 여백·모션 — 각 화면 CSS 뒤에 오도록 마지막에 불러옵니다.
+import "./styles/v6.css";
+import "./styles/v9.css";
+import "./styles/v10.css";
+import "./styles/palette.css";
 
 function Workspace() {
   const { user } = useAuth();
@@ -78,9 +83,38 @@ function Workspace() {
   const catalogQuery = useApiQuery(
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
-    activeMenu !== "home" || assistantOpen,
   );
   const equipmentList = catalogQuery.data ?? [];
+  // 헤더 자동 완성 후보: 장비·기관·시험 종류 (관리자는 기관만)
+  const searchSources = useMemo<SearchSuggestion[]>(() => {
+    const orgs = new Map<number, { name: string; region?: string; count: number }>();
+    const types = new Map<string, number>();
+    for (const e of equipmentList) {
+      if (e.institutionId != null) {
+        const o = orgs.get(e.institutionId) ?? { name: e.institution, region: e.region, count: 0 };
+        o.count += 1; orgs.set(e.institutionId, o);
+      }
+      for (const t of e.testTypes) types.set(t, (types.get(t) ?? 0) + 1);
+    }
+    const institutions: SearchSuggestion[] = [...orgs].filter(([, o]) => o.name).map(([id, o]) => ({
+      kind: "institution", label: o.name, sub: `${o.region ?? ""}${o.region ? " · " : ""}장비 ${o.count}대`,
+      query: user.role === "ADMIN" ? o.name : "", options: user.role === "ADMIN" ? undefined : { institutionId: id },
+    }));
+    if (user.role === "ADMIN") return institutions;
+    return [
+      ...equipmentList.map((e) => ({ kind: "equipment" as const, label: e.name, sub: e.institution, query: e.name })),
+      ...institutions,
+      ...[...types].map(([code, n]) => ({ kind: "testType" as const, label: testTypeLabel(code), sub: `장비 ${n}대`, query: "", options: { testType: code } })),
+    ];
+  }, [equipmentList, user.role]);
+  // 검색창을 처음 열었을 때의 추천 검색어: 장비가 많은 시험 종류 4개 + 장비가 많은 기관 2곳
+  const searchRecommendations = useMemo<SearchSuggestion[]>(() => {
+    const bySize = (a: SearchSuggestion, b: SearchSuggestion) => Number(/\d+/.exec(b.sub ?? "")?.[0] ?? 0) - Number(/\d+/.exec(a.sub ?? "")?.[0] ?? 0);
+    const types = searchSources.filter((x) => x.kind === "testType").sort(bySize).slice(0, 4);
+    const orgs = searchSources.filter((x) => x.kind === "institution").sort((a, b) => Number(/장비 (\d+)/.exec(b.sub ?? "")?.[1] ?? 0) - Number(/장비 (\d+)/.exec(a.sub ?? "")?.[1] ?? 0))
+      .slice(0, user.role === "ADMIN" ? 5 : 2);
+    return [...types, ...orgs];
+  }, [searchSources, user.role]);
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1024px)");
@@ -119,10 +153,25 @@ function Workspace() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const searchEquipment = (query: string, options: { institutionId?: number | null } = {}) => {
-    workspaceNavigation.go("search", { searchTerm: query, institutionId: options.institutionId ?? null });
+  const searchEquipment = (query: string, options: { institutionId?: number | null; testType?: string; region?: string } = {}) => {
+    addRecentSearch(user.id, query);
+    workspaceNavigation.go("search", {
+      searchTerm: query, institutionId: options.institutionId ?? null,
+      ...(options.testType ? { testType: options.testType } : {}), ...(options.region ? { region: options.region } : {}),
+    });
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  // 알림에서 바로 해당 작업으로 이동합니다. 의뢰는 현재 화면 위에 상세 창으로 엽니다.
+  const [requestDialog, setRequestDialog] = useState<{ id: number; box?: RequestBox } | null>(null);
+  const openTarget = (target: NotificationTarget) => {
+    if (target.kind === "request") {
+      setRequestDialog({ id: target.id, box: user.role === "ADMIN" ? undefined : user.role === "INSTITUTION_MANAGER" ? "RECEIVED" : "SENT" });
+      return;
+    }
+    if (target.menu === "admin") workspaceNavigation.go("admin", null, { approvalFocus: target.focus });
+    else navigate(target.menu);
   };
 
   const openCalendar = (box?: RequestBox) => {
@@ -155,7 +204,7 @@ function Workspace() {
       );
     switch (activeMenu) {
       case "home":
-        return <Home view={dashboardView} onViewChange={setDashboardView} setActiveMenu={navigate} onSearch={searchEquipment}
+        return <Home view={dashboardView} setActiveMenu={navigate} onSearch={searchEquipment}
           openRequests={(box, status) => workspaceNavigation.go(box === "RECEIVED" ? "review" : "reservationCheck", null, { requestStatus: status })}
           openCalendar={openCalendar} openChat={openChat}
           openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} />;
@@ -177,25 +226,28 @@ function Workspace() {
       case "reservationCheck":
       case "review":
         return <ReservationCheck key={`${activeMenu}:${workspaceNavigation.route.index}`} setActiveMenu={navigate} institutionView={activeMenu === "review"}
-          initialStatus={workspaceNavigation.route.requestStatus} openCalendar={openCalendar} />;
+          initialStatus={workspaceNavigation.route.requestStatus} />;
       case "calendar":
         return <ReservationCalendar requestBox={calendarBox} onBoxChange={setCalendarBox} />;
       case "matching":
         return <Matching setActiveMenu={navigate} />;
       case "compare":
-        return <EquipmentCompare />;
+        return <EquipmentCompare setActiveMenu={navigate} />;
       case "testInfo":
         return <TestInformation setActiveMenu={navigate} />;
-      case "duplicates":
-        return <DuplicateEquipment setActiveMenu={navigate} />;
       case "simulation":
-        return <Simulation />;
+        return <Simulation setActiveMenu={navigate} />;
+      case "quickRequest":
+        return <QuickRequest key={workspaceNavigation.route.index} setActiveMenu={navigate} />;
       case "admin":
-        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus} />;
+        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus}
+          initialKeyword={workspaceNavigation.route.search?.searchTerm ?? ""} />;
+      case "stats":
+        return <AdminStats />;
       case "notifications":
-        return <Notifications />;
+        return <Notifications onOpenTarget={openTarget} />;
       case "manager":
-        return <EquipmentManager setActiveMenu={navigate} />;
+        return <EquipmentManager />;
       default:
         return (
           <ApiState
@@ -275,24 +327,25 @@ function Workspace() {
         >
           <AppHeader
             activeMenu={activeMenu}
-            onBack={() => { closeAssistant(); closeMenu(); workspaceNavigation.back(); }}
-            canGoBack={workspaceNavigation.canGoBack}
             menuOpen={menuOpen}
             onMenu={() => setMenuOpen(true)}
-            onSearch={searchEquipment}
+            searchSources={searchSources}
+            searchRecommendations={searchRecommendations}
+            dashboardView={dashboardView}
+            onDashboardView={setDashboardView}
+            onSearch={(query, options) => {
+              if (user.role !== "ADMIN") return searchEquipment(query, options);
+              addRecentSearch(user.id, query);
+              workspaceNavigation.go("admin", query ? { searchTerm: query, institutionId: null } : null);
+            }}
             onNotifications={() => navigate("notifications")}
+            onOpenTarget={openTarget}
           />
           <main id="main-content" className="main-content" tabIndex={-1}>
             {renderContent()}
           </main>
-          <footer className="app-footer">
-            <span>
-              ASTRA <i /> 우주항공 시험장비 공동활용 플랫폼
-            </span>
-            <span>
-              {user.name}{user.organization?.name && ` · ${user.organization.name}`}
-            </span>
-          </footer>
+          {requestDialog && <RequestDetailDialog key={requestDialog.id} requestId={requestDialog.id}
+            requestBox={requestDialog.box} onClose={() => setRequestDialog(null)} />}
         </div>
         {canAccessMenu(user.role, "assistant") && (
           <AiAssistant
@@ -326,49 +379,7 @@ function AuthenticatedWorkspace() {
 }
 
 function WorkspaceEntry() {
-  const navigate = useNavigate();
-  const [localAccount, setLocalAccount] = useState<LocalWorkspaceAccount | null>(null);
-  const [localQueries] = useState(() => new QueryClient({ defaultOptions: queryClient.getDefaultOptions() }));
-  const unblockApi = useRef<(() => void) | null>(null);
-
-  useEffect(() => () => {
-    localQueries.clear();
-    unblockApi.current?.();
-  }, [localQueries]);
-
-  useEffect(() => {
-    if (localAccount || !unblockApi.current) return;
-    localQueries.clear();
-    unblockApi.current();
-    unblockApi.current = null;
-  }, [localAccount, localQueries]);
-
-  const enterLocal = (account: LocalWorkspaceAccount) => {
-    if (!canOpenLocalWorkspace() || unblockApi.current) return;
-    unblockApi.current = blockLocalWorkspaceRequests();
-    setLocalAccount(account);
-    navigate("/", { replace: true });
-  };
-
-  if (localAccount) return (
-    <QueryClientProvider client={localQueries}>
-      <AuthContext.Provider value={{
-        status: "local", user: localWorkspaceAccounts[localAccount].user, error: null,
-        login: async () => false,
-        checkSession: async () => {},
-        logout: async () => {
-          setLocalAccount(null);
-          navigate("/auth/login", { replace: true });
-        },
-      }}>
-        <AuthGate><AuthenticatedWorkspace /></AuthGate>
-      </AuthContext.Provider>
-    </QueryClientProvider>
-  );
-
-  return <AuthGate onEnterLocal={canOpenLocalWorkspace() ? enterLocal : undefined}>
-    <AuthenticatedWorkspace />
-  </AuthGate>;
+  return <AuthGate><AuthenticatedWorkspace /></AuthGate>;
 }
 
 export default function App() {

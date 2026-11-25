@@ -1,0 +1,39 @@
+/* ── 회원·기관 승인 ─────────────────────────────────────────────── */
+.admin-page { display: grid; gap: var(--stack); }
+.admin-page > .page-header { margin-bottom: 0; }
+.admin-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.admin-tabs { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-sunken); }
+.admin-tabs button {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 4px 14px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 560;
+}
+.admin-tabs button[aria-selected="true"] { background: var(--surface-raised); color: var(--text); box-shadow: 0 1px 6px #0000001f; }
+.admin-tabs__count { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--amber); color: #2a2111; font-size: 11px; line-height: 18px; text-align: center; font-weight: 700; }
+.admin-filters { display: flex; gap: 8px; align-items: center; }
+.admin-filters select { min-height: 38px; padding: 6px 10px; }
+.admin-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface-sunken); color: var(--text-muted); }
+.admin-search:focus-within { border-color: var(--cyan); }
+.admin-search input { border: 0; background: transparent; padding: 9px 0; width: clamp(160px, 18vw, 260px); outline: none; }
+.admin-panel .panel__header { min-height: 0; padding: 14px 18px 10px; }
+.admin-panel .panel__header h2 { display: inline-flex; align-items: center; gap: 8px; }
+.admin-table th, .admin-table td { padding-inline: 18px; vertical-align: middle; }
+.admin-table td:first-child { min-width: 0; }
+.admin-table td strong { color: var(--text); font-weight: 580; font-size: var(--fs-md); }
+.admin-table tr { transition: background .15s; }
+.admin-table tbody tr:hover, .admin-table tr.is-selected { background: var(--control-hover); }
+.admin-table__check { width: 44px; padding-right: 0 !important; }
+.admin-table__check input { width: 16px; height: 16px; accent-color: var(--blue); }
+.admin-table__actions { text-align: right; white-space: nowrap; }
+.admin-actions { display: inline-flex; gap: 4px; }
+.admin-actions .button, .admin-table__actions > .button { min-height: 32px; padding: 5px 12px; }
+.admin-reasons { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; animation: fade-in .2s ease both; }
+.admin-reasons button {
+  padding: 5px 10px; border-radius: 999px; font-size: var(--fs-xs);
+  border: 1px solid color-mix(in srgb, var(--red) 32%, transparent); background: color-mix(in srgb, var(--red) 8%, transparent); color: var(--red);
+}
+.admin-reasons .admin-reasons__cancel { border-color: var(--border); background: transparent; color: var(--text-muted); }
+.admin-muted { color: var(--text-muted); }
+.admin-org-form form { padding: 4px 18px 16px; }
+.admin-org-form .form-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 14px 16px; }
+.admin-org-form__actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; }
+.admin-org-form { animation: rise-in .3s var(--ease-out) both; }

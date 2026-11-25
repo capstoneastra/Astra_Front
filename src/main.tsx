@@ -6,6 +6,8 @@ import "./index.css";
 import "./styles/themes.css";
 import "./styles/assistant.css";
 import "./styles/workspace-updates.css";
+import "./styles/chat.css";
+import "./styles/refresh.css";
 import App from "./App";
 import { initializeApi } from "./api/bootstrap";
 import { queryClient } from "./api/cache";

@@ -3,7 +3,7 @@ import type { ApiError } from "../api/errors";
 import type { User } from "../services/authService";
 
 export type AuthState =
-  | { status: "authenticated" | "local"; user: User; error: null }
+  | { status: "authenticated"; user: User; error: null }
   | { status: "checking" | "anonymous" | "error"; user: null; error: ApiError | null };
 
 type AuthContextValue = AuthState & {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
-import { navigation, parentMenu } from "../data/navigation";
+import { menuLabel, navigation, parentMenu } from "../data/navigation";
 import { useAuth } from "../auth/context";
 import { canAccessMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
@@ -32,13 +32,18 @@ export default function Sidebar({
   }, []);
   const { user } = useAuth();
   const collapseLabel = collapsed ? "사이드바 펼치기" : "사이드바 접기";
+  const roleText = user.organization?.orgType === "UNIVERSITY" ? "대학 담당자" : roleLabels[user.role] ?? user.role;
   const highlighted = parentMenu[activeMenu] ?? activeMenu;
+  // v11: 기관·대학은 '시험 의뢰 관리'를 누르면 받은 의뢰함이 먼저 열립니다(보낸 의뢰는 헤더 전환으로).
   const visibleNavigation = navigation
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => canAccessMenu(user.role, item.id)),
+      items: group.items.filter((item) => canAccessMenu(user.role, item.id)).map((item) => ({ ...item, label: menuLabel(item.id, user.role, item.label) })),
     }))
-    .filter((group) => group.items.length);
+    .filter((group) => group.items.length)
+    // 관리자는 승인·장비 데이터 관리가 주 업무이므로 '운영 관리'를 위로 올립니다.
+    .sort((a, b) => user.role === "ADMIN" ? Number(b.label === "운영 관리") - Number(a.label === "운영 관리") || 0 : 0)
+    .sort((a, b) => Number(b.label === "워크스페이스") - Number(a.label === "워크스페이스"));
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement;
@@ -135,15 +140,6 @@ export default function Sidebar({
             <X size={19} />
           </button>
         </div>
-        <div className="sidebar__section">
-          <div>
-            <div className="workspace-label">
-              <span className="workspace-label__icon">A</span>
-              <div>시험장비 공동활용<span>통합 워크스페이스</span></div>
-              <span className="workspace-label__dot" />
-            </div>
-          </div>
-        </div>
         <nav id="sidebar-navigation" className="sidebar__nav" aria-label="서비스 메뉴" onScroll={hideHint}>
           {visibleNavigation.map((group) => (
             <div className="nav-group" key={group.label}>
@@ -155,7 +151,7 @@ export default function Sidebar({
                   key={id}
                   type="button"
                   disabled={upcoming}
-                  onClick={() => { hideHint(); setActiveMenu(id); }}
+                  onClick={() => { hideHint(); setActiveMenu(id === "reservationCheck" && user.role === "INSTITUTION_MANAGER" ? "review" : id); }}
                   onMouseEnter={(event) => showHint(event.currentTarget, label)}
                   onMouseLeave={hideHint}
                   onFocus={(event) => {
@@ -175,12 +171,11 @@ export default function Sidebar({
           ))}
         </nav>
         <div className="sidebar__bottom">
-          <div className="sidebar__footer">
-            <span className="status-dot" />
-            {roleLabels[user.role] ?? user.role}
-            <span>v0.1</span>
+          <div className="sidebar-org" title={`${user.organization?.name ?? "ASTRA 운영"} · ${roleText}`}>
+            <strong>{user.organization?.name ?? "ASTRA 운영"}</strong>
+            <small>{roleText}</small>
           </div>
-          <button type="button" className="icon-button sidebar__collapse" aria-label={collapseLabel}
+          <button type="button" className="icon-button sidebar__collapse" aria-label={collapseLabel} title={collapseLabel}
             aria-expanded={!collapsed} aria-controls="sidebar-navigation"
             onClick={() => { hideHint(); onToggleCollapse(); }}>
             {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}

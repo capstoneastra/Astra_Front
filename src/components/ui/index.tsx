@@ -76,18 +76,17 @@ export function Panel({
 }
 
 export function PageHeader({
-  eyebrow = "ASTRA WORKSPACE",
+  eyebrow = null,
   title,
   description,
   children,
 }: HeadingProps) {
+  // v9: 화면마다 크게 쓰던 페이지 제목·설명은 공간만 차지해 화면에서 숨깁니다.
+  // (제목은 화면 읽기 프로그램용으로만 남기고, 버튼이 있으면 얇은 도구 줄로만 표시)
+  void eyebrow; void description;
   return (
-    <div className="page-header">
-      <div>
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h1>{title}</h1>
-        {description && <p>{description}</p>}
-      </div>
+    <div className={`page-header${children ? " page-header--toolbar" : " page-header--hidden"}`}>
+      <h1 className="sr-only">{title}</h1>
       {children && (
         <div className="page-header__actions tw:flex tw:items-center tw:gap-[9px]">
           {children}

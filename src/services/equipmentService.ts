@@ -9,16 +9,21 @@ interface EquipmentFilters {
   size?: number;
   sort?: string;
   institutionId?: number | null;
-  region?: string;
+  /** 여러 지역은 배열로 — API 명세대로 `region=대전&region=진주` 반복 파라미터로 보냅니다. */
+  region?: string | string[];
   testType?: string;
   availability?: string;
   equipmentType?: string;
   externalOnly?: boolean;
+  accreditedOnly?: boolean;
   includeMock?: boolean;
 }
 
 const testLabels: Record<string, string> = {
   VIBRATION: "진동시험",
+  SHOCK: "충격시험",
+  THERMAL_VACUUM: "열진공시험",
+  EMC: "전자파적합성",
   TEMPERATURE_HUMIDITY: "온습도시험",
   ELECTRICAL_RF_ANALYSIS: "전기·RF 측정",
   X_RAY_INSPECTION: "X선 비파괴검사",
@@ -122,6 +127,7 @@ export const equipmentService = {
       availability,
       equipmentType,
       externalOnly,
+      accreditedOnly,
       includeMock = apiConfig.includeMock,
     }: EquipmentFilters = {},
     signal?: AbortSignal,
@@ -137,12 +143,14 @@ export const equipmentService = {
             sort,
             includeMock,
             ...(institutionId ? { institutionId } : {}),
-            ...(region ? { region } : {}),
+            ...(region && region.length ? { region } : {}),
             ...(testType ? { testType } : {}),
             ...(availability ? { availability } : {}),
             ...(equipmentType ? { equipmentType } : {}),
             ...(externalOnly ? { externalOnly } : {}),
+            ...(accreditedOnly ? { accreditedOnly } : {}),
           },
+          paramsSerializer: { indexes: null },
         }),
       ),
     );

@@ -1,0 +1,43 @@
+/* ── 시험 의뢰 목록 ────────────────────────────────────────────── */
+.requests-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.requests-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.requests-chips button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 560;
+}
+.requests-chips button span { color: var(--text-muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.requests-chips button:hover { border-color: var(--border-strong); color: var(--text); }
+.requests-chips button[aria-selected="true"] { background: var(--blue-soft); border-color: var(--blue-border); color: var(--blue); }
+.requests-chips button[aria-selected="true"] span { color: var(--blue); }
+.requests-search input { width: clamp(150px, 16vw, 240px); }
+
+.requests-table { padding: 4px 6px 6px; }
+.requests-table .request-list { list-style: none; margin: 0; padding: 0; display: block; }
+.requests-table .request-list > li + li { border-top: 1px solid var(--border); }
+.requests-row {
+  display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.3fr) 110px 100px 110px 70px; align-items: center; gap: 14px;
+  width: 100%; padding: 12px 14px; border: 0; border-radius: 10px; background: transparent; color: inherit; text-align: left;
+}
+button.requests-row:hover { background: var(--control-hover); }
+button.requests-row:hover .requests-row__cta svg { color: var(--blue); transform: translateX(2px); }
+.requests-row--head { padding-block: 10px 8px; color: var(--text-muted); font-size: var(--fs-xs); border-bottom: 1px solid var(--border); border-radius: 0; }
+.requests-row__title { display: grid; gap: 2px; min-width: 0; }
+.requests-row__title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); font-weight: 580; }
+.requests-row__title small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: var(--fs-xs); }
+.requests-row__org { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: var(--fs-sm); }
+.requests-row__date { color: var(--text-secondary); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.requests-row__cta { display: flex; justify-content: flex-end; color: var(--text-muted); }
+.requests-row__cta svg { transition: transform .15s, color .15s; }
+@media (max-width: 900px) {
+  .requests-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .requests-row--head { display: none; }
+  .requests-row__org, .requests-row__date { display: none; }
+  .requests-row__cta { display: none; }
+}
+
+/* v17: 휴대폰 폭에서 상태 칩이 한 줄에 하나씩 세로로 쌓이던 문제 — 칩은 한 줄 전체를 쓰고 검색칸은 아래 줄 */
+@media (max-width: 760px) {
+  .requests-chips { flex-basis: 100%; }
+  .requests-search { flex: 1 1 100%; }
+  .requests-search input { width: 100%; }
+}

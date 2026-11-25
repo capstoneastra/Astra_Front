@@ -3,7 +3,7 @@ import type { MouseEvent, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 interface AuthCardLinkProps {
-  to: "/auth/login" | "/auth/signup";
+  to: "/auth/login" | "/auth/signup" | "/auth/recover";
   className?: string;
   children: ReactNode;
 }

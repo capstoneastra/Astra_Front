@@ -18,19 +18,13 @@ export function Feedback({ action, onRetry }: {
     </>
   );
 }
-export function DemoNotice({ children }: { children?: ReactNode }) {
+/** 화면 상단의 짧은 주의 문구. 내용이 없으면 아무것도 표시하지 않습니다. */
+export function PageNotice({ children }: { children?: ReactNode }) {
+  if (!children) return null;
   return (
-    <div className="content-note">
-      <Info size={16} />
-      <span>
-        실제 API 모드 · 최종 시험 가능 여부와 일정은 기관이 확인합니다.
-        {children && (
-          <>
-            <br />
-            {children}
-          </>
-        )}
-      </span>
-    </div>
+    <p className="page-hint">
+      <Info size={14} aria-hidden="true" />
+      {children}
+    </p>
   );
 }

@@ -1,178 +1,138 @@
-import { useState } from "react";
-import { Building2, ClipboardList, Info, CalendarDays, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { HeaderSlot, ViewSwitch } from "./layout/HeaderSlot";
+import { ArrowRight, ClipboardList, Search } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
-import { Badge, Button, EmptyState, PageHeader, Panel } from "./ui";
+import { Badge, EmptyState, PageHeader, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { requestService } from "../services/requestService";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
-import { requestStatusLabels, formatDate } from "../domain/constants";
-import type { RequestBox } from "../services/contracts";
-import { canAccessMenu } from "../auth/permissions";
+import { requestStatusLabels } from "../domain/constants";
+import { seoulDate } from "../domain/calendar";
+import type { RequestBox, RequestSummary } from "../services/contracts";
+import "../styles/requests.css";
+
+/** 상태 묶음 — 목록 상단의 탭(칩)으로 표시합니다. */
+const groups: { id: string; label: string; statuses: string[] }[] = [
+  { id: "", label: "전체", statuses: [] },
+  { id: "REVIEW_QUEUE", label: "검토 대기", statuses: ["SUBMITTED", "RESUBMITTED"] },
+  { id: "DRAFT", label: "작성 중", statuses: ["DRAFT"] },
+  { id: "UNDER_REVIEW", label: "검토 중", statuses: ["SUBMITTED", "UNDER_REVIEW", "RESUBMITTED"] },
+  { id: "SUPPLEMENT_REQUESTED", label: "보완 요청", statuses: ["SUPPLEMENT_REQUESTED"] },
+  { id: "SCHEDULING", label: "일정 협의", statuses: ["SCHEDULING"] },
+  { id: "CONFIRMED", label: "예약 확정", statuses: ["CONFIRMED"] },
+  { id: "COMPLETED", label: "완료", statuses: ["COMPLETED"] },
+  { id: "CLOSED", label: "반려·취소", statuses: ["REJECTED", "CANCELED"] },
+];
+const tone: Record<string, string> = {
+  DRAFT: "neutral", SUBMITTED: "cyan", UNDER_REVIEW: "cyan", RESUBMITTED: "cyan", SUPPLEMENT_REQUESTED: "amber",
+  SCHEDULING: "violet", CONFIRMED: "green", COMPLETED: "neutral", REJECTED: "neutral", CANCELED: "neutral",
+};
 
 export default function ReservationCheck({
   setActiveMenu,
-  openCalendar,
   initialStatus = "",
   institutionView = false,
+}: {
+  setActiveMenu: (menu: string) => void;
+  initialStatus?: string;
+  institutionView?: boolean;
 }) {
-  const { user, setDraftRequestId, setSelectedEquipment, equipmentList } =
-    useWorkspace();
-  const [selected, setSelected] = useState(null),
-    [status, setStatus] = useState(initialStatus);
+  const { user, setDraftRequestId, setSelectedEquipment, equipmentList } = useWorkspace();
+  const [selected, setSelected] = useState<number | null>(null);
+  const [keyword, setKeyword] = useState("");
   const admin = user.role === "ADMIN";
   const received = institutionView && !admin;
   const box: RequestBox | undefined = admin ? undefined : received ? "RECEIVED" : "SENT";
+  const visibleGroups = groups.filter((g) => (received ? g.id !== "DRAFT" && g.id !== "UNDER_REVIEW" : g.id !== "REVIEW_QUEUE"));
+  const normalized = visibleGroups.some((g) => g.id === initialStatus) ? initialStatus
+    : groups.find((g) => g.statuses.includes(initialStatus) && visibleGroups.includes(g))?.id ?? "";
+  const [group, setGroup] = useState(normalized);
+
   const query = useApiQuery(
-    async (signal) => {
-      if (received && status === "REVIEW_QUEUE") {
-        const pages = await Promise.all(["SUBMITTED", "RESUBMITTED"].map((stage) => requestService.list({ box, status: stage }, signal)));
-        return { content: pages.flatMap((page) => page.content), totalElements: pages.reduce((sum, page) => sum + page.totalElements, 0) };
-      }
-      return requestService.list({ ...(box && { box }), ...(status && { status }) }, signal);
-    },
-    `requests:${user.id}:${box ?? "ALL"}:${status}`,
+    (signal) => requestService.list({ ...(box && { box }) }, signal),
+    `requests:${user.id}:${box ?? "ALL"}`,
   );
-  const reservations = query.data?.content ?? [];
+  const all = useMemo(() => query.data?.content ?? [], [query.data]);
+  const count = (id: string) => {
+    const g = groups.find((x) => x.id === id);
+    return g.statuses.length ? all.filter((r) => g.statuses.includes(r.status)).length : all.length;
+  };
+  const current = groups.find((g) => g.id === group) ?? groups[0];
+  const term = keyword.trim().toLowerCase();
+  const rows = all
+    .filter((r) => !current.statuses.length || current.statuses.includes(r.status))
+    .filter((r) => !term || `${r.title} ${r.requestNo} ${r.equipment?.name ?? ""} ${r.institution?.name ?? ""} ${r.revision?.content?.applicant?.companyName ?? ""}`.toLowerCase().includes(term));
+
+  const continueDraft = (item: RequestSummary) => {
+    setDraftRequestId(item.id);
+    setSelectedEquipment(equipmentList.find((e) => e.id === item.equipment?.id) ?? null);
+    setActiveMenu("reservation");
+  };
 
   return (
-    <div className="content-page page-enter">
-      <PageHeader
-        eyebrow="MY TEST REQUESTS"
-        title="시험 의뢰 관리"
-        description={admin ? "전체 시험 의뢰와 진행 상태를 확인하세요." : received ? "소속 조직의 장비로 접수된 의뢰를 검토하세요." : "신청한 시험 의뢰와 진행 상태를 확인하세요."}
-      >
-        <Button variant="secondary" icon={CalendarDays} onClick={() => openCalendar(box)}>예약 캘린더</Button>
-        {canAccessMenu(user.role, "reservation") && (
-          <Button icon={Plus} onClick={() => {
-            setDraftRequestId(null);
-            setSelectedEquipment(null);
-            setActiveMenu("reservation");
-          }}>새 시험 의뢰</Button>
-        )}
-        <Badge tone="cyan">
-          {query.loading ? "조회 중" : (query.data?.totalElements ?? "—")}건
-        </Badge>
-      </PageHeader>
-      <div className="content-note">
-        <Info size={16} />
-        <span>
-          소속 기업·기관의 의뢰만 조회합니다.{" "}
-          제출·검토·보완·예약은 각각 별도 상태로 관리합니다.
-        </span>
-      </div>
-      <Panel className="search-toolbar">
-        {!admin && <div className="request-box-switch" role="group" aria-label="의뢰함 선택">
-          <Button variant={received ? "secondary" : "primary"} aria-pressed={!received} onClick={() => setActiveMenu("reservationCheck")}>
-            보낸 의뢰
-          </Button>
-          <Button variant={received ? "primary" : "secondary"} aria-pressed={received} onClick={() => setActiveMenu("review")}>
-            받은 의뢰
-          </Button>
-        </div>}
-        <label htmlFor="requests-status">진행 상태</label>
-        <select
-          id="requests-status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="">전체 상태</option>
-          {received && <option value="REVIEW_QUEUE">검토 대기 (신규·재제출)</option>}
-          {Object.entries(requestStatusLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </Panel>
-      {query.loading || query.error ? (
-        <Panel>
-          <ApiState
-            loading={query.loading}
-            error={query.error}
-            onRetry={query.reload}
-          />
-        </Panel>
-      ) : reservations.length === 0 ? (
-        <Panel>
-          <EmptyState
-            icon={ClipboardList}
-            title={received ? "접수된 시험 의뢰가 없습니다" : "조회된 시험 의뢰가 없습니다"}
-            description={status ? "다른 진행 상태를 선택해 보세요." : undefined}
-          />
-        </Panel>
-      ) : (
-        <div className="request-list">
-          {reservations.map((item) => (
-            <Panel className="request-card" key={item.id}>
-              <div className="request-card__header">
-                <span className="request-card__number">
-                  REQUEST / {item.id}
-                </span>
-                <div>
-                  <Badge tone="amber" dot>
-                    {requestStatusLabels[item.status] ?? item.status}
-                  </Badge>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setSelected(item.id)}
-                  >
-                    의뢰 상세
-                  </Button>
-                </div>
-              </div>
-              <h2>{item.equipment?.name || item.title || item.requestNo}</h2>
-              <p className="request-card__institution">
-                <Building2 size={14} />
-                {item.institution?.name || "보유기관 미입력"}
-              </p>
-              <div className="request-card__dates">
-                <div>
-                  <span>신청일</span>
-                  {formatDate(item.createdAt)}
-                </div>
-                <div>
-                  <span>희망 시험일</span>
-                  <strong>
-                    {item.revision?.content?.schedule?.desiredStartDate ||
-                      "기관 협의"}
-                  </strong>
-                </div>
-              </div>
-              <div className="request-card__condition">
-                <span>요청 시험조건</span>
-                <p>{item.revision?.content?.test?.purpose || "확인 필요"}</p>
-                <p>
-                  {item.revision?.revisionNo != null && `제출본 ${item.revision.revisionNo} · `}{item.requestNo}
-                </p>
-                {!received && item.status === "DRAFT" && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setDraftRequestId(item.id);
-                      setSelectedEquipment(
-                        equipmentList.find((e) => e.id === item.equipment?.id) ??
-                          null,
-                      );
-                      setActiveMenu("reservation");
-                    }}
-                  >
-                    초안 이어서 작성
-                  </Button>
-                )}
-              </div>
-            </Panel>
+    <div className="content-page page-enter requests-page">
+      <PageHeader title="시험 의뢰 관리"
+        description={admin ? "플랫폼 전체 의뢰의 진행 상태입니다." : received ? "우리 기관 장비로 접수된 의뢰입니다." : "신청한 의뢰의 진행 상태를 확인하세요."} />
+
+      {user.role === "INSTITUTION_MANAGER" && (
+        <HeaderSlot>
+          <ViewSwitch label="의뢰함" value={received ? "review" : "reservationCheck"} onChange={setActiveMenu}
+            options={[{ value: "review", label: "받은 의뢰" }, { value: "reservationCheck", label: "보낸 의뢰" }]} />
+        </HeaderSlot>
+      )}
+      <div className="requests-toolbar">
+        <div className="requests-chips" role="tablist" aria-label="진행 상태">
+          {visibleGroups.map((g) => (
+            <button key={g.id} type="button" role="tab" aria-selected={group === g.id} onClick={() => setGroup(g.id)}>
+              {g.label}<span>{query.data ? count(g.id) : "·"}</span>
+            </button>
           ))}
         </div>
+        <label className="admin-search requests-search">
+          <Search size={15} aria-hidden="true" />
+          <span className="sr-only">의뢰 검색</span>
+          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="의뢰명·번호·장비 검색" />
+        </label>
+      </div>
+
+      {query.loading || query.error ? (
+        <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>
+      ) : rows.length === 0 ? (
+        <Panel>
+          <EmptyState icon={ClipboardList} title={received ? "해당하는 접수 의뢰가 없습니다" : "해당하는 의뢰가 없습니다"}
+            description={group || term ? "다른 상태를 선택하거나 검색어를 지워보세요." : undefined} />
+        </Panel>
+      ) : (
+        <Panel className="requests-table">
+          <div className="requests-row requests-row--head" aria-hidden="true">
+            <span>의뢰</span><span>{received ? "신청 기업" : "보유기관"}</span><span>희망 시험일</span><span>접수일</span><span>상태</span><span />
+          </div>
+          <ul className="request-list">
+            {rows.map((item) => (
+              <li key={item.id}>
+                <button type="button" className="requests-row" onClick={() => setSelected(item.id)}>
+                  <span className="requests-row__title">
+                    <strong>{item.title || item.equipment?.name}</strong>
+                    <small>{item.requestNo} · {item.equipment?.name}</small>
+                  </span>
+                  <span className="requests-row__org">{received ? item.revision?.content?.applicant?.companyName ?? "—" : item.institution?.name ?? "—"}</span>
+                  <span className="requests-row__date">{item.revision?.content?.schedule?.desiredStartDate ?? "협의"}</span>
+                  <span className="requests-row__date">{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</span>
+                  <span><Badge tone={tone[item.status]} dot>{requestStatusLabels[item.status] ?? item.status}</Badge></span>
+                  <span className="requests-row__cta">
+                    {!received && item.status === "DRAFT" ? (
+                      <span role="button" tabIndex={0} className="text-link" onClick={(e) => { e.stopPropagation(); continueDraft(item); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); continueDraft(item); } }}>이어 쓰기</span>
+                    ) : <ArrowRight size={15} aria-hidden="true" />}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
       )}
-      {selected && (
-        <RequestDetailDialog
-          key={selected}
-          requestId={selected}
-          requestBox={box}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      {selected && <RequestDetailDialog key={selected} requestId={selected} requestBox={box} onClose={() => setSelected(null)} />}
     </div>
   );
 }

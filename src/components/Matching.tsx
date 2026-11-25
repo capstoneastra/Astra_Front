@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import ApiState from "./ui/ApiState";
-import { DemoNotice, Feedback } from "./workflow/Feedback";
+import { PageNotice, Feedback } from "./workflow/Feedback";
 import RequirementWorkbench from "./workflow/RequirementWorkbench";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -38,7 +38,7 @@ export default function Matching({ setActiveMenu }) {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="CONDITION INTELLIGENCE"
+        
         title="AI 시험조건 분석·장비 매칭"
         description="조건을 확인하고, 장비별 충족·불일치·미확인 근거를 비교하세요."
       >
@@ -50,9 +50,9 @@ export default function Matching({ setActiveMenu }) {
           선택 장비 비교 ({comparisonIds.length})
         </Button>
       </PageHeader>
-      <DemoNotice>
-        규칙 비교 결과이며 실제 AI 분석이나 기관의 시험 가능 확정이 아닙니다.
-      </DemoNotice>
+      <PageNotice>
+        규칙 비교 결과이며, 최종 시험 가능 여부는 기관이 확인합니다.
+      </PageNotice>
       {!requirementId ? (
         <Panel className="form-panel" title="시험조건 직접 입력">
           {(types.loading || types.error) && (

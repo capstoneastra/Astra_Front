@@ -29,9 +29,6 @@
   --primary-ink: #fff;
 }
 
-:root[data-theme="light"] .metric-card {
-  box-shadow: var(--panel-shadow);
-}
 :root[data-theme="light"] .dialog {
   box-shadow: 0 30px 110px #25363238;
 }
@@ -39,48 +36,9 @@
   background: #21292370;
 }
 
-/* Secondary copy uses one readable ink color across all existing screens. */
 :root[data-theme="light"]
   :is(
-    .brand .astra-brand__text small,
-    .nav-group__label,
-    .nav-item small,
-    .sidebar__footer,
-    .sidebar__footer > span:last-child,
-    .header-date,
-    .eyebrow,
-    .demo-notice,
-    .demo-notice > span:first-child,
-    .demo-notice p,
-    .demo-notice__right,
-    .metric-card__top,
-    .metric-card__value > span,
-    .metric-card__bottom,
-    .metric-card__bottom > svg,
-    .panel__header p,
-    .panel-footnote,
-    .muted-label,
-    th,
-    td,
-    td small,
-    .content-note,
-    .results-heading,
-    .equipment-card__id,
-    .equipment-card__institution,
-    .equipment-description small,
-    .equipment-card__footer > span,
-    .field-hint,
-    .form-actions p,
-    .request-card__number,
-    .request-card__institution,
-    .request-card__condition > span,
-    .chat-panel__heading small,
-    .message__body > span,
-    .chat-panel__footnote,
-    .chat-conditions__body > p,
-    .condition-steps li,
-    .condition-steps li::before,
-    .chat-examples button
+    .brand .astra-brand__text small, .nav-group__label, .nav-item small, .sidebar__footer, .sidebar__footer > span:last-child, .header-date, .eyebrow, .demo-notice, .demo-notice > span:first-child, .demo-notice p, .demo-notice__right, .panel__header p, .panel-footnote, .muted-label, th, td, td small, .content-note, .results-heading, .equipment-card__id, .equipment-card__institution, .equipment-description small, .equipment-card__footer > span, .field-hint, .form-actions p, .request-card__number, .request-card__institution, .request-card__condition > span, .chat-panel__heading small, .message__body > span, .chat-panel__footnote, .chat-conditions__body > p, .condition-steps li, .condition-steps li::before, .chat-examples button
   ) {
   color: var(--text-secondary);
 }
@@ -138,11 +96,7 @@
   background: var(--control-hover);
   border-color: var(--accent-border);
 }
-:root[data-theme="light"] .demo-notice .badge {
-  color: var(--cyan);
-  background: var(--accent-background);
-  border-color: var(--accent-border);
-}
+
 :root[data-theme="light"] .equipment-glyph {
   background: var(--accent-background);
 }
@@ -154,21 +108,7 @@
   background: var(--surface-sunken);
   border-color: var(--border);
 }
-:root[data-theme="light"] .message--user .message__bubble {
-  background: var(--accent-background);
-  color: var(--cyan);
-  border-color: var(--accent-border);
-}
-:root[data-theme="light"] .condition-ready {
-  background: var(--accent-background);
-  color: var(--cyan);
-}
-:root[data-theme="light"] .chat-examples button {
-  background: var(--surface-sunken);
-}
-:root[data-theme="light"] .chat-examples button:hover {
-  color: var(--cyan);
-}
+
 :root[data-theme="light"] .sidebar-backdrop {
   background: #21292361;
 }

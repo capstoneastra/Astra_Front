@@ -1,0 +1,83 @@
+/* ── 장비 비교: 두 장의 카드 ───────────────────────────────────────── */
+.compare-basket { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: var(--stack); }
+.compare-basket > span:first-child { margin-right: 4px; color: var(--text-muted); font-size: var(--fs-sm); }
+.compare-basket__item { display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden; transition: border-color .15s, background .15s; }
+.compare-basket__item > button { border: 0; background: transparent; color: var(--text-secondary); font-size: var(--fs-sm); padding: 5px 4px 5px 11px; }
+.compare-basket__item > .compare-basket__remove { padding: 5px 9px 5px 5px; color: var(--text-muted); display: grid; place-items: center; }
+.compare-basket__item:hover { border-color: var(--accent-border); }
+.compare-basket__item.is-active { border-color: var(--blue-border); background: var(--blue-soft); }
+.compare-basket__item.is-active > button:first-child { color: var(--blue); font-weight: 600; }
+
+.compare-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto repeat(var(--rows), auto) auto;
+  column-gap: clamp(12px, 1.4vw, 22px);
+}
+.compare-card {
+  grid-row: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  grid-template-rows: subgrid;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--panel-background);
+  box-shadow: var(--panel-shadow);
+  overflow: visible;
+  transition: border-color .2s, transform .25s var(--ease-out);
+}
+.compare-card:not(.compare-card--empty):hover { border-color: var(--border-strong); }
+.compare-card--empty { border-style: dashed; background: transparent; box-shadow: none; }
+.compare-card__head { display: flex; align-items: center; gap: 6px; padding: 12px 12px 0; }
+.compare-card__fill { grid-row: 2 / -1; display: grid; place-content: center; padding: 20px; }
+.compare-card__placeholder { text-align: center; color: var(--text-muted); gap: 12px; justify-items: center; min-height: 280px; }
+.compare-card__placeholder span { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; border: 1px dashed var(--border-strong); }
+.compare-card__placeholder p { font-size: var(--fs-sm); line-height: 1.7; }
+.compare-card__summary { padding: 16px 18px 12px; border-bottom: 1px solid var(--border); animation: rise-in .4s var(--ease-out) both; }
+.compare-card__summary h2 { font-size: clamp(17px, 0.6vw + 12px, 21px); letter-spacing: -0.02em; line-height: 1.35; }
+.compare-card__summary p { display: flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--text-secondary); font-size: var(--fs-sm); }
+.compare-card__badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.compare-row { margin: 0; padding: 10px 18px; display: grid; grid-template-columns: minmax(84px, 34%) minmax(0, 1fr); align-items: center; gap: 12px; border-bottom: 1px solid var(--border); animation: fade-in .35s ease both; }
+.compare-row dt { color: var(--text-muted); font-size: var(--fs-sm); }
+.compare-row dd { margin: 0; position: relative; display: grid; gap: 5px; }
+.compare-row dd > span { font-size: var(--fs-md); font-weight: 560; font-variant-numeric: tabular-nums; }
+.compare-row__flag { margin-left: 6px; padding: 0 5px; border-radius: 4px; color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); font-size: 10px; font-weight: 500; }
+.compare-row__bar { display: block; height: 4px; border-radius: 99px; background: var(--cyan); opacity: .75; animation: bar-grow .7s var(--ease-out) both; transform-origin: left; }
+.compare-row--diff { background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 7%, transparent), transparent 80%); }
+.compare-row--diff dd > span { color: var(--blue); }
+.compare-row--missing dd > span { color: var(--text-muted); font-weight: 400; }
+.compare-row--usage dt { color: var(--text-secondary); }
+.compare-card__foot { padding: 14px 18px 16px; display: flex; justify-content: flex-end; }
+
+.compare-picker { position: relative; flex: 1; min-width: 0; }
+.compare-picker__trigger {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 12px 6px 6px;
+  border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface-sunken); color: var(--text); text-align: left;
+}
+.compare-picker__trigger:hover, .compare-picker__trigger[aria-expanded="true"] { border-color: var(--blue-border); }
+.compare-picker__slot { display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: var(--blue-soft); color: var(--blue); font-weight: 700; }
+.compare-picker__value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
+.compare-picker__pop {
+  position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0;
+  border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface-glass); backdrop-filter: blur(18px);
+  box-shadow: 0 18px 44px #00000047; animation: drop-down .2s var(--ease-out); overflow: hidden;
+}
+.compare-picker__search { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.compare-picker__search input { flex: 1; border: 0; background: transparent; padding: 8px 0; outline: none; }
+.compare-picker__pop ul { list-style: none; margin: 0; padding: 6px; max-height: 320px; overflow-y: auto; }
+.compare-picker__pop li > button {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; width: 100%; padding: 9px 10px;
+  border: 0; border-radius: 9px; background: transparent; color: inherit; text-align: left;
+}
+.compare-picker__pop li > button:hover, .compare-picker__pop li > button[aria-selected="true"] { background: var(--control-hover); }
+.compare-picker__pop li strong { font-size: var(--fs-sm); font-weight: 560; }
+.compare-picker__pop li small { grid-column: 1; color: var(--text-muted); font-size: var(--fs-xs); }
+.compare-picker__pop li .badge { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.compare-picker__empty { padding: 14px; color: var(--text-muted); font-size: var(--fs-sm); }
+
+@media (max-width: 760px) {
+  .compare-board { column-gap: 8px; }
+  .compare-row { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 9px 12px; }
+  .compare-card__summary { padding: 12px; }
+}
