@@ -1,4 +1,5 @@
 import { getData, postData, mutate } from "./http";
+import { registerTestTypeLabels } from "./equipmentService";
 import type { EquipmentDto, EquipmentSpec, NamedResource, RequirementCondition, ResourceId, TestType, TestTypeDetail } from "./contracts";
 
 type CatalogEquipment = EquipmentDto & { institution: NamedResource };
@@ -23,7 +24,11 @@ export interface SearchResult {
 }
 
 export const catalogService = {
-  testTypes: (signal?: AbortSignal) => getData<TestType[]>("/test-types", undefined, signal),
+  testTypes: async (signal?: AbortSignal) => {
+    const types = await getData<TestType[]>("/test-types", undefined, signal);
+    registerTestTypeLabels(Array.isArray(types) ? types : []);
+    return types;
+  },
   testType: (code: string, signal?: AbortSignal) => getData<TestTypeDetail>(`/test-types/${code}`, undefined, signal),
   /** 시험항목·자연어 통합 검색 (명세 §2 GET /search) — 문장을 시험유형·조건·지역으로 해석하고 장비 후보(최대 20대)를 돌려줌 */
   search: (q: string, signal?: AbortSignal) => getData<SearchResult>("/search", { q }, signal),

@@ -22,7 +22,7 @@ import {
   TextLink,
 } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
-import { equipmentService, equipmentView, testTypeLabel } from "../services/equipmentService";
+import { equipmentService, equipmentView, specLabel, testTypeLabel } from "../services/equipmentService";
 import { valueText } from "../domain/constants";
 import "../styles/search.css";
 import { catalogService } from "../services/catalogService";
@@ -102,6 +102,8 @@ export default function EquipmentSearch({
     (signal) => catalogService.testTypes(signal),
     "test-types",
   );
+  // 사양 이름표(한글) — 실패해도 목록은 그대로 보여 주고 키 이름으로 대신함
+  useApiQuery((signal) => equipmentService.specDefinitions(signal), "spec-definitions");
   const [detailEquipment, setDetailEquipment] = useState(null);
   const [selecting, setSelecting] = useState(null);
   const [selectionError, setSelectionError] = useState(null);
@@ -306,7 +308,9 @@ export default function EquipmentSearch({
                     <small><Building2 size={12} aria-hidden="true" />{equip.institution || "보유기관 확인 필요"}{equip.region && ` · ${equip.region}`}</small>
                   </button>
                   <span role="cell" className="eq-row__types">
-                    {equip.testTypes.map((code) => <span key={code} className="type-chip">{testTypeLabel(code)}</span>)}
+                    {equip.testTypes.length
+                      ? equip.testTypes.map((code) => <span key={code} className="type-chip">{testTypeLabel(code)}</span>)
+                      : <span className="eq-row__muted" title="시험유형이 연결되지 않은 장비">{(() => { const kind = EQUIPMENT_TYPES.find(([code]) => code === equip.equipmentType)?.[1]; return kind ? `${kind} 장비` : "—"; })()}</span>}
                   </span>
                   <span role="cell" className="eq-row__status">
                     {status ? <span className={`status-chip status-chip--${status[1]}`}><i aria-hidden="true" />{status[0]}</span> : <span className="status-chip">확인 필요</span>}
@@ -314,8 +318,8 @@ export default function EquipmentSearch({
                   </span>
                   <span role="cell" className="eq-row__specs">
                     {equip.specs?.length ? equip.specs.slice(0, 2).map((spec) => (
-                      <span key={spec.key}><small>{spec.label ?? spec.key}</small>{valueText(spec)}</span>
-                    )) : <small className="eq-row__desc">{equip.reason || "사양 정보 없음"}</small>}
+                      <span key={spec.key}><small>{specLabel(spec)}</small>{valueText(spec)}</span>
+                    )) : <small className="eq-row__desc eq-row__muted" title={equip.reason || undefined}>{equip.reason || "등록된 사양 없음"}</small>}
                   </span>
                   <span role="cell" className="eq-row__fee">{equip.usage?.feeText ?? equip.feeText ?? "기관 문의"}</span>
                   <span role="cell" className="eq-row__actions">

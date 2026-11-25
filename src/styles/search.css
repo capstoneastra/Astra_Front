@@ -45,10 +45,7 @@
 .eq-check:hover:not(:disabled) { color: var(--blue); border-color: var(--blue-border); }
 .eq-check.is-on { background: var(--blue); border-color: var(--blue); color: var(--primary-ink); transform: scale(1.04); }
 @keyframes row-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@media (max-width: 1180px) {
-  .eq-list { --eq-cols: 34px minmax(170px, 1.3fr) minmax(130px, 1fr) minmax(0, 1.5fr) auto; }
-  .eq-list__head > :nth-child(5), .eq-row__fee { display: none; }
-}
+/* (v6 의 1180px 규칙은 삭제 — '주요 사양' 제목만 숨기고 칸은 남겨 1001~1180px 에서 제목 줄과 내용이 한 칸씩 어긋났음) */
 @media (max-width: 760px) {
   .eq-list__head { display: none; }
   .eq-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 6px 10px; padding-block: 10px; }
@@ -223,3 +220,6 @@
   .eq-row__specs { flex-wrap: wrap; row-gap: 2px; }
   .eq-row__specs > span { max-width: 100%; white-space: nowrap; }
 }
+
+/* 시험유형이 없는 장비(가공·지원 등)·사양 미등록 — 빈칸 대신 옅은 글자로 */
+.eq-row__muted { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 400; }

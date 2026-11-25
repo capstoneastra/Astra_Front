@@ -31,6 +31,18 @@ const testLabels: Record<string, string> = {
   BATTERY_TEST: "배터리 시험",
 };
 export const testTypeLabel = (code: string) => testLabels[code] ?? code;
+/** GET /test-types 의 nameKo 로 이름표를 채움 — 위 고정 목록에 없는 시험유형이 영어 코드로 보이지 않도록 */
+export function registerTestTypeLabels(types: { code: string; nameKo?: string | null }[] | undefined) {
+  types?.forEach((t) => { if (t.code && t.nameKo) testLabels[t.code] = t.nameKo; });
+}
+
+/** 사양 키 → 한글 이름 (GET /equipment/spec-definitions). label 이 비어 있으면 snake_case 키 대신 이 이름을 씀 */
+const specLabels: Record<string, string> = {};
+export interface SpecDefinition { specKey: string; nameKo?: string | null; baseUnit?: string | null; valueType?: string | null }
+export function registerSpecLabels(defs: SpecDefinition[] | undefined) {
+  defs?.forEach((d) => { if (d.specKey && d.nameKo) specLabels[d.specKey] = d.nameKo; });
+}
+export const specLabel = (spec: { key: string; label?: string | null }) => spec.label || specLabels[spec.key] || spec.key;
 const optionalText = (value: unknown) => value == null || typeof value === "string";
 const optionalNumber = (value: unknown) =>
   value == null || (typeof value === "number" && Number.isFinite(value));
@@ -175,6 +187,11 @@ export const equipmentService = {
         "장비 페이지의 전체 건수와 항목이 일치하지 않습니다. 다시 조회해주세요.",
       );
     return items;
+  },
+  async specDefinitions(signal?: AbortSignal) {
+    const defs = responseData<SpecDefinition[]>(await apiClient.get("/equipment/spec-definitions", { signal }));
+    registerSpecLabels(Array.isArray(defs) ? defs : []);
+    return defs;
   },
   async detail(id: ResourceId, signal?: AbortSignal) {
     if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0)
