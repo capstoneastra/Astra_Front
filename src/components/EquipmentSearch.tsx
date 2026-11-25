@@ -91,9 +91,10 @@ export default function EquipmentSearch({
   const [testType, setTestType] = useState(initialView?.testType ?? "");
   const [availabilityFilter, setAvailabilityFilter] = useState(initialView?.availability ?? "");
   const [equipmentType, setEquipmentType] = useState(initialView?.equipmentType ?? "");
-  const [externalOnly, setExternalOnly] = useState<boolean>(initialView?.externalOnly ?? false);
-  const [accreditedOnly, setAccreditedOnly] = useState<boolean>(initialView?.accreditedOnly ?? false);
-  const [includeMock, setIncludeMock] = useState<boolean>(initialView?.includeMock ?? apiConfig.includeMock);
+  // 공동활용·공인시험 체크박스는 없앰. 예시 데이터는 항상 포함(시연 때 구두로 안내)
+  const externalOnly = false;
+  const accreditedOnly = false;
+  const includeMock = apiConfig.includeMock;
   const [sort, setSort] = useState(initialView?.sort ?? "externalId,asc");
   useEffect(() => {
     onViewChange?.({ searchTerm, filterType, institutionId, page, regions, testType, availability: availabilityFilter, equipmentType, externalOnly, accreditedOnly, includeMock, sort });
@@ -193,7 +194,7 @@ export default function EquipmentSearch({
   const toggleCompare = (id: number) =>
     setComparisonIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : ids.length >= 5 ? ids : [...ids, id]));
   const resetFilters = () => {
-    setInstitutionId(null); setRegions([]); setTestType(""); setAvailabilityFilter(""); setEquipmentType(""); setExternalOnly(false); setAccreditedOnly(false); setPage(0);
+    setInstitutionId(null); setRegions([]); setTestType(""); setAvailabilityFilter(""); setEquipmentType(""); setPage(0);
   };
   const resetAll = () => { setSearchTerm(""); setQueryTerm(""); setFilterType("all"); resetFilters(); };
 
@@ -254,11 +255,6 @@ export default function EquipmentSearch({
               <option value="">장비 유형 전체</option>
               {EQUIPMENT_TYPES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
             </select>
-            <span className="eq-filterbar__checks">
-              <label><input type="checkbox" checked={externalOnly} onChange={(e) => { setExternalOnly(e.target.checked); setPage(0); }} />공동활용만</label>
-              <label><input type="checkbox" checked={accreditedOnly} onChange={(e) => { setAccreditedOnly(e.target.checked); setPage(0); }} />공인시험 가능만</label>
-              <label><input type="checkbox" checked={includeMock} onChange={(e) => { setIncludeMock(e.target.checked); setPage(0); }} />예시 데이터 포함</label>
-            </span>
           </div>
           {types.error && <ApiState error={types.error} onRetry={types.reload} />}
           <div className="results-heading eq-filterbar__result">
@@ -314,7 +310,6 @@ export default function EquipmentSearch({
                   </span>
                   <span role="cell" className="eq-row__status">
                     {status ? <span className={`status-chip status-chip--${status[1]}`}><i aria-hidden="true" />{status[0]}</span> : <span className="status-chip">확인 필요</span>}
-                    {equip.isMock && <span className="status-note">미검증 사양</span>}
                   </span>
                   <span role="cell" className="eq-row__specs">
                     {equip.specs?.length ? equip.specs.slice(0, 2).map((spec) => (
