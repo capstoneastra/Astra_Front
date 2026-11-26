@@ -136,6 +136,48 @@
 .dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 @media (max-width: 640px) { .spec-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .spec-row__unit { grid-column: 1; } }
 
+/* v19: 장비 등록 — 명세 항목을 다섯 묶음(기본 정보 · 시험 종류 · 이용 조건·요금 · 운영 상태 · 주요 사양)으로 */
+.register-dialog { width: min(780px, calc(var(--vw-full) - 32px)); }
+.register-dialog__form { gap: 0; }
+.reg-section { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid var(--border); }
+.reg-section:first-child { border-top: 0; padding-top: 4px; }
+.reg-section h3 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin: 0; font-size: var(--fs-md); font-weight: 700; }
+.reg-section h3 > span {
+  align-self: center; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px;
+  background: var(--accent-background); color: var(--cyan); font-size: 12px; font-weight: 750; font-variant-numeric: tabular-nums;
+}
+.reg-section h3 small { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 400; }
+.reg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.reg-grid__wide { grid-column: 1 / -1; }
+.reg-grid .form-field { margin: 0; }
+.reg-grid input, .reg-grid select, .reg-grid textarea { width: 100%; }
+.reg-grid .field-hint { margin: 4px 0 0; line-height: 1.5; }
+.reg-fee { display: grid; grid-template-columns: 120px minmax(0, 1fr) 130px; gap: 6px; }
+.reg-fee input:disabled, .reg-fee select:disabled { opacity: .55; }
+@media (max-width: 640px) { .reg-grid { grid-template-columns: minmax(0, 1fr); } .reg-fee { grid-template-columns: 1fr 1fr; } .reg-fee input { grid-column: 1 / -1; grid-row: 1; } }
+
+/* 고른 시험마다 예상 비용·소요 일수·공인 정보 */
+.reg-types { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.reg-types > li { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-sunken); animation: v6-rise .25s var(--ease-soft) both; }
+.reg-types > li > strong { font-size: var(--fs-sm); font-weight: 700; }
+.reg-types__fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 10px; align-items: end; }
+.reg-mini { display: grid; gap: 4px; min-width: 0; }
+.reg-mini > span:first-child { color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 600; }
+.reg-mini input, .reg-mini select { width: 100%; min-height: 36px; }
+.reg-mini--cost { grid-column: span 2; }
+.reg-range { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 4px; align-items: center; color: var(--text-muted); }
+@media (max-width: 480px) { .reg-mini--cost { grid-column: 1 / -1; } }
+
+/* 주요 사양: 사전 항목 고르기 + 값 + 단위 */
+.spec-row select { min-height: 36px; width: 100%; }
+.spec-row select.is-missing { border-color: color-mix(in srgb, var(--tone-warn) 60%, var(--border-strong)); }
+.spec-row__source { grid-column: 1 / -1; margin-top: -2px; color: var(--tone-warn); font-size: 11.5px; }
+.reg-add { justify-self: start; display: inline-flex; align-items: center; gap: 4px; }
+.reg-add:disabled { opacity: .5; cursor: not-allowed; }
+.reg-problems { margin: 4px 0 10px; padding: 10px 14px; border-radius: 10px; background: var(--tone-warn-bg); color: var(--tone-warn); font-size: var(--fs-sm); }
+.reg-problems ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 2px; }
+.register-dialog .dialog__actions { padding-top: 12px; border-top: 1px solid var(--border); }
+
 /* ── 라이트 모드: 기존에 어두운 배경 기준으로 고정했던 색을 토큰으로 ───────── */
 .status-chip--green { color: var(--tone-ok); border-color: color-mix(in srgb, var(--tone-ok) 40%, transparent); background: var(--tone-ok-bg); }
 .status-chip--amber { color: var(--tone-warn); border-color: color-mix(in srgb, var(--tone-warn) 45%, transparent); background: var(--tone-warn-bg); }

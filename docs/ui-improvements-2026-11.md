@@ -463,3 +463,16 @@
   - 이메일(아이디)·소속·역할은 읽기 전용으로 위에 표시.
   - 기본 정보: 이름·연락처 → `PATCH /users/me`(바뀐 값만 보냄). 응답으로 화면의 사용자 정보를 바로 바꿈(`useAuth().updateUser`, 세션 재확인 없이).
   - 비밀번호 변경: 현재·새·확인 → `PATCH /users/me/password`. 회원가입과 같은 규칙(8~72자, UTF-8 72바이트 이하), 현재와 같은 비밀번호·확인 불일치 안내, `400 INVALID_PASSWORD`는 '현재 비밀번호가 맞지 않습니다'로.
+
+### 장비 등록 창 — 명세 항목 모두 입력 가능하게 (`EquipmentRegisterDialog`)
+- 다섯 묶음으로 정리: ① 기본 정보 ② 시험 종류 ③ 이용 조건·요금 ④ 운영 상태 ⑤ 주요 사양. `*`만 필수, 나머지는 '확인 필요'로 둘 수 있음.
+- 추가한 칸 (명세 2-1·2-2)
+  - 기본: 장비 분류 `equipmentType`(시험·측정·가공·소프트웨어·지원), 지역 `region`(비우면 소속 기관 지역), 장비 설명 `description`(초안에는 있었지만 칸이 없던 것).
+  - 시험 종류: 고른 시험마다 예상 비용 최소~최대·소요 일수·공인성적서(`isAccredited`, 발급 가능이면 인정번호·유효일 필수) → 등록 뒤 `PUT /equipment/{id}/test-types`.
+  - 이용 조건: `usage.accessScope`·`operationMode`·이용료 `feeUnit`/`feeAmount`/`vatIncluded`(feeText 는 서버가 만듦)·`durationText`.
+  - 운영 상태: `usage.availability`·`leadTimeDays`·`utilizationRate`·`availabilityNote`(500자).
+- 주요 사양: 명세대로 `GET /equipment/spec-definitions` 사전에서만 고르게 바꿈(이전에는 `custom_…` 임의 키를 만들어 400 위험). 값 칸은 사전의 형식(NUMBER/RANGE/TEXT)대로, 단위 기본값은 사전 기준 단위. 사양서에서 읽은 사양은 같은 키 → `_range` 뺀 키 → 같은 한글 이름으로 자동으로 맞추고, 못 맞추면 읽은 값을 보여 주며 고르게 함.
+- 명세의 입력 규칙(시험·측정 장비는 시험 종류 1개 이상, 비용 최소 ≤ 최대, 공인 정보, 대기 일수·가동률 범위, 사양 형식·중복)을 등록 전에 화면에서 먼저 안내.
+- 등록 뒤 사양·시험 정보 저장이 실패하면 만든 장비 번호를 기억해, 다시 눌러도 장비를 또 만들지 않고 남은 정보만 저장.
+- `User.organization.region` 타입 추가(명세 `GET /users/me` 응답에 있음).
+- 서버 확인 필요: `POST /equipment`의 usage 가 PATCH usage 항목(operationMode·leadTimeDays·availabilityNote·utilizationRate)을 함께 받는지, `PUT …/test-types` 항목의 비용·기간 필드 이름(`estCostMin`·`estCostMax`·`estDurationDays`, 조회 응답과 같은 이름으로 보냄).

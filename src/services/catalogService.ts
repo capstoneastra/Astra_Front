@@ -43,6 +43,9 @@ export const catalogService = {
     mutate("PATCH", `/equipment/${id}`, body, signal),
   saveSpecs: (id: ResourceId, specs: EquipmentSpec[], signal?: AbortSignal) =>
     mutate("PUT", `/equipment/${id}/specs`, { specs }, signal),
+  /** 가능 시험유형 + 시험별 예상 비용·소요기간·공인 정보 (명세 2-1·2-2 PUT /equipment/{id}/test-types) */
+  saveTestTypes: (id: ResourceId, testTypes: object[], signal?: AbortSignal) =>
+    mutate("PUT", `/equipment/${id}/test-types`, { testTypes }, signal),
   confirmEquipment: (id: ResourceId, signal?: AbortSignal) =>
     mutate("POST", `/equipment/${id}/confirm`, {}, signal),
   deleteEquipment: (id: ResourceId, signal?: AbortSignal) =>

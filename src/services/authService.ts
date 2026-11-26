@@ -13,7 +13,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string | null;
-  organization?: { id: number; name: string; isVerified?: boolean; orgType?: "COMPANY" | InstitutionType } | null;
+  organization?: { id: number; name: string; isVerified?: boolean; orgType?: "COMPANY" | InstitutionType; region?: string | null } | null;
 }
 
 export type InstitutionType = "INSTITUTION" | "UNIVERSITY";
