@@ -43,6 +43,7 @@
 | 400 | `VALIDATION_FAILED` | 입력값 검증 실패 (`details`에 필드별 사유) |
 | 400 | `EMAIL_NOT_VERIFIED`, `VERIFICATION_CODE_INVALID`, `VERIFICATION_CODE_EXPIRED` | 회원가입: 이메일 인증 토큰이 없거나 만료·사용됨 / 인증 코드 틀림(`details.remainingAttempts`) / 코드 만료·5회 틀림 → 다시 받기 |
 | 400 | `INVALID_PASSWORD` | 비밀번호 변경: 현재 비밀번호가 틀림 (`details.field = "currentPassword"`) |
+| 400 | `RESET_TOKEN_INVALID` | 비밀번호 재설정: `resetToken` 이 없거나 만료·이미 사용됨 → 계정 찾기 처음부터 (2026-11-26 추가) |
 | 401 | `AUTH_REQUIRED`, `TOKEN_EXPIRED`, `INVALID_CREDENTIALS` | 미인증·잘못된 토큰 / access 토큰 만료 → refresh 시도 / 로그인 시 이메일 또는 비밀번호 불일치 |
 | 403 | `FORBIDDEN`, `ACCOUNT_NOT_ACTIVE` | 역할·소유권 불일치 (다른 기관 의뢰 조회 등) / 승인 대기·거절·정지 계정 로그인 (`details.status`, 거절이면 `details.rejectReason`) |
 | 404 | `NOT_FOUND`, `EQUIPMENT_NOT_FOUND`, `REQUEST_NOT_FOUND` | 없는 주소 / 없는 장비 / 없는 의뢰 |
@@ -50,7 +51,7 @@
 | 409 | `REQUEST_INVALID_STATUS`, `VERSION_CONFLICT`, `RESERVATION_OVERLAP`, `RESERVATION_ALREADY_CONFIRMED`, `SUPPLEMENT_ALREADY_OPEN` | 상태 전이 불가 / 동시 수정 / 일정 중복 / 이미 확정된 의뢰 / 답변 대기 중인 보완 요청 존재 |
 | 409 | `EMAIL_ALREADY_EXISTS`, `ORGANIZATION_ALREADY_EXISTS` | 회원가입: 이미 가입된 이메일 / 같은 유형에 같은 이름의 조직이 이미 있음 (`organizations` UNIQUE(org_type, name)) |
 | 409 | `USER_INVALID_STATUS` | 관리자: 승인 대기(PENDING)가 아닌 회원을 승인·거절 |
-| 429 | `TOO_MANY_REQUESTS` | 요청이 너무 잦음. 이메일 인증 코드는 같은 이메일 60초에 한 번, 같은 IP 1분에 5번(전체 60번), 로그인은 같은 IP 1분에 20번 (`details.retryAfter` 초). AI 기능은 AI 서비스 한도 초과·동시 호출 초과 때도 429 ("잠시 후 다시 시도") |
+| 429 | `TOO_MANY_REQUESTS` | 요청이 너무 잦음. 이메일 인증 코드는 같은 이메일 60초에 한 번, 같은 IP 1분에 5번(전체 60번), 로그인은 같은 IP 1분에 20번, 계정 찾기는 이메일 찾기 같은 IP 1분에 10번·재설정 코드 발송 같은 IP 1분에 5번(전체 60번)·코드 확인과 새 비밀번호 저장 같은 IP 1분에 20번 (`details.retryAfter` 초). AI 기능은 AI 서비스 한도 초과·동시 호출 초과 때도 429 ("잠시 후 다시 시도") |
 | 500 | `INTERNAL_ERROR` | 처리되지 않은 서버 오류 (서버 로그 확인) |
 | 502 | `AI_UPSTREAM_ERROR` | LLM 호출 실패 |
 
@@ -84,10 +85,10 @@
 | GET | `/users/me` | 로그인 | 내 정보 + 소속 조직 |
 | PATCH | `/users/me` | 로그인 | 내 정보 수정 |
 | PATCH | `/users/me/password` | 로그인 | 비밀번호 변경 (2026-11-24 추가) |
-| POST | `/auth/find-email` | 🔓 | 이메일(아이디) 찾기 — 이름·연락처 → 가려진 이메일 (2026-11-25 FE 추가, 1-1) |
-| POST | `/auth/password-resets` | 🔓 | 비밀번호 재설정 코드(6자리) 발송 (1-1) |
-| POST | `/auth/password-resets/confirm` | 🔓 | 재설정 코드 확인 → `resetToken` (1-1) |
-| POST | `/auth/password-resets/complete` | 🔓 | 새 비밀번호 저장 (1-1) |
+| POST | `/auth/find-email` | 🔓 | 계정 찾기: 이름+연락처로 가려진 이메일 (2026-11-26 추가, §1-2) |
+| POST | `/auth/password-resets` | 🔓 | 계정 찾기: 비밀번호 재설정 코드 발송 (2026-11-26 추가) |
+| POST | `/auth/password-resets/confirm` | 🔓 | 재설정 코드 확인 → `resetToken` (2026-11-26 추가) |
+| POST | `/auth/password-resets/complete` | 🔓 | `resetToken` 으로 새 비밀번호 저장 (2026-11-26 추가) |
 
 **가입 흐름**
 
@@ -176,31 +177,33 @@
 
 > 토큰: access 토큰은 `Authorization: Bearer` 헤더로 보냅니다(유효 1시간). refresh 토큰은 유효 14일이고, 서버는 원문 대신 해시만 `refresh_tokens.token_hash`에 저장합니다.
 
+### 1-2. 계정 찾기 (2026-11-26 추가, 로그인 불필요)
 
-### 1-1. 계정 찾기 (2026-11-25 프론트 추가 · 서버 구현 필요)
+로그인 화면의 "계정 찾기"(`/auth/recover`)에서 씁니다. 아이디는 이메일입니다.
 
-로그인 화면 **계정 찾기**(`/auth/recover`)에서 사용합니다. 아이디는 이메일이므로 ① 이메일 찾기 ② 비밀번호 재설정 두 가지입니다.
-코드 규칙은 가입용 이메일 인증과 같습니다(6자리, 10분 유효, 60초에 한 번 발송, 5번 틀리면 다시 받기).
-
-- **계정 존재 노출 방지**: `/auth/password-resets` 는 가입하지 않은 이메일이어도 같은 200 응답을 주고 메일만 보내지 않습니다. `/auth/find-email` 은 이메일을 가려서(`co*****@astra.kr`) 돌려줍니다.
-- 이름·연락처는 가입 때 넣은 값과 **둘 다** 일치해야 합니다(연락처는 숫자만 비교 권장). 연락처를 넣지 않은 계정은 찾을 수 없으며 화면에서 관리자 문의를 안내합니다.
-- 비밀번호를 바꾸면 그 회원의 refresh 토큰을 모두 폐기합니다(다른 기기 로그아웃).
-- PENDING·REJECTED 계정도 이메일 찾기·재설정은 됩니다(로그인 가능 여부는 기존 규칙 그대로).
+- **계정이 있는지 드러내지 않음**: 이메일 찾기는 가린 이메일만, 재설정 코드 발송은 가입하지 않은 이메일이어도 같은 200 (메일만 안 보냄, 60초 제한도 똑같이 걸림)
+- 이메일 찾기는 이름과 연락처가 **둘 다** 가입할 때 넣은 값과 같아야 함. 연락처는 숫자만 비교 (하이픈·공백 무시)
+- 코드 규칙은 회원가입 이메일 인증과 같음: 6자리, 10분 유효, 같은 이메일 60초에 한 번, 5번 틀리면 다시 받기
+- `resetToken` 은 15분 유효, 한 번만 사용 (DB 에는 해시만 저장, `password_resets`, V19)
+- 비밀번호를 바꾸면 그 회원의 refresh 토큰을 모두 폐기 (다른 기기 로그아웃). 이미 받은 access 토큰은 만료(최대 1시간)까지 유효
+- 승인 대기(PENDING)·반려(REJECTED) 계정도 찾기·재설정 가능. 로그인 가능 여부는 기존 규칙 그대로
 
 ```json
-// POST /auth/find-email { "name": "홍길동", "phone": "010-0000-0000" } → 200
-{ "emails": ["a*****@company.com"] }          // 없으면 빈 배열 (항상 200)
+// 1) POST /auth/find-email { "name": "홍길동", "phone": "010-0000-0000" } → 200
+{ "emails": ["co*****@astra.kr"] }      // 아이디 앞 2글자(3글자 미만이면 1글자)만 보임. 없으면 [] (항상 200)
 // 실패: 400 VALIDATION_FAILED (빈 값) / 429 TOO_MANY_REQUESTS { "retryAfter": 42 }
 
-// POST /auth/password-resets { "email": "a@company.com" } → 200
+// 2) POST /auth/password-resets { "email": "a@company.com" } → 200
 { "expiresIn": 600, "resendAvailableIn": 60 }
 // 실패: 429 TOO_MANY_REQUESTS { "retryAfter": 42 }
 
-// POST /auth/password-resets/confirm { "email": "a@company.com", "code": "123456" } → 200
-{ "resetToken": "Qm9vdHN0cmFw...", "expiresIn": 900 }   // 15분, 한 번만 사용
-// 실패: 400 VERIFICATION_CODE_INVALID { "remainingAttempts": 4 } / 400 VERIFICATION_CODE_EXPIRED
+// 3) POST /auth/password-resets/confirm { "email": "a@company.com", "code": "123456" } → 200
+{ "resetToken": "Qm9vdHN0cmFw...", "expiresIn": 900 }
+// 실패: 400 VERIFICATION_CODE_INVALID { "remainingAttempts": 4 }
+//       400 VERIFICATION_CODE_EXPIRED (만료·5회 틀림·이미 확인한 코드 → 2) 다시)
 
-// POST /auth/password-resets/complete { "resetToken": "Qm9v...", "newPassword": "new-pass-1234" } → 200 { "success": true } (data 없음)
+// 4) POST /auth/password-resets/complete { "resetToken": "Qm9v...", "newPassword": "new-pass-1234" }
+//   → 200 { "success": true }  (data 없음)
 // 실패: 400 RESET_TOKEN_INVALID (만료·이미 사용) / 400 VALIDATION_FAILED (비밀번호 규칙 = 회원가입과 같음: 8~72자)
 ```
 
@@ -256,8 +259,11 @@
   "keySpecs": [   // 주요 사양 최대 2개 = 상세 specs 순서에서 사양 키가 다른 앞 2개 (같은 키면 REAL 우선). 형식은 상세 specs 와 같음
     { "key": "frequency", "label": "주파수 범위", "min": 10, "max": 3000, "unit": "Hz", "sourceType": "MOCK", ... },
     { "key": "max_payload", "label": "최대 시료 질량", "value": 40, "unit": "kg", "sourceType": "MOCK", ... } ],
-  "simulation": { "capability": "CALCULATED_DEMO", "presetIds": ["SIM-0048"] } }   // 상세 simulation 과 같은 형식
+  "simulation": { "capability": "CALCULATED_DEMO", "presetIds": ["SIM-0048"] },   // 상세 simulation 과 같은 형식
+  // 2026-11-26 추가: 사양 전체. 상세(GET /equipment/{id})의 specs 와 같은 값·순서·형식 (사양이 없으면 [])
+  "specs": [ { "key": "frequency", ... }, { "key": "max_payload", ... }, ... ] }
 // infoUpdatedAt: 초기 적재 데이터는 DB 를 만든(마이그레이션) 시각. 기관이 수정·확인하면 그 시각으로 바뀜
+// 정렬(?sort=)값이 같으면 가용 상태 순(AVAILABLE → BUSY → MAINTENANCE → UNAVAILABLE → UNKNOWN), 그다음 id (2026-11-26)
 // 목록 항목 형식은 비교(POST /equipment/compare)의 equipment[] 에도 그대로 쓰임
 
 // 이용료 형식 (V17, 모든 장비): feeText = "금액원/단위 (부가세 별도|포함)" 또는 "협의"
@@ -777,7 +783,11 @@ structured output의 시험유형 enum은 test_types, 조건 키 enum은 선택 
 | POST | `/notifications/read-all` | 로그인 | 모두 읽음 |
 
 > 의뢰·예약 칸은 BE-B 의 `RequestDashboardQuery`, 최근 상담은 BE-C 의 `ChatSessionQuery` 구현이 있을 때만 채워집니다.
-> 구현 전에는 0·빈 목록이고 `dataAvailable` 이 `false`이므로, 프론트는 그 칸을 "준비 중"으로 표시합니다. 목록 칸은 최대 5개.
+> 구현 전에는 0·빈 목록이고 `dataAvailable` 이 `false`이므로, 프론트는 그 칸을 "준비 중"으로 표시합니다. 목록 칸은 최대 5개
+> (`upcomingReservations` 만 캘린더용으로 최대 30개, 2026-11-26).
+>
+> `upcomingReservations` = 확정(CONFIRMED) 예약 중 **아직 끝나지 않은 것**(`endAt` 이 지금 이후, 진행 중 포함. 2026-11-26 전에는 시작 전만). 의뢰가 시험 완료(COMPLETED)되면 빠짐. REQUESTER·PROVIDER 둘 다 있음.
+> 시연 서버는 lab1 조직 장비에 company 의뢰로 확정 일정 7건(+1~+21일, 2~3일짜리·같은 날 2건 포함)과 제안 2건을 매일 오늘 기준으로 맞춥니다. 그중 1건은 결과까지 등록돼 "시험 완료"를 바로 누를 수 있습니다.
 
 > 응답 형식은 `role`이 아니라 `view`로 구분합니다. 기업 회원도 `?view=PROVIDER`로 자기 조직이 받은 의뢰를, 기관·대학 회원도 `?view=REQUESTER`로 자기가 보낸 의뢰를 볼 수 있습니다.
 
@@ -788,6 +798,9 @@ structured output의 시험유형 enum은 test_types, 조건 키 enum은 선택 
                      "SCHEDULING": 0, "CONFIRMED": 3, "COMPLETED": 0, "REJECTED": 0, "CANCELED": 0 },  // 10개 상태 항상 포함
   "actionRequired": [ { "requestId": 15, "requestNo": "REQ-20261105-0001", "title": "위성 전장품 진동시험",
                         "status": "SUPPLEMENT_REQUESTED", "dueDate": "2026-11-12", "submittedAt": "..." } ],
+  // 2026-11-26 추가: 내가 보낸 의뢰의 확정 일정 중 아직 끝나지 않은 것 (시작 빠른 순, 최대 30개). 형식은 PROVIDER 와 같음
+  "upcomingReservations": [ { "reservationId": 4, "requestId": 15, "requestNo": "REQ-20261105-0001", "equipmentId": 48,
+                              "equipmentName": "진동시험기", "startAt": "2026-11-20T09:00:00+09:00", "endAt": "..." } ],
   "recentChats": [ { "id": 5, "title": "위성 부품 진동시험", "updatedAt": "..." } ],
   "equipmentStats": { "total": 339, "byRegion": { "경남": 1, "고흥": 40, "광주": 1, "대전": 32, "사천": 154, "원주": 1, "진주": 36, "창원": 74 } },
   "dataAvailable": { "requests": true, "chats": true } }
