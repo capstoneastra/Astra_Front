@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { AlertTriangle, PencilLine, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useWorkspace } from "../../context/AppContext";
 import { useAction } from "../../hooks/useAction";
 import { catalogService } from "../../services/catalogService";
@@ -10,8 +10,8 @@ import { Button, FormField } from "../ui/index";
 import { Feedback } from "../workflow/Feedback";
 
 /**
- * 장비 등록 창 (v9 — 대시보드 'AI 간편 등록'에서 열림)
- * 글에서 읽어낸 항목을 미리 채우고, 담당자가 확인·수정한 뒤 등록합니다.
+ * 장비 등록 창 (v9 — 대시보드 장비 등록 칸에서 열림)
+ * 사양서 파일을 넣고 [→]로 열면 읽어낸 항목을 미리 채우고([수동 등록]이면 빈 양식), 담당자가 확인·수정한 뒤 등록합니다.
  * 등록 전에 비슷한 장비가 이미 있으면 알려줍니다(별도 '중복 장비' 화면 대신).
  * 등록 순서: POST /equipment → PUT /equipment/{id}/specs (API 명세)
  */
@@ -48,13 +48,15 @@ export default function EquipmentRegisterDialog({ draft, testTypes, onClose, onD
     <dialog ref={dialog} className="dialog equipment-dialog register-dialog" aria-labelledby="register-title" onClose={onClose}
       onClick={(e) => { if (e.target === dialog.current) dialog.current?.close(); }}>
       <div className="dialog__heading">
-        <span className="register-dialog__badge"><Sparkles size={14} aria-hidden="true" />AI 간편 등록</span>
+        {draft.source === "manual"
+          ? <span className="register-dialog__badge is-manual"><PencilLine size={14} aria-hidden="true" />수동 등록</span>
+          : <span className="register-dialog__badge"><Sparkles size={14} aria-hidden="true" />AI가 채운 양식</span>}
         <button type="button" className="icon-button" aria-label="장비 등록 닫기" onClick={() => dialog.current?.close()}><X size={20} /></button>
       </div>
       <h2 id="register-title">새 장비 등록</h2>
       {draft.found.length > 0
         ? <p className="register-dialog__found"><b>이렇게 읽었어요</b> {draft.found.join(" · ")}<br /><small>틀린 곳이 있으면 고친 뒤 등록하세요.</small></p>
-        : <p className="register-dialog__found"><small>장비 정보를 직접 입력하세요. 이름과 시험 종류만 있으면 등록할 수 있고, 사양은 나중에 보유 장비 관리에서 더 채울 수 있습니다.</small></p>}
+        : <p className="register-dialog__found"><small>{draft.source === "file" && "사양서에서 장비 정보를 찾지 못했어요. "}장비 정보를 직접 입력하세요. 이름과 시험 종류만 있으면 등록할 수 있고, 사양은 나중에 보유 장비 관리에서 더 채울 수 있습니다.</small></p>}
 
       {similar.length > 0 && (
         <div className="register-dialog__similar" role="status">

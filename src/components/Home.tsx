@@ -210,8 +210,9 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
   };
   const startRegister = (text: string) => {
     setRegistered(false);
-    setRegisterDraft(text ? extractEquipmentDraft(text, (types.data ?? []).map((t) => t.code))
-      : { name: "", model: "", manufacturer: "", testTypes: [], specs: [], description: "", found: [] });
+    // 글(사양서 파일 내용)이 있으면 AI(현재는 규칙 기반 추출)로 채우고, 없으면 수동 등록용 빈 양식
+    setRegisterDraft(text ? { ...extractEquipmentDraft(text, (types.data ?? []).map((t) => t.code)), source: "file" }
+      : { name: "", model: "", manufacturer: "", testTypes: [], specs: [], description: "", found: [], source: "manual" });
   };
   const openManager = (staleOnly: boolean) => {
     try { window.sessionStorage.setItem("astra.manager.filter", staleOnly ? "stale" : "all"); } catch { /* 저장 불가 환경은 무시 */ }

@@ -108,6 +108,7 @@
 
 /* ── 장비 등록 창 ──────────────────────────────────────────────────── */
 .register-dialog { width: min(720px, calc(var(--vw-full) - 32px)); }
+.register-dialog__badge.is-manual { background: var(--surface-sunken); color: var(--text-secondary); }
 .register-dialog__badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: color-mix(in srgb, var(--violet) 16%, transparent); color: var(--violet); font-size: 12px; font-weight: 700; }
 .register-dialog__found { margin: 6px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--surface-sunken); color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.6; }
 .register-dialog__found b { margin-right: 6px; color: var(--text); }

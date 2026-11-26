@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
-import { ArrowRight, FileText, Plus, Sparkles, X } from "lucide-react";
+import type { CSSProperties, DragEvent, ReactNode } from "react";
+import { ArrowRight, FileText, PencilLine, Plus, Sparkles, Upload, X } from "lucide-react";
 import type { HeroFile } from "../../domain/quickPrefill";
 
 /**
@@ -8,7 +8,7 @@ import type { HeroFile } from "../../domain/quickPrefill";
  * - 별·행성 대신 얇은 선으로 그린 도면풍 그림. 색은 한 가지 차분한 강조색만 씁니다.
  * - 그림은 글과 겹치지 않도록 자기 칸(오른쪽)에만 그리고, 입력칸은 아래 가운데 줄에 둡니다.
  * - 기업(내 의뢰): 시험 종류들이 궤도를 따라 도는 위성 + 시험 검색 + AI 간편 의뢰
- * - 기관·대학(장비 운영): 떠다니는 시험 장비들이 등록 카드로 이어지는 그림 + 장비 설명 입력 + AI 간편 등록
+ * - 기관·대학(장비 운영): 떠다니는 시험 장비들이 등록 카드로 이어지는 그림 + 사양서 파일 끌어다 놓기 + 수동 등록
  * 그림은 장식이라 화면 읽기 프로그램에서는 숨기고, '움직임 줄이기' 설정을 따릅니다.
  */
 /* v12: 2.5D — 비스듬히 기운 궤도(뒤쪽 반은 위성 뒤, 앞쪽 반은 위성 앞)와 등각 투영 큐브위성 */
@@ -195,7 +195,7 @@ function HeroArt({ children }: { children: ReactNode }) {
 
 function useHeroFiles() {
   const [files, setFiles] = useState<HeroFile[]>([]);
-  const add = async (list: FileList | null) => {
+  const add = async (list: FileList | File[] | null) => {
     const picked = [...(list ?? [])].slice(0, MAX_FILES - files.length);
     const read = await Promise.all(picked.map(async (f) => ({
       name: f.name, size: f.size,
@@ -274,21 +274,52 @@ export function RequestHero({ popular, onSearch, onAiRequest }: {
 }
 
 
+/** 장비 등록 칸이 받는 사양서 — 내용을 읽을 수 있는 글 파일만 (PDF·한글·워드는 아직 못 읽음) */
+const SPEC_ACCEPT = ".txt,.csv,.md,.json,.tsv";
+const SPEC_MAX_BYTES = 200_000;
+
+/**
+ * 기관·대학 첫 칸 (v19)
+ * - 입력칸 → 사양서 파일 끌어다 놓기 칸. [→] 를 누르면 AI가 파일을 읽어 등록 양식을 채운 채로 엽니다.
+ *   (현재 읽기는 domain/equipmentDraft 의 규칙 기반 추출 — 장비 추출 AI API 가 생기면 그 함수만 바꾸면 됨)
+ * - [AI 간편 등록] → [수동 등록]: 빈 등록 양식을 열어 직접 적습니다.
+ */
 export function RegisterHero({ stats, onRegister, onOpenManager }: {
   stats: { total: number; stale: number };
   onRegister: (text: string) => void;
   onOpenManager: (staleOnly: boolean) => void;
 }) {
-  const [text, setText] = useState("");
   const { files, add, remove } = useHeroFiles();
-  // 입력한 글 + 읽을 수 있는 첨부 파일 내용을 합쳐 AI(현재는 규칙 기반)에 넘깁니다.
-  const submit = () => onRegister([text.trim(), ...files.map((f) => f.text ?? "")].filter(Boolean).join("\n"));
+  const picker = useRef<HTMLInputElement>(null);
+  const [over, setOver] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const full = files.length >= MAX_FILES;
+  const readable = files.filter((f) => f.text);
+  const hasFiles = (e: DragEvent) => [...e.dataTransfer.types].includes("Files");
+
+  // 칸 밖에 파일을 잘못 떨어뜨려도 브라우저가 파일을 열며 대시보드를 벗어나지 않게
+  useEffect(() => {
+    const stop = (e: globalThis.DragEvent) => { if (e.dataTransfer?.types.includes("Files")) e.preventDefault(); };
+    window.addEventListener("dragover", stop);
+    window.addEventListener("drop", stop);
+    return () => { window.removeEventListener("dragover", stop); window.removeEventListener("drop", stop); };
+  }, []);
+
+  const pick = (list: FileList | null) => {
+    const all = [...(list ?? [])];
+    const ok = all.filter((f) => READABLE.test(f.name) && f.size <= SPEC_MAX_BYTES);
+    setNote(ok.length < all.length ? "txt·csv·md·json·tsv 글 파일(200KB 이하)만 읽을 수 있어요. PDF·한글·워드는 수동 등록을 이용해 주세요." : null);
+    if (ok.length) void add(ok);
+  };
+  // 읽은 파일 내용을 합쳐 AI(현재는 규칙 기반 추출)에 넘겨 등록 양식을 채움
+  const fill = () => { if (readable.length) onRegister(readable.map((f) => f.text).join("\n")); };
+
   return (
     <section className="hero hero--register" aria-labelledby="hero-register-title">
       <div className="hero__copy">
         <span className="hero__eyebrow">ASTRA · 장비 등록</span>
         <h2 id="hero-register-title">새 장비를 등록하세요</h2>
-        <p>장비 이름·모델·사양을 적거나 사양서를 추가하면, AI가 등록 양식을 채워 드려요.</p>
+        <p>사양서 파일을 넣고 →를 누르면 AI가 읽어 등록 양식을 채워 드려요. 파일이 없으면 수동 등록으로 직접 적을 수 있어요.</p>
         <div className="hero__stats">
           <button type="button" onClick={() => onOpenManager(false)}>보유 장비 <b>{stats.total}</b></button>
           <button type="button" className={stats.stale ? "is-warn" : undefined} onClick={() => onOpenManager(true)}>정보 갱신 필요 <b>{stats.stale}</b></button>
@@ -296,18 +327,33 @@ export function RegisterHero({ stats, onRegister, onOpenManager }: {
       </div>
       <HeroArt><RegisterArt /></HeroArt>
       <div className="hero__dock">
-        {/* v12: 여러 줄 입력칸이 포커스 때 늘어나 그림·문구를 밀던 문제 → 시험 검색칸과 같은 한 줄 입력칸 */}
-        <form className="hero-input" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-          <FileTabs files={files} onRemove={remove} />
-          <AttachButton count={files.length} onPick={(l) => void add(l)} accept=".txt,.csv,.md,.json,.tsv,.pdf,.hwp,.hwpx,.doc,.docx" />
-          <label htmlFor="hero-register" className="sr-only">장비 설명</label>
-          <input id="hero-register" value={text} onChange={(e) => setText(e.target.value)} autoComplete="off"
-            placeholder="예: 열진공 챔버 Ø3.5m, -180~150℃, 모델 TVAC-3500" />
-          <button type="submit" className="hero-input__go" aria-label="입력한 내용으로 등록 양식 채우기"><ArrowRight size={17} /></button>
-        </form>
-        <button type="button" className="hero-ai" onClick={submit}
-          title={text.trim() || files.length ? "입력한 내용으로 등록 양식을 채웁니다" : "빈 등록 양식을 엽니다"}>
-          <Sparkles size={16} aria-hidden="true" />AI 간편 등록
+        {/* v19: 한 줄 입력칸 자리를 그대로 쓰는 파일 끌어다 놓기 칸 (높이·위치가 같아 그림·문구를 밀지 않음) */}
+        <div
+          className={`hero-input hero-drop${over ? " is-over" : ""}`}
+          onDragEnter={(e) => { if (!hasFiles(e) || full) return; e.preventDefault(); setOver(true); }}
+          onDragOver={(e) => { if (!hasFiles(e) || full) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false); }}
+          onDrop={(e) => { e.preventDefault(); setOver(false); if (!full) pick(e.dataTransfer.files); }}
+        >
+          <FileTabs files={files} onRemove={(i) => { remove(i); setNote(null); }} />
+          <button type="button" className="hero-drop__pick" disabled={full} onClick={() => picker.current?.click()}>
+            <span className="hero-drop__icon" aria-hidden="true"><Upload size={17} /></span>
+            <span className="hero-drop__text">
+              <strong>{over ? "여기에 놓으면 추가돼요"
+                : full ? `파일은 최대 ${MAX_FILES}개까지 넣을 수 있어요`
+                : files.length ? <>사양서 {files.length}개 · <u>더 넣기</u></>
+                : <>사양서 파일을 끌어다 놓거나 <u>눌러서 고르세요</u></>}</strong>
+              <small className={note ? "is-warn" : undefined}>{note ?? (files.length ? "→를 누르면 AI가 읽어 등록 양식을 채워요" : "txt·csv·md·json·tsv · 최대 5개")}</small>
+            </span>
+          </button>
+          <input ref={picker} type="file" hidden multiple accept={SPEC_ACCEPT} onChange={(e) => { pick(e.target.files); e.target.value = ""; }} />
+          <button type="button" className="hero-input__go" disabled={!readable.length} onClick={fill}
+            aria-label="AI가 파일을 읽어 등록 양식 채우기" title={readable.length ? "AI가 파일을 읽어 등록 양식을 채웁니다" : "사양서 파일을 먼저 넣어 주세요"}>
+            <ArrowRight size={17} />
+          </button>
+        </div>
+        <button type="button" className="hero-ai hero-manual" onClick={() => onRegister("")} title="빈 등록 양식을 열어 직접 입력합니다">
+          <PencilLine size={16} aria-hidden="true" />수동 등록
         </button>
       </div>
     </section>

@@ -186,7 +186,7 @@ export default function EquipmentManager() {
         <Panel>
           <EmptyState icon={Database}
             title={term ? "검색어와 맞는 장비가 없습니다" : status === "all" ? "등록된 장비가 없습니다" : "해당 상태의 장비가 없습니다"}
-            description={term ? "검색어를 바꾸거나 지워 보세요." : status === "all" ? (admin ? "기관·대학이 장비를 등록하면 여기에 표시됩니다." : "대시보드의 'AI 간편 등록'으로 첫 번째 장비를 등록해 보세요.") : "다른 상태를 선택해 보세요."} />
+            description={term ? "검색어를 바꾸거나 지워 보세요." : status === "all" ? (admin ? "기관·대학이 장비를 등록하면 여기에 표시됩니다." : "대시보드의 장비 등록 칸에 사양서 파일을 넣거나 '수동 등록'으로 첫 번째 장비를 등록해 보세요.") : "다른 상태를 선택해 보세요."} />
         </Panel>
       )}
       {editing && (

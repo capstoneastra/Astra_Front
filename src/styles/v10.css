@@ -112,6 +112,29 @@
 @keyframes tab-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .hero-files > li { animation: none; } .hero-input__attach:hover:not(:disabled) svg { transform: none; } }
 
+/* v19: 장비 등록 — 입력칸 자리의 사양서 파일 끌어다 놓기 칸 (높이 52px 그대로) */
+.hero-drop { padding-left: 5px; border-style: dashed; border-width: 1.5px; }
+.hero-drop.is-over { border-style: solid; border-color: var(--hero-accent); background: var(--hero-field-focus); box-shadow: 0 0 0 4px color-mix(in srgb, var(--hero-accent) 18%, transparent); }
+.hero-drop__pick {
+  flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 6px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--hero-ink); text-align: left; transition: background .2s;
+}
+.hero-drop__pick:hover:not(:disabled) { background: color-mix(in srgb, var(--hero-ink) 5%, transparent); }
+.hero-drop__pick:focus-visible { outline: none; }
+.hero-drop__pick:disabled { cursor: default; }
+.hero-drop__icon {
+  flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px;
+  background: color-mix(in srgb, var(--hero-accent) 16%, transparent); color: var(--hero-accent); transition: transform .25s var(--ease-soft);
+}
+.hero-drop.is-over .hero-drop__icon { transform: translateY(-2px); }
+.hero-drop__text { min-width: 0; display: grid; gap: 1px; line-height: 1.3; }
+.hero-drop__text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); font-weight: 650; }
+.hero-drop__text u { color: var(--hero-accent); text-underline-offset: 3px; }
+.hero-drop__text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--hero-muted); font-size: 11.5px; }
+.hero-drop__text small.is-warn { color: var(--tone-update); }
+.hero-drop .hero-input__go:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+@media (max-width: 480px) { .hero-drop__icon { display: none; } }
+
 /* AI 버튼: 작게, 대신 단색 채움으로 한눈에 보이게 */
 .hero-ai {
   flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 18px;

@@ -17,6 +17,8 @@ export interface EquipmentDraft {
   description: string;
   /** 무엇을 찾아냈는지 — 화면에 '이렇게 읽었어요'로 보여줌 */
   found: string[];
+  /** 어디서 열었는지 — file: 사양서 파일을 AI가 읽어 채움, manual: 빈 양식(수동 등록) */
+  source?: "file" | "manual";
 }
 
 const TYPE_WORDS: [string, RegExp][] = [
@@ -92,7 +94,7 @@ export function extractEquipmentDraft(text: string, knownTypes: string[] = []): 
 export function similarEquipment<T extends { id: number; name: string; model?: string | null; testTypes: string[]; institution?: string; institutionId?: number | null }>(
   draft: Pick<EquipmentDraft, "name" | "model" | "testTypes">, list: T[], ownOrgId?: number | null,
 ) {
-  const words = (s: string) => new Set(s.toLowerCase().replace(/[()（）\[\]·,]/g, " ").split(/\s+/).filter((w) => w.length > 1));
+  const words = (s: string) => new Set(s.toLowerCase().replace(/[()（）[\]·,]/g, " ").split(/\s+/).filter((w) => w.length > 1));
   const mine = words(draft.name);
   return list
     .map((e) => {
