@@ -132,8 +132,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       /* Local logout has already completed, even offline. */
     }
   }, []);
+  const updateUser = useCallback((user: User) => {
+    setState((current) => (current.status === "authenticated" && current.user.id === user.id ? { ...current, user } : current));
+  }, []);
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, checkSession }}>
+    <AuthContext.Provider value={{ ...state, login, logout, checkSession, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

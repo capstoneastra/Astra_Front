@@ -128,6 +128,15 @@ export const authService = {
   async completePasswordReset(resetToken: string, newPassword: string, signal?: AbortSignal) {
     await publicPost("/auth/password-resets/complete", { resetToken, newPassword }, signal);
   },
+  // ── 내 정보 수정 (docs/api-spec.md 1. PATCH /users/me, /users/me/password) ──
+  /** 이름·연락처 수정 — 보낸 값만 바뀌고, 응답은 GET /users/me 와 같은 형식 */
+  async updateMe(body: { name?: string; phone?: string }, signal?: AbortSignal) {
+    return validateUser(responseData<User>(await apiClient.patch("/users/me", body, { signal })));
+  },
+  /** 비밀번호 변경 — 로그인 상태·토큰은 그대로. 현재 비밀번호가 틀리면 400 INVALID_PASSWORD */
+  async changePassword(currentPassword: string, newPassword: string, signal?: AbortSignal) {
+    await apiClient.patch("/users/me/password", { currentPassword, newPassword }, { signal });
+  },
   async me(signal?: AbortSignal) {
     return validateUser(
       responseData<User>(await apiClient.get("/users/me", { signal })),

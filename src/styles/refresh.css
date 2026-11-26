@@ -164,6 +164,25 @@ td small { font-size: var(--fs-xs); }
 .profile-menu__actions button:hover { background: var(--control-hover); color: var(--text); }
 .profile-menu__actions .is-danger { color: var(--red); }
 .profile-menu__actions .is-danger:hover { color: var(--red); background: color-mix(in srgb, var(--red) 9%, transparent); }
+/* 내 정보 수정 창 (프로필 메뉴 → 정보 수정) */
+.profile-dialog { width: min(560px, calc(var(--vw-full) - 32px)); }
+.profile-dialog .dialog__heading { align-items: center; margin-bottom: 14px; }
+.profile-dialog__fixed { margin: 0 0 6px; padding: 10px 14px; display: grid; gap: 6px; border-radius: 12px; background: var(--surface-sunken); }
+.profile-dialog__fixed > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; font-size: var(--fs-sm); }
+.profile-dialog__fixed dt { color: var(--text-muted); }
+.profile-dialog__fixed dd { margin: 0; overflow-wrap: anywhere; }
+.profile-dialog__section { display: grid; gap: 12px; padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border); }
+.profile-dialog__section h3 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: var(--fs-md); font-weight: 700; }
+.profile-dialog__section h3 svg { color: var(--cyan); }
+.profile-dialog__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.profile-dialog__wide { grid-column: 1 / -1; }
+.profile-dialog .form-field { margin: 0; }
+.profile-dialog .form-field input { width: 100%; }
+.profile-dialog .field-hint { margin: 4px 0 0; line-height: 1.5; }
+.profile-dialog p.content-note { margin: 0; }
+.profile-dialog .dialog__actions { margin-top: 0; }
+.profile-dialog__warn { color: var(--tone-warn); }
+@media (max-width: 520px) { .profile-dialog__grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* ── 반응형 보정 ───────────────────────────────────────────────── */
 @media (max-width: 767px) {

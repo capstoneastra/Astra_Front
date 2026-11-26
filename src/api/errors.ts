@@ -44,6 +44,7 @@ const messages: Record<string, string> = {
   AUTH_REQUIRED: "로그인이 필요합니다.",
   TOKEN_EXPIRED: "로그인이 만료되었습니다. 다시 로그인해주세요.",
   INVALID_CREDENTIALS: "이메일 또는 비밀번호를 확인해주세요.",
+  INVALID_PASSWORD: "현재 비밀번호가 맞지 않습니다.",
   ACCOUNT_NOT_ACTIVE: "아직 이용할 수 없는 계정입니다.",
   EMAIL_NOT_VERIFIED: "이메일 인증이 만료되었거나 사용할 수 없습니다. 인증 코드를 다시 받으세요.",
   EMAIL_ALREADY_EXISTS: "이미 가입된 이메일입니다.",

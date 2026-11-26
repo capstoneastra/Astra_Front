@@ -1,10 +1,11 @@
-import { useId } from "react";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { useId, useState } from "react";
+import { LogOut, Moon, Sun, UserPen } from "lucide-react";
 import { roleLabels } from "../../domain/constants";
 import { useTheme } from "../../theme/useTheme";
 import type { User } from "../../services/authService";
+import ProfileEditDialog from "./ProfileEditDialog";
 
-/** 프로필 원을 누르면 아래로 펼쳐지는 계정 메뉴. 프로필 정보를 바로 보여줍니다. */
+/** 프로필 원을 누르면 아래로 펼쳐지는 계정 메뉴. 프로필 정보를 바로 보여주고, [정보 수정]으로 이름·연락처·비밀번호를 바꿉니다. */
 export default function ProfileMenu({ user, onLogout, open, onToggle, onClose }: {
   user: User;
   onLogout: () => Promise<void>;
@@ -17,6 +18,7 @@ export default function ProfileMenu({ user, onLogout, open, onToggle, onClose }:
   const role = user.organization?.orgType === "UNIVERSITY" && user.role === "INSTITUTION_MANAGER"
     ? "대학 담당자" : roleLabels[user.role];
   const initial = user.name?.trim().slice(0, 1) || "A";
+  const [editing, setEditing] = useState(false);
 
   return <div className="header-menu header-account">
     <button type="button" className="user-avatar" title="내 계정" aria-label="내 계정 메뉴"
@@ -37,9 +39,13 @@ export default function ProfileMenu({ user, onLogout, open, onToggle, onClose }:
         {user.phone && <div><dt>연락처</dt><dd>{user.phone}</dd></div>}
       </dl>
       <div className="profile-menu__actions">
+        <button type="button" onClick={() => { onClose(); setEditing(true); }}>
+          <UserPen size={16} aria-hidden="true" />
+          정보 수정
+        </button>
         <button type="button" onClick={toggleTheme}>
           {theme === "dark" ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
-          {theme === "dark" ? "라이트 모드로 보기" : "다크 모드로 보기"}
+          {theme === "dark" ? "라이트 모드" : "다크 모드"}
         </button>
         <button type="button" className="is-danger" onClick={() => {
           onClose();
@@ -50,5 +56,7 @@ export default function ProfileMenu({ user, onLogout, open, onToggle, onClose }:
         </button>
       </div>
     </div>
+    {/* 펼침 메뉴(hidden)를 닫아도 보이도록 메뉴 바깥에 둠 */}
+    {editing && <ProfileEditDialog user={user} onClose={() => setEditing(false)} />}
   </div>;
 }

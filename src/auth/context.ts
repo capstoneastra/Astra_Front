@@ -10,6 +10,8 @@ type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
+  /** 내 정보 수정(PATCH /users/me) 응답으로 화면의 사용자 정보만 바꿈 — 세션을 다시 확인하지 않음 */
+  updateUser: (user: User) => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
