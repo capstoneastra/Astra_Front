@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Building2, Check, Pencil, Plus, Search, Users, X } from "lucide-react";
 import { useAuth } from "../auth/context";
+import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, EmptyState, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -14,6 +15,21 @@ import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
 const organizationTypeLabels: Record<string, string> = { COMPANY: "기업", INSTITUTION: "기관", UNIVERSITY: "대학" };
 const statusTone: Record<string, string> = { ACTIVE: "green", PENDING: "amber", REJECTED: "neutral", SUSPENDED: "violet" };
 const rejectReasons = ["소속 확인 불가", "중복 가입", "필수 정보 누락", "허위 정보"];
+/** 가입일: 2026.11.24 */
+const shortDate = (value?: string | null) => value
+  ? new Date(Date.parse(value) + 9 * 3600_000).toISOString().slice(0, 10).replace(/-/g, ".") : "—";
+/** 최근 로그인: 방금, 3시간 전, 5일 전 (30일 넘으면 날짜) */
+const agoText = (value: string | null | undefined, now: number) => {
+  if (!value) return "기록 없음";
+  const minutes = Math.max(0, Math.floor((now - Date.parse(value)) / 60_000));
+  if (minutes < 1) return "방금";
+  if (minutes < 60) return `${minutes}분 전`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}시간 전`;
+  const days = Math.floor(minutes / 1440);
+  return days <= 30 ? `${days}일 전` : shortDate(value);
+};
+/** 관리자 회원 목록 응답에는 화면 User 타입에 없는 날짜 필드가 더 있다 */
+type MemberDates = { createdAt?: string | null; lastLoginAt?: string | null };
 type Tab = "pending" | "members" | "organizations";
 
 /**
@@ -83,6 +99,14 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
   const organizations = useApiQuery((signal) => adminService.organizations({}, signal), "admin-organizations:all", tab === "organizations" || tab === "pending");
   const pendingOrgs = (organizations.data?.content ?? []).filter((org) => org.orgType !== "COMPANY" && !org.isVerified);
   const pendingUsers = pending.data?.content ?? [];
+  // 기관 목록의 '회원'·'장비' 칸: 전체 회원 목록(전체 회원 탭과 같은 캐시)·장비 목록으로 센다
+  const { equipmentList } = useWorkspace();
+  const allUsers = useApiQuery((signal) => adminService.users({}, signal), "admin-users:", tab === "organizations");
+  const memberCount = new Map<number, number>();
+  for (const m of allUsers.data?.content ?? []) if (m.organization?.id) memberCount.set(m.organization.id, (memberCount.get(m.organization.id) ?? 0) + 1);
+  const equipmentCount = new Map<number, number>();
+  for (const e of equipmentList) if (e.institutionId) equipmentCount.set(e.institutionId, (equipmentCount.get(e.institutionId) ?? 0) + 1);
+  const [now] = useState(() => Date.now());
 
   useEffect(() => { setSelected([]); setOrgEditing(null); }, [tab]);
   useEffect(() => {
@@ -117,7 +141,8 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
               <input type="checkbox" aria-label="전체 선택" checked={rows.length > 0 && selected.length === rows.length}
                 onChange={(e) => setSelected(e.target.checked ? rows.map((r) => r.id) : [])} />
             </th>}
-            <th>신청자</th><th>역할·소속</th><th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th>
+            <th>신청자</th><th>역할·소속</th><th className="admin-table__fit">연락처</th><th className="admin-table__fit">가입일</th>
+            <th className="admin-table__fit">최근 로그인</th><th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th>
           </tr>
         </thead>
         <tbody>
@@ -129,6 +154,9 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
               </td>}
               <td><strong>{member.name}</strong><small>{member.email}</small></td>
               <td>{member.organization?.orgType === "UNIVERSITY" ? "대학 담당자" : roleLabels[member.role]}<small>{member.organization?.name ?? "소속 없음"}</small></td>
+              <td className="admin-table__fit admin-table__num">{member.phone || <span className="admin-muted">—</span>}</td>
+              <td className="admin-table__fit admin-table__num">{shortDate((member as MemberDates).createdAt)}</td>
+              <td className="admin-table__fit admin-table__num">{member.status === "PENDING" ? <span className="admin-muted">승인 전</span> : agoText((member as MemberDates).lastLoginAt, now)}</td>
               <td className="admin-table__fit"><Badge tone={statusTone[member.status]}>{accountStatusLabels[member.status] ?? member.status}</Badge></td>
               <td className="admin-table__actions">
                 {member.status === "PENDING" ? (
@@ -166,13 +194,19 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
   const orgTable = (rows: typeof orgRows) => (
     <div className="table-scroll">
       <table className="admin-table">
-        <thead><tr><th>조직</th><th className="admin-table__fit">유형</th><th>지역·연락처</th><th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th></tr></thead>
+        <thead><tr><th>조직</th><th className="admin-table__fit">유형</th><th className="admin-table__fit">지역</th><th>연락처</th>
+          <th className="admin-table__fit admin-table__count">회원</th><th className="admin-table__fit admin-table__count">장비</th><th className="admin-table__fit">등록일</th>
+          <th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th></tr></thead>
         <tbody>
           {rows.map((org) => (
             <tr key={org.id}>
-              <td><strong>{org.name}</strong>{org.homepageUrl && <small>{org.homepageUrl}</small>}</td>
+              <td><strong>{org.name}</strong>{(org.address || org.homepageUrl) && <small>{org.address || org.homepageUrl}</small>}</td>
               <td className="admin-table__fit">{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
-              <td>{org.region || "—"}<small>{org.phone || ""}</small></td>
+              <td className="admin-table__fit">{org.region || <span className="admin-muted">—</span>}</td>
+              <td>{org.phone || org.email ? <>{org.phone}{org.email && <small>{org.email}</small>}</> : <span className="admin-muted">—</span>}</td>
+              <td className="admin-table__fit admin-table__count">{allUsers.data ? memberCount.get(org.id) ?? 0 : "–"}</td>
+              <td className="admin-table__fit admin-table__count">{org.orgType === "COMPANY" ? <span className="admin-muted">—</span> : equipmentCount.get(org.id) ?? 0}</td>
+              <td className="admin-table__fit admin-table__num">{shortDate(org.createdAt)}</td>
               <td className="admin-table__fit"><Badge tone={org.isVerified ? "green" : "amber"}>{org.isVerified ? "승인" : "확인 필요"}</Badge></td>
               <td className="admin-table__actions">
                 {org.orgType !== "COMPANY" && !org.isVerified ? (
