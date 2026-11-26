@@ -34,26 +34,55 @@
 /* 펼치는 상세: 높이 애니메이션(grid-template-rows 0fr → 1fr)으로 끊김 없이 */
 .mgr-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s var(--ease-soft, ease); background: var(--surface-sunken); }
 .mgr-detail.is-open { grid-template-rows: 1fr; border-top: 1px solid var(--border); }
-.mgr-detail__inner { overflow: hidden; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; padding: 0 18px 0 38px; opacity: 0; transition: opacity .25s, padding .35s var(--ease-soft, ease); }
+/* v19: 상세 — 주요 사양(넓게) · 운영 정보 · 상태 점검을 각각 작은 카드로, 항목마다 줄을 그어 이름과 값을 한 줄로 읽히게 */
+.mgr-detail__inner {
+  overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 12px;
+  padding: 0 16px 0 38px; opacity: 0; transition: opacity .25s, padding .35s var(--ease-soft, ease);
+}
 .mgr-detail.is-open .mgr-detail__inner { padding-block: 14px 16px; opacity: 1; }
-.mgr-detail h3 { margin: 0 0 8px; font-size: var(--fs-xs); font-weight: 650; color: var(--text-muted); letter-spacing: .02em; }
-.mgr-specs { margin: 0; display: grid; gap: 4px; }
-.mgr-specs > div { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
-.mgr-specs dt { color: var(--text-muted); }
-.mgr-specs dd { margin: 0; font-weight: 560; text-align: right; font-variant-numeric: tabular-nums; }
-.mgr-specs em { margin-left: 6px; font-style: normal; font-size: 10.5px; color: var(--violet); }
-.mgr-checks { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; font-size: var(--fs-sm); }
-.mgr-checks li { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
-.mgr-checks li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.mgr-checks li.is-ok::before { background: var(--green); }
-.mgr-checks li.is-warn::before { background: var(--violet); }
-.mgr-detail__desc { margin: 0 0 10px; color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.6; }
-.mgr-detail__empty { color: var(--text-muted); font-size: var(--fs-sm); }
-.mgr-detail .button { min-height: 32px; padding: 5px 12px; }
+.mgr-card { min-width: 0; padding: 12px 14px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-background); }
+.mgr-card--wide { grid-column: 1 / -1; padding-bottom: 12px; }
+.mgr-detail h3 {
+  display: flex; align-items: center; gap: 7px; margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  color: var(--text); font-size: var(--fs-sm); font-weight: 700;
+}
+.mgr-detail h3 svg { flex-shrink: 0; color: var(--cyan); }
+.mgr-detail h3 small { margin-left: auto; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 500; font-variant-numeric: tabular-nums; }
+.mgr-specs { margin: 0; display: grid; }
+.mgr-specs > div {
+  display: grid; grid-template-columns: minmax(84px, auto) minmax(0, 1fr); align-items: baseline; gap: 12px; padding: 7px 0;
+  border-bottom: 1px dashed var(--border); font-size: var(--fs-sm); line-height: 1.45;
+}
+.mgr-specs > div:last-child { border-bottom: 0; }
+.mgr-specs dt { color: var(--text-secondary); white-space: nowrap; }
+.mgr-specs dd { margin: 0; min-width: 0; color: var(--text); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mgr-specs dd .is-empty { color: var(--text-muted); font-weight: 400; }
+.mgr-specs em {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 99px; vertical-align: 1px;
+  background: color-mix(in srgb, var(--violet) 14%, transparent); color: var(--violet); font-style: normal; font-size: 10.5px; font-weight: 700;
+}
+/* 주요 사양이 많으면 카드 안에서 2열로 (카드가 넓을 때만) */
+.mgr-card--specs { container-type: inline-size; }
+@container (min-width: 460px) {
+  .mgr-card--specs .mgr-specs { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+  .mgr-card--specs .mgr-specs > div:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+}
+/* 상태 점검: 아이콘 + 항목 | 값 */
+.mgr-checks dt { display: inline-flex; align-items: center; gap: 6px; }
+.mgr-checks .is-ok dt svg { color: var(--tone-ok); }
+.mgr-checks .is-warn dt svg { color: var(--violet); }
+.mgr-checks .is-warn dd { color: var(--violet); }
+.mgr-card__note { margin: 2px 0 4px; padding: 7px 10px; border-radius: 8px; background: color-mix(in srgb, var(--violet) 9%, transparent); color: var(--violet); font-size: var(--fs-xs); line-height: 1.5; }
+.mgr-detail__desc { margin: 4px 0 0; color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.7; white-space: pre-line; }
+.mgr-detail__empty { margin: 8px 0 6px; color: var(--text-muted); font-size: var(--fs-sm); }
 
+@media (max-width: 1180px) {
+  .mgr-detail__inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mgr-card--specs { grid-column: 1 / -1; }
+}
 @media (max-width: 760px) {
   .mgr-row--head { display: none; }
-  .mgr-detail__inner { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-left: 18px; }
+  .mgr-detail__inner { grid-template-columns: minmax(0, 1fr); padding-left: 12px; padding-right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .mgr-row { animation: none; } .mgr-detail, .mgr-detail__inner { transition: none; } }
 

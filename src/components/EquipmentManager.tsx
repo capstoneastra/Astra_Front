@@ -1,6 +1,6 @@
 import { Fragment, useDeferredValue, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { ChevronDown, Database, Pencil, Search, Trash2 } from "lucide-react";
+import { Building2, ChevronDown, CircleAlert, CircleCheck, Database, FileText, Gauge, Pencil, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Button, EmptyState, PageHeader, Panel } from "./ui";
 import ApiState from "./ui/ApiState";
@@ -16,6 +16,10 @@ import { needsUpdate } from "./dashboard/ProviderParts";
 
 const OPERATION: Record<string, [string, string]> = { AVAILABLE: ["운영 중", "green"], LIMITED: ["일정 제한", "amber"], MAINTENANCE: ["점검 중", "red"] };
 const operation = (item: Equipment) => OPERATION[item.availability ?? item.usage?.availability ?? ""] ?? ["상태 미등록", "neutral"];
+/** 이용 범위 코드 → 화면 이름 (장비 상세·정보 수정 창과 같은 말) */
+const ACCESS: Record<string, string> = { EXTERNAL_ALLOWED: "외부 이용 가능", INTERNAL_ONLY: "기관 내부 전용" };
+/** 코드면 한글로, 이미 글로 들어온 값은 그대로, UNKNOWN·빈 값은 null */
+const accessText = (scope?: string | null) => (!scope || scope === "UNKNOWN" ? null : ACCESS[scope] ?? scope);
 type StatusFilter = "all" | "AVAILABLE" | "LIMITED" | "MAINTENANCE" | "stale";
 /** 한 번에 그리는 행 수 — 관리자는 전체 장비(수백 대)를 보므로 나눠서 그림 */
 const PAGE_ROWS = 50;
@@ -135,40 +139,53 @@ export default function EquipmentManager() {
                   </span>
                 </div>
                 <div id={`equipment-detail-${equip.id}`} className={`mgr-detail${expanded ? " is-open" : ""}`} role="row" aria-hidden={!expanded}>
+                  {/* v19: 세 묶음을 각각 작은 카드로, 항목마다 줄을 그어 이름·값을 읽기 쉽게. 수정은 행 오른쪽 연필 아이콘으로 */}
                   <div className="mgr-detail__inner" role="cell">
-                    <section>
-                      <h3>주요 사양</h3>
+                    <section className="mgr-card mgr-card--specs">
+                      <h3><Gauge size={14} aria-hidden="true" />주요 사양{equip.specs?.length ? <small>{equip.specs.length}개</small> : null}</h3>
                       {equip.specs?.length ? (
                         <dl className="mgr-specs">
                           {equip.specs.map((spec) => (
                             <div key={spec.key}>
                               <dt>{specLabel(spec)}</dt>
-                              <dd>{valueText(spec)}{spec.verificationStatus !== "CONFIRMED" && <em>미확인</em>}</dd>
+                              <dd>{valueText(spec)}{spec.verificationStatus !== "CONFIRMED" && <em title="기관 확인 전 사양">미확인</em>}</dd>
                             </div>
                           ))}
                         </dl>
                       ) : <p className="mgr-detail__empty">등록된 사양이 없습니다.</p>}
                     </section>
-                    <section>
-                      <h3>운영 정보</h3>
+                    <section className="mgr-card">
+                      <h3><Building2 size={14} aria-hidden="true" />운영 정보</h3>
                       <dl className="mgr-specs">
-                        <div><dt>제조사</dt><dd>{equip.manufacturer || "—"}</dd></div>
-                        <div><dt>지역</dt><dd>{equip.region || "—"}</dd></div>
-                        <div><dt>이용 범위</dt><dd>{equip.usage?.accessScope || "—"}</dd></div>
-                        <div><dt>소요 시간</dt><dd>{equip.usage?.durationText || "—"}</dd></div>
-                        <div><dt>이용료</dt><dd>{equip.usage?.feeText ?? equip.feeText ?? "—"}</dd></div>
+                        <div><dt>제조사</dt><dd>{equip.manufacturer || <span className="is-empty">미입력</span>}</dd></div>
+                        <div><dt>지역</dt><dd>{equip.region || <span className="is-empty">미입력</span>}</dd></div>
+                        <div><dt>이용 범위</dt><dd>{accessText(equip.usage?.accessScope) ?? <span className="is-empty">확인 필요</span>}</dd></div>
+                        <div><dt>소요 기간</dt><dd>{equip.usage?.durationText || <span className="is-empty">미입력</span>}</dd></div>
+                        <div><dt>이용료</dt><dd>{equip.usage?.feeText ?? equip.feeText ?? <span className="is-empty">미등록</span>}</dd></div>
                       </dl>
                     </section>
-                    <section>
-                      <h3>상태 점검</h3>
-                      <ul className="mgr-checks">
-                        <li className={equip.verificationStatus === "CONFIRMED" ? "is-ok" : "is-warn"}>사양 정보 {equip.verificationStatus === "CONFIRMED" ? "확인 완료" : "미확인"}</li>
-                        <li className={check.age != null && check.age <= 180 ? "is-ok" : "is-warn"}>마지막 갱신 {equip.updateDate ?? "기록 없음"}{check.age != null && ` (${check.age}일 전)`}</li>
-                        <li className={opLabel === "운영 중" ? "is-ok" : "is-warn"}>현재 {opLabel}</li>
-                      </ul>
-                      {equip.reason && <p className="mgr-detail__desc">{equip.reason}</p>}
-                      <Button variant="secondary" icon={Pencil} onClick={() => setEditing(equip.id)}>정보 수정</Button>
+                    <section className="mgr-card">
+                      <h3><ShieldCheck size={14} aria-hidden="true" />상태 점검</h3>
+                      <dl className="mgr-specs mgr-checks">
+                        {[
+                          ["사양 정보", equip.verificationStatus === "CONFIRMED" ? "확인 완료" : "미확인", equip.verificationStatus === "CONFIRMED"],
+                          ["마지막 갱신", equip.updateDate ? `${equip.updateDate}${check.age != null ? ` · ${check.age}일 전` : ""}` : "기록 없음", check.age != null && check.age <= 180],
+                          ["운영 상태", opLabel, opLabel === "운영 중"],
+                        ].map(([label, value, ok]) => (
+                          <div key={label as string} className={ok ? "is-ok" : "is-warn"}>
+                            <dt>{ok ? <CircleCheck size={14} aria-hidden="true" /> : <CircleAlert size={14} aria-hidden="true" />}{label}</dt>
+                            <dd>{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      {check.reasons.length > 0 && <p className="mgr-card__note">갱신이 필요한 이유: {check.reasons.join(", ")}</p>}
                     </section>
+                    {equip.reason && (
+                      <section className="mgr-card mgr-card--wide">
+                        <h3><FileText size={14} aria-hidden="true" />장비 설명</h3>
+                        <p className="mgr-detail__desc">{equip.reason}</p>
+                      </section>
+                    )}
                   </div>
                 </div>
               </Fragment>
