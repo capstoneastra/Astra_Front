@@ -61,7 +61,8 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
   useEffect(() => {
     dialog.current.showModal();
   }, []);
-  const openSupplement = r?.supplements.find((s) => s.status === "OPEN");
+  // 서버는 열린 보완 요청 하나(openSupplement)를 준다. 예전 형식(supplements 목록)도 받아 준다.
+  const openSupplement = r?.openSupplement ?? r?.supplements?.find((s) => s.status === "OPEN") ?? null;
   const fields = [
     ...(content?.conditions ?? []).map((c) => ({
       fieldKey: c.key,
@@ -465,15 +466,16 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
                     <div>
                       <strong>제출본 {revision.revisionNo}</strong>
                       <p>{revision.changeSummary}</p>
-                      {revision.content.conditions.map((c) => (
+                      {/* 제출본 목록 응답에는 내용(content)이 빠져 올 수 있다(서버가 요약만 줌). 있을 때만 그린다 */}
+                      {(revision.content?.conditions ?? []).map((c) => (
                         <p key={c.key}>
                           {c.label ?? c.key}: {valueText(c)}
                         </p>
                       ))}
-                      <p>
+                      {revision.content?.sample && <p>
                         준비 완료일{" "}
                         {revision.content.sample.readyDate ?? "미확인"}
-                      </p>
+                      </p>}
                     </div>
                   </div>
                 ))}

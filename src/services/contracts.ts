@@ -104,13 +104,17 @@ export interface RequestContent {
 export interface RequestDetail extends RequestSummary {
   reservations: ReservationRecord[];
   version: number;
-  supplements: {
-    id: number;
-    status: string;
-    message: string;
-    dueDate?: string | null;
-    items: { fieldKey: string; label?: string; message?: string; required?: boolean }[];
-  }[];
+  /** 예전 응답: 보완 요청 목록. 지금 서버는 이 대신 열린 보완 요청 하나(openSupplement)를 준다. */
+  supplements?: SupplementRequest[];
+  openSupplement?: SupplementRequest | null;
+}
+
+export interface SupplementRequest {
+  id: number;
+  status: string;
+  message: string;
+  dueDate?: string | null;
+  items: { fieldKey: string; label?: string; message?: string; required?: boolean }[];
 }
 
 export interface TestType {

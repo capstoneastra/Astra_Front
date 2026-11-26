@@ -316,3 +316,17 @@ body.qsearch-open .app-header__location, body.qsearch-open .app-header__tools { 
 /* 페이지 제목 줄 삭제 — 버튼이 있는 화면만 얇은 도구 줄 */
 .page-header--hidden { display: contents; }
 .page-header--toolbar { display: flex; justify-content: flex-end; margin-bottom: var(--stack); }
+
+/* 관리자: 예약이 많은 기업·기관 상위 3 (회의 11/26) — 지표 카드가 4장이 되어 넓은 화면 4열, 노트북 2열 */
+@media (min-width: 1024px) { .insight-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1440px) { .insight-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.bookers__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.bookers__title { margin: 0 0 4px; color: var(--text-muted); font-size: var(--fs-xs, 12px); font-weight: 600; }
+.bookers__list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bookers__list li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; grid-template-rows: auto 4px; column-gap: 6px; row-gap: 3px; align-items: center; font-size: var(--fs-sm, 13px); }
+.bookers__rank { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-sunken, rgba(127,127,127,.15)); color: var(--text-muted); font-size: 11px; font-weight: 700; }
+.bookers__rank--1 { background: var(--accent, var(--cyan)); color: var(--primary-ink, #fff); }
+.bookers__name { min-width: 0; overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.bookers__list b { color: var(--text); font-variant-numeric: tabular-nums; }
+.bookers__bar { grid-column: 2 / -1; display: block; height: 4px; border-radius: 2px; background: var(--surface-sunken, rgba(127,127,127,.15)); overflow: hidden; }
+.bookers__bar > i { display: block; height: 100%; border-radius: 2px; background: var(--accent, var(--cyan)); }

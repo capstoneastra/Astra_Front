@@ -24,7 +24,7 @@ import type { EquipmentDraft } from "../domain/equipmentDraft";
 import type { ProgressItem, UpcomingItem } from "./dashboard/CompanyParts";
 import { requestService } from "../services/requestService";
 import { needsUpdate } from "./dashboard/ProviderParts";
-import { FlowStack, VerificationRing, useAdminInsights } from "./dashboard/AdminInsights";
+import { FlowStack, TopBookers, VerificationRing, useAdminInsights } from "./dashboard/AdminInsights";
 import BarChart from "./dashboard/BarChart";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 
@@ -289,6 +289,9 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
           </Section>
           <Section title="장비 정보 검증률" className="insight">
             {loading ? <Skeleton rows={2} /> : <VerificationRing summary={summary} />}
+          </Section>
+          <Section title="예약이 많은 곳" className="insight">
+            <TopBookers />
           </Section>
         </div>
         <div className="dash-grid dash-grid--main dash-fill">

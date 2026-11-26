@@ -4,6 +4,8 @@ import { useWorkspace } from "../../context/AppContext";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { catalogService } from "../../services/catalogService";
 import { requestService } from "../../services/requestService";
+import { loadCalendar } from "../../services/calendarService";
+import type { Schedule } from "../../domain/calendar";
 import type { DashboardSummary, RequestStatus } from "../../services/dashboardService";
 import type { BarRow } from "./BarChart";
 import { STAGES } from "./DashboardParts";
@@ -103,6 +105,65 @@ export function VerificationRing({ summary }: { summary?: DashboardSummary }) {
         <p className="insight__number"><b>{verified}</b><small> / {total}대 검증</small></p>
         <p>미검증 <b>{total - verified}</b>대</p>
         {lowest && <p>가장 낮은 곳: {lowest.name} ({Math.round((lowest.verifiedCount / lowest.equipmentCount) * 100)}%)</p>}
+      </div>
+    </div>
+  );
+}
+
+interface Booker { name: string; count: number; confirmed: number }
+
+/** 예약(취소 제외) 수로 기업·기관을 센다. 예약 건은 의뢰 상세의 reservations 에서 온다 (예약 캘린더와 같은 데이터). */
+function rankBookers(schedules: Schedule[], keyOf: (s: Schedule) => string | null | undefined): Booker[] {
+  const map = new Map<string, Booker>();
+  for (const s of schedules) {
+    if (s.status === "CANCELED") continue;
+    const name = keyOf(s)?.trim();
+    if (!name) continue;
+    const row = map.get(name) ?? { name, count: 0, confirmed: 0 };
+    row.count += 1;
+    if (s.status === "CONFIRMED") row.confirmed += 1;
+    map.set(name, row);
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || b.confirmed - a.confirmed || a.name.localeCompare(b.name, "ko")).slice(0, 3);
+}
+
+function BookerList({ title, rows }: { title: string; rows: Booker[] }) {
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  return (
+    <div className="bookers__col">
+      <p className="bookers__title">{title}</p>
+      {rows.length ? <ol className="bookers__list">
+        {rows.map((row, i) => (
+          <li key={row.name} title={`${row.name}: 예약 ${row.count}건 (확정 ${row.confirmed}건)`}>
+            <span className={`bookers__rank bookers__rank--${i + 1}`}>{i + 1}</span>
+            <span className="bookers__name">{row.name}</span>
+            <b>{row.count}건</b>
+            <i className="bookers__bar" aria-hidden="true"><i style={{ width: `${(row.count / max) * 100}%` }} /></i>
+          </li>
+        ))}
+      </ol> : <p className="dash-empty">아직 예약이 없습니다.</p>}
+    </div>
+  );
+}
+
+/** 회의(11/26): 관리자 대시보드에 예약이 가장 많은 기업·기관 상위 3곳 */
+export function TopBookers() {
+  const { user } = useWorkspace();
+  // 예약 캘린더(관리자 전체)와 같은 캐시 키를 써서 두 화면이 한 번만 불러온다
+  const calendar = useApiQuery((signal) => loadCalendar(signal), `calendar:${user.id}:ALL`);
+  if (calendar.loading) return <div className="dash-skeleton" aria-hidden="true"><span /><span /><span /></div>;
+  if (calendar.error) return <p className="dash-empty">{calendar.error.message}</p>;
+  const requests = new Map((calendar.data?.requests ?? []).map((r) => [r.id, r]));
+  const schedules = calendar.data?.schedules ?? [];
+  const companies = rankBookers(schedules, (s) => s.companyName ?? (requests.get(s.requestId) as { companyName?: string } | undefined)?.companyName);
+  const institutions = rankBookers(schedules, (s) => s.institution?.name);
+  const total = schedules.filter((s) => s.status !== "CANCELED").length;
+  return (
+    <div className="bookers">
+      <p className="insight__number"><b>{total}</b>건 <small>예약 (취소 제외)</small></p>
+      <div className="bookers__cols">
+        <BookerList title="기업" rows={companies} />
+        <BookerList title="시험기관" rows={institutions} />
       </div>
     </div>
   );

@@ -117,7 +117,7 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
               <input type="checkbox" aria-label="전체 선택" checked={rows.length > 0 && selected.length === rows.length}
                 onChange={(e) => setSelected(e.target.checked ? rows.map((r) => r.id) : [])} />
             </th>}
-            <th>신청자</th><th>역할·소속</th><th>상태</th><th className="admin-table__actions">처리</th>
+            <th>신청자</th><th>역할·소속</th><th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th>
           </tr>
         </thead>
         <tbody>
@@ -129,7 +129,7 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
               </td>}
               <td><strong>{member.name}</strong><small>{member.email}</small></td>
               <td>{member.organization?.orgType === "UNIVERSITY" ? "대학 담당자" : roleLabels[member.role]}<small>{member.organization?.name ?? "소속 없음"}</small></td>
-              <td><Badge tone={statusTone[member.status]}>{accountStatusLabels[member.status] ?? member.status}</Badge></td>
+              <td className="admin-table__fit"><Badge tone={statusTone[member.status]}>{accountStatusLabels[member.status] ?? member.status}</Badge></td>
               <td className="admin-table__actions">
                 {member.status === "PENDING" ? (
                   rejecting === member.id ? (
@@ -141,10 +141,12 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
                       <button type="button" className="admin-reasons__cancel" onClick={() => setRejecting(null)}>취소</button>
                     </span>
                   ) : (
+                    // 승인(왼쪽)·거절(오른쪽) 모두 같은 크기의 테두리 버튼. 거절은 빨간 글자로만 구분
                     <span className="admin-actions">
-                      <Button variant="ghost" disabled={action.busy} onClick={() => setRejecting(member.id)}>거절</Button>
-                      <Button variant="secondary" icon={Check} disabled={action.busy}
+                      <Button variant="secondary" icon={Check} className="admin-btn admin-btn--approve" disabled={action.busy}
                         onClick={() => action.run(() => adminService.approve(member.id), `${member.name}님을 승인했습니다.`)}>승인</Button>
+                      <Button variant="secondary" icon={X} className="admin-btn admin-btn--reject" disabled={action.busy}
+                        onClick={() => setRejecting(member.id)}>거절</Button>
                     </span>
                   )
                 ) : ["ACTIVE", "SUSPENDED"].includes(member.status) && member.id !== user.id ? (
@@ -164,14 +166,14 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
   const orgTable = (rows: typeof orgRows) => (
     <div className="table-scroll">
       <table className="admin-table">
-        <thead><tr><th>조직</th><th>유형</th><th>지역·연락처</th><th>상태</th><th className="admin-table__actions">처리</th></tr></thead>
+        <thead><tr><th>조직</th><th className="admin-table__fit">유형</th><th>지역·연락처</th><th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th></tr></thead>
         <tbody>
           {rows.map((org) => (
             <tr key={org.id}>
               <td><strong>{org.name}</strong>{org.homepageUrl && <small>{org.homepageUrl}</small>}</td>
-              <td>{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
+              <td className="admin-table__fit">{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
               <td>{org.region || "—"}<small>{org.phone || ""}</small></td>
-              <td><Badge tone={org.isVerified ? "green" : "amber"}>{org.isVerified ? "승인" : "확인 필요"}</Badge></td>
+              <td className="admin-table__fit"><Badge tone={org.isVerified ? "green" : "amber"}>{org.isVerified ? "승인" : "확인 필요"}</Badge></td>
               <td className="admin-table__actions">
                 {org.orgType !== "COMPANY" && !org.isVerified ? (
                   <Button variant="secondary" icon={Check} disabled={action.busy}
