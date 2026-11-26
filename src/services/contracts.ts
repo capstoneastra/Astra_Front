@@ -163,8 +163,11 @@ export interface MatchRun {
     usedMockData: boolean;
     checks: {
       conditionKey: string;
+      /** 조건 이름 (예: 시료 질량) — 백엔드 V21부터 */
       label?: string;
       result: string;
+      /** 판정 한글 (충족 / 미충족 / 확인 필요) — 백엔드 V21부터 */
+      resultText?: string;
       requiredText?: string;
       equipmentText?: string;
       sourceType?: string;

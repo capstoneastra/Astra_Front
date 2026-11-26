@@ -8,6 +8,7 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
 import type { SearchResult } from "../services/catalogService";
+import type { RequirementAnalysis } from "../services/requirementService";
 import { requirementService } from "../services/requirementService";
 import { requestService } from "../services/requestService";
 import type { ConditionRule, MatchRun, RequirementCondition } from "../services/contracts";
@@ -158,6 +159,8 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [requirement, setRequirement] = useState<{ id: number; key: string; type: string } | null>(null);
   const [run, setRun] = useState<MatchRun | null>(null);
+  // 매칭 전에 빠진 조건 안내 (POST /requirements/{id}/analyze). 사용자가 '그래도 찾기'를 누르면 그대로 매칭
+  const [gap, setGap] = useState<{ key: string; missing: RequirementAnalysis["missing"]; unconfirmed: RequirementAnalysis["unconfirmed"] } | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [form, setForm] = useState<Form>({
     purpose: "", sampleName: "", quantity: "1", readyDate: "", start: "", end: "",
@@ -269,7 +272,7 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
   });
 
   /** ① → ② : 시험조건 저장 후 매칭 실행 */
-  const findEquipment = () => {
+  const findEquipment = (force = false) => {
     if (!typeCode) { setFieldError("시험 종류를 먼저 골라 주세요."); return; }
     const bad = rules.find((r) => r.valueType === "RANGE" && isNum(values[r.conditionKey]?.min) && isNum(values[r.conditionKey]?.max)
       && Number(values[r.conditionKey].min) > Number(values[r.conditionKey].max));
@@ -283,6 +286,16 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
       let id = requirement?.type === typeCode ? requirement.id : undefined;
       if (id) await requirementService.conditions(id, conds, signal);
       else id = (await requirementService.create({ testTypeCode: typeCode, title, purpose: form.purpose, sampleName: form.sampleName, conditions: conds }, signal)).id;
+      setRequirement({ id, key: "", type: typeCode });
+      // 매칭 전에 빠진 필수 조건부터 안내한다. 비워 둔 채 매칭하면 모든 장비가 '확인 필요'로만 나오기 때문
+      if (!force) {
+        const analysis = await requirementService.analyze(id, signal);
+        if (!analysis.readyForMatching && (analysis.missing.length || analysis.unconfirmed.length)) {
+          setGap({ key, missing: analysis.missing, unconfirmed: analysis.unconfirmed });
+          return;
+        }
+      }
+      setGap(null);
       const result = await requirementService.match(id, { limit: 5, ...(read?.regions?.[0] ? { region: read.regions[0] } : {}) }, signal);
       setRequirement({ id, key, type: typeCode }); setRun(result);
       const first = result.results.find((r) => r.verdict !== "UNSUITABLE") ?? result.results[0];
@@ -486,7 +499,7 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
                       const v = values[r.conditionKey] ?? {};
                       const id = `qr-${r.conditionKey}`;
                       return (
-                        <div key={r.conditionKey} className={`qr-field${v.ai && filled(r, v) ? " is-ai" : ""}${r.valueType === "RANGE" ? " is-range" : ""}`}>
+                        <div key={r.conditionKey} className={`qr-field${v.ai && filled(r, v) ? " is-ai" : ""}${r.valueType === "RANGE" ? " is-range" : ""}${gap?.missing.some((m) => m.key === r.conditionKey) && !filled(r, v) ? " is-missing" : ""}`}>
                           <label htmlFor={id} className="qr-field__label">
                             <b>{r.label}{r.isRequired && <i aria-label="필수"> *</i>}</b>
                             {!r.isRequired && <small>시험기관이 확인</small>}
@@ -517,10 +530,21 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
                 </div>
               ))}
               {fieldError && <p className="sim-error" role="alert">{fieldError}</p>}
+              {gap && (
+                <div className="qr-gap" role="alert">
+                  <strong>장비를 찾기 전에 이 조건을 채워 주세요</strong>
+                  <ul>
+                    {gap.missing.map((m) => <li key={`m-${m.key ?? m.label}`}>{m.question ?? `${m.label}을(를) 알려 주세요.`}</li>)}
+                    {gap.unconfirmed.map((u) => <li key={`u-${u.key ?? u.label}`} className="is-unconfirmed">{u.label}: {u.reason ?? "확인이 필요해요."}</li>)}
+                  </ul>
+                  <p>비워 둔 채로 찾으면 그 조건은 모든 장비에서 '확인 필요'로 나와요.</p>
+                  <Button variant="secondary" disabled={finder.busy} onClick={() => findEquipment(true)}>그래도 장비 찾기</Button>
+                </div>
+              )}
               {finder.error && <ApiState error={finder.error} />}
               <footer className="sim-card__actions qr-foot">
                 <span className="qr-foot__hint">{typeCode ? (required.length > requiredDone ? "필수 조건을 비워 두면 '기관 확인'으로 비교해요." : "조건이 준비됐어요.") : "시험 종류를 고르면 입력할 조건이 나타나요."}</span>
-                <Button icon={ArrowRight} disabled={!typeCode || finder.busy || detail.loading} onClick={findEquipment}>{finder.busy ? "찾는 중…" : "맞는 장비 찾기"}</Button>
+                <Button icon={ArrowRight} disabled={!typeCode || finder.busy || detail.loading} onClick={() => findEquipment()}>{finder.busy ? "찾는 중…" : "맞는 장비 찾기"}</Button>
               </footer>
             </section>
           ) : step === 1 && run ? (
@@ -551,10 +575,11 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
                               {r.checks.map((c) => {
                                 const [label, tone] = RESULT[c.result] ?? [c.result, "warn"];
                                 return (
-                                  <span key={c.conditionKey} className={`qr-check qr-check--${tone}`} title={`요구 ${c.requiredText ?? "미정"} / 장비 ${c.equipmentText ?? "정보 없음"}`}>
+                                  <span key={c.conditionKey} className={`qr-check qr-check--${tone}`}
+                                    title={[`요구 ${c.requiredText ?? "미정"} / 장비 ${c.equipmentText ?? "정보 없음"}`, c.note].filter(Boolean).join("\n")}>
                                     {tone === "ok" ? <CircleCheck size={12} aria-hidden="true" /> : tone === "bad" ? <CircleAlert size={12} aria-hidden="true" /> : <CircleHelp size={12} aria-hidden="true" />}
                                     {c.label ?? rules.find((x) => x.conditionKey === c.conditionKey)?.label ?? c.conditionKey}
-                                    <em>{c.requiredText === "미정" ? label : `${c.requiredText} → ${c.equipmentText}`}</em>
+                                    <em>{c.requiredText === "미정" ? (c.resultText ?? label) : `${c.requiredText} → ${c.equipmentText}`}</em>
                                   </span>
                                 );
                               })}

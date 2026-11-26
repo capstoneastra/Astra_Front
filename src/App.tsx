@@ -24,6 +24,7 @@ import AuthGate from "./auth/AuthGate";
 import { useAuth } from "./auth/context";
 import { canAccessMenu } from "./auth/permissions";
 import { useApiQuery } from "./hooks/useApiQuery";
+import { catalogService } from "./services/catalogService";
 import { equipmentService, testTypeLabel } from "./services/equipmentService";
 import type { SearchSuggestion } from "./components/layout/QuickSearch";
 import { defaultDashboardView } from "./services/dashboardService";
@@ -124,6 +125,8 @@ function Workspace() {
     `catalog:${user.id}:${user.role}`,
   );
   const equipmentList = catalogQuery.data ?? EMPTY_EQUIPMENT;
+  // 시험유형 이름표를 서버 목록(GET /test-types, 20종)으로 채운다 — 새 유형이 영어 코드로 보이지 않도록
+  useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
   // 헤더 자동 완성 후보: 장비·기관·시험 종류 (관리자는 기관만)
   const searchSources = useMemo<SearchSuggestion[]>(() => {
     const orgs = new Map<number, { name: string; region?: string; count: number }>();

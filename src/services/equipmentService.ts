@@ -19,16 +19,28 @@ interface EquipmentFilters {
   includeMock?: boolean;
 }
 
+// 백엔드 GET /test-types 20종 (V23 기준). 앱 시작 때 서버 목록으로 다시 채우므로 여기는 응답 전 임시 이름
 const testLabels: Record<string, string> = {
-  VIBRATION: "진동시험",
-  SHOCK: "충격시험",
-  THERMAL_VACUUM: "열진공시험",
-  EMC: "전자파적합성",
-  TEMPERATURE_HUMIDITY: "온습도시험",
-  ELECTRICAL_RF_ANALYSIS: "전기·RF 측정",
-  X_RAY_INSPECTION: "X선 비파괴검사",
   ACOUSTIC_NOISE: "음향·소음 시험",
   BATTERY_TEST: "배터리 시험",
+  CHARPY_IMPACT: "충격시험(샤르피)",
+  COMPRESSION: "압축시험",
+  DIMENSIONAL_INSPECTION: "치수·형상 측정",
+  ELECTRICAL_RF_ANALYSIS: "전기·RF 측정",
+  HARDNESS: "경도시험",
+  MATERIAL_ANALYSIS: "재료·성분 분석",
+  MICROSCOPY: "현미경 관찰",
+  POWER_SUPPLY: "전원 시험",
+  PROCESS_MEASUREMENT: "공정 계측",
+  TEMPERATURE_HUMIDITY: "온습도시험",
+  TENSILE: "인장시험",
+  VIBRATION: "진동시험",
+  X_RAY_INSPECTION: "X선 비파괴검사",
+  MACHINING: "가공·시제품 제작",
+  ADDITIVE_MANUFACTURING: "적층제조(금속 3D 프린팅)",
+  FORMING_HEAT_TREATMENT: "성형·열처리",
+  NDT_ULTRASONIC: "비파괴검사(초음파)",
+  MASS_PROPERTIES: "질량특성 측정",
 };
 export const testTypeLabel = (code: string) => testLabels[code] ?? code;
 /** GET /test-types 의 nameKo 로 이름표를 채움 — 위 고정 목록에 없는 시험유형이 영어 코드로 보이지 않도록 */

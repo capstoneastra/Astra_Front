@@ -28,6 +28,18 @@ const TYPE_WORDS: [string, RegExp][] = [
   ["ACOUSTIC_NOISE", /음향|잔향|acoustic/i],
   ["EMI_EMC", /전자파|emc|emi|차폐/i],
   ["TEMPERATURE_HUMIDITY", /온습도|항온|습도/i],
+  ["CHARPY_IMPACT", /샤르피|charpy/i],
+  ["TENSILE", /인장|tensile/i],
+  ["COMPRESSION", /압축|compression/i],
+  ["HARDNESS", /경도|hardness/i],
+  ["X_RAY_INSPECTION", /x\s*-?\s*ray|엑스레이|x선/i],
+  ["BATTERY_TEST", /배터리|전지|battery/i],
+  // 백엔드 V23 에서 추가된 시험유형
+  ["MACHINING", /가공|cnc|머시닝|시제품/i],
+  ["ADDITIVE_MANUFACTURING", /적층|3d\s*프린|금속\s*프린|additive/i],
+  ["FORMING_HEAT_TREATMENT", /성형|열처리|heat\s*treat/i],
+  ["NDT_ULTRASONIC", /초음파|ultrasonic/i],
+  ["MASS_PROPERTIES", /질량\s*특성|무게\s*중심|관성\s*모멘트|mass\s*propert/i],
 ];
 
 const num = (s: string) => Number(s.replace(/,/g, ""));

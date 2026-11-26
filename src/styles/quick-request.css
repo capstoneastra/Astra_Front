@@ -231,3 +231,19 @@
 .qr-tips ul { margin: 8px 0 0; padding-left: 26px; display: grid; gap: 5px; color: var(--text-secondary); font-size: var(--fs-sm); }
 @media (max-width: 1100px) { .qr-summary { position: static; } }
 .quick-request-page { padding-bottom: 28px; }
+
+/* 11/27: 매칭 전에 빠진 조건 안내 (POST /requirements/{id}/analyze) */
+.qr-gap {
+  display: grid; gap: 6px; margin: 12px 0 0; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--border)); background: color-mix(in srgb, var(--amber) 10%, transparent);
+  color: var(--text); font-size: var(--fs-sm); animation: v6-rise .25s ease both;
+}
+.qr-gap strong { font-size: var(--fs-md); }
+.qr-gap ul { display: grid; gap: 2px; margin: 0; padding-left: 18px; }
+.qr-gap li.is-unconfirmed { color: var(--text-muted); }
+.qr-gap p { margin: 0; color: var(--text-muted); font-size: var(--fs-xs); }
+.qr-gap .button { justify-self: start; }
+/* 빠진 필수 조건 칸 강조 */
+.qr-field.is-missing .qr-field__control input,
+.qr-field.is-missing .qr-field__control select { border-color: var(--amber); box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 25%, transparent); }
+.qr-field.is-missing .qr-field__label b { color: var(--amber); }

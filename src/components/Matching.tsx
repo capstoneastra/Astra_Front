@@ -205,13 +205,13 @@ export default function Matching({ setActiveMenu }) {
                     <tbody>
                       {result.checks.map((c) => (
                         <tr key={c.conditionKey}>
-                          <td>{c.conditionKey}</td>
+                          <td>{c.label ?? c.conditionKey}</td>
                           <td>{c.requiredText}</td>
-                          <td>
-                            {c.equipmentText}
-                            <small>{c.note}</small>
+                          <td>{c.equipmentText}</td>
+                          <td title={c.note}>
+                            {c.resultText ?? checkLabels[c.result]}
+                            {c.note && <small>{c.note}</small>}
                           </td>
-                          <td>{checkLabels[c.result]}</td>
                         </tr>
                       ))}
                     </tbody>

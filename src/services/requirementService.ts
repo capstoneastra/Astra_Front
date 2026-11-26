@@ -1,10 +1,13 @@
 import { getData, postData, mutate } from "./http";
 import type { MatchRun, Requirement, RequirementCondition, ResourceId } from "./contracts";
 
+/** POST /requirements/{id}/analyze — 매칭 전에 빠진 조건을 먼저 안내할 때 쓴다 */
 export interface RequirementAnalysis {
   readyForMatching: boolean;
-  missing: { label: string; question?: string }[];
-  unconfirmed: { label: string }[];
+  /** 빠진 필수 조건과 물어볼 문구 (예: "시료 질량을 알려 주세요.") */
+  missing: { key?: string; label: string; question?: string }[];
+  /** AI가 뽑았지만 확인이 필요한 조건과 그 이유 */
+  unconfirmed: { key?: string; label: string; reason?: string }[];
 }
 
 export const requirementService = {
