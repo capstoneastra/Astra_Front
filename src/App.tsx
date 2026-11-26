@@ -104,7 +104,6 @@ function Workspace() {
   const [dashboardView, setDashboardView] = useState(() => defaultDashboardView(user.role));
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantStarted, setAssistantStarted] = useState(false);
-  const [assistantMode, setAssistantMode] = useState("chatbot");
   const [smallScreen, setSmallScreen] = useState(
     () => window.matchMedia("(max-width: 700px)").matches,
   );
@@ -174,7 +173,6 @@ function Workspace() {
 
   const openAssistant = (mode?: string) => {
     if (!canAccessMenu(user.role, mode ?? "assistant")) return;
-    if (mode) setAssistantMode(mode);
     setAssistantStarted(true);
     setAssistantOpen(true);
     setMenuOpen(false);
@@ -395,11 +393,9 @@ function Workspace() {
             chatPanelKey={chatPanelKey}
             open={assistantOpen}
             started={assistantStarted}
-            mode={assistantMode}
             modal={smallScreen}
             onOpen={() => openAssistant()}
             onClose={closeAssistant}
-            onModeChange={setAssistantMode}
             onNavigate={(menu) => {
               closeAssistant();
               navigate(menu);

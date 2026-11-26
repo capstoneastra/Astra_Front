@@ -358,3 +358,7 @@ body.qsearch-open .app-header__location, body.qsearch-open .app-header__tools { 
 .bookers__what small { color: var(--text-muted); font-size: var(--fs-xs, 12px); }
 .bookers__state { padding: 2px 8px; border-radius: 999px; background: var(--surface-sunken, rgba(127,127,127,.12)); color: var(--text-muted); font-size: 11px; font-weight: 600; }
 .bookers__state.is-confirmed { background: color-mix(in srgb, var(--green, #2e9d5b) 16%, transparent); color: var(--text); }
+
+/* 11/27: 알림·프로필 메뉴가 AI 상담 창 뒤로 숨지 않게 — 헤더를 상담 창(70)·여는 버튼(75)보다 위로.
+   (이 파일이 가장 나중에 읽혀서 여기 둔다. 빠른 검색이 열렸을 때 규칙도 같이 덮어쓴다) */
+.app-header, body.qsearch-open .app-header { z-index: 80; }

@@ -1,45 +1,23 @@
 import { useEffect, useRef } from "react";
-import { BotMessageSquare, MessageSquareText, Workflow, X } from "lucide-react";
+import { BotMessageSquare, MessageSquareText, X } from "lucide-react";
 import Chatbot from "../Chatbot";
-import Automation from "../Automation";
-
-const modes = [
-  {
-    id: "chatbot",
-    label: "AI 상담",
-    icon: MessageSquareText,
-  },
-  {
-    id: "autopilot",
-    label: "의뢰 자동 작성",
-    icon: Workflow,
-  },
-];
 
 export default function AiAssistant({
   chatPanelKey,
   open,
   started,
-  mode,
   modal,
   onOpen,
   onClose,
-  onModeChange,
   onNavigate,
 }) {
   const panel = useRef<HTMLElement>(null);
   const launcher = useRef(null);
-  const tabs = useRef({});
-  const currentMode = useRef(mode);
-  useEffect(() => {
-    currentMode.current = mode;
-  }, [mode]);
-
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement;
     const launchButton = launcher.current;
-    tabs.current[currentMode.current]?.focus({ preventScroll: true });
+    panel.current?.querySelector<HTMLElement>("textarea, input")?.focus({ preventScroll: true });
     const closeWithEscape = (event) => {
       if (event.key === "Escape" && !document.querySelector("dialog[open]")) {
         event.preventDefault();
@@ -92,24 +70,6 @@ export default function AiAssistant({
     };
   }, [open, modal]);
 
-  const changeTabWithKeys = (event) => {
-    const index = modes.findIndex((item) => item.id === mode);
-    const next =
-      event.key === "ArrowRight"
-        ? (index + 1) % modes.length
-        : event.key === "ArrowLeft"
-          ? (index - 1 + modes.length) % modes.length
-          : event.key === "Home"
-            ? 0
-            : event.key === "End"
-              ? modes.length - 1
-              : null;
-    if (next === null) return;
-    event.preventDefault();
-    onModeChange(modes[next].id);
-    tabs.current[modes[next].id]?.focus();
-  };
-
   return (
     <>
       <button
@@ -140,31 +100,8 @@ export default function AiAssistant({
         aria-label="ASTRA AI 어시스턴트"
       >
         <header className="ai-assistant__bar">
-          <div
-            className="ai-assistant__tabs"
-            role="tablist"
-            aria-label="AI 지원 기능"
-          >
-            {modes.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                id={`ai-tab-${id}`}
-                type="button"
-                role="tab"
-                ref={(node) => {
-                  tabs.current[id] = node;
-                }}
-                aria-selected={mode === id}
-                aria-controls={`ai-pane-${id}`}
-                tabIndex={mode === id ? 0 : -1}
-                onKeyDown={changeTabWithKeys}
-                onClick={() => onModeChange(id)}
-              >
-                <Icon size={15} aria-hidden="true" />
-                {label}
-              </button>
-            ))}
-          </div>
+          {/* 의뢰 자동 작성 탭은 뺐다 (11/27). 이 패널은 AI 상담 하나만 */}
+          <h2 className="ai-assistant__title"><MessageSquareText size={16} aria-hidden="true" />AI 상담</h2>
           <button
             type="button"
             className="icon-button"
@@ -176,26 +113,11 @@ export default function AiAssistant({
           </button>
         </header>
         <div className="ai-assistant__body">
-          {started &&
-            modes.map(({ id }) => (
-              <section
-                key={id}
-                id={`ai-pane-${id}`}
-                className={`ai-assistant__pane ai-assistant__pane--${id}`}
-                role="tabpanel"
-                aria-labelledby={`ai-tab-${id}`}
-                hidden={mode !== id}
-                ref={(node) => {
-                  if (node) node.inert = !open || mode !== id;
-                }}
-              >
-                {id === "chatbot" ? (
-                  <Chatbot key={chatPanelKey} setActiveMenu={onNavigate} />
-                ) : (
-                  <Automation setActiveMenu={onNavigate} embedded />
-                )}
-              </section>
-            ))}
+          {started && (
+            <section className="ai-assistant__pane ai-assistant__pane--chatbot" aria-label="AI 상담">
+              <Chatbot key={chatPanelKey} setActiveMenu={onNavigate} />
+            </section>
+          )}
         </div>
       </aside>
     </>

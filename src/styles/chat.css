@@ -159,3 +159,16 @@
 .chat-files li small { color: var(--text-muted); }
 .chat-files button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); }
 .chat-files button:hover { background: var(--control-hover); color: var(--text); }
+
+
+/* ── 11/27: AI 상담 창을 채팅 위젯 크기로 (오른쪽 아래, 폭 400, 높이 최대 620) ── */
+@media (min-width: 701px) {
+  .ai-assistant {
+    top: auto;
+    bottom: 16px;
+    width: min(400px, calc(var(--vw-full) - 32px));
+    height: min(620px, calc(var(--vh-full, 100dvh) - var(--header-h, 56px) - 32px));
+  }
+}
+.ai-assistant__title { display: inline-flex; flex: 1; gap: 8px; align-items: center; margin: 0; padding-left: 4px; color: var(--text); font-size: var(--fs-md); font-weight: 650; }
+.ai-assistant__title svg { color: var(--blue); }
