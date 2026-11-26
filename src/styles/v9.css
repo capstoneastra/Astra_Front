@@ -142,10 +142,6 @@
 .reg-section { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid var(--border); }
 .reg-section:first-child { border-top: 0; padding-top: 4px; }
 .reg-section h3 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin: 0; font-size: var(--fs-md); font-weight: 700; }
-.reg-section h3 > span {
-  align-self: center; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px;
-  background: var(--accent-background); color: var(--cyan); font-size: 12px; font-weight: 750; font-variant-numeric: tabular-nums;
-}
 .reg-section h3 small { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 400; }
 .reg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 .reg-grid__wide { grid-column: 1 / -1; }
@@ -177,6 +173,34 @@
 .reg-problems { margin: 4px 0 10px; padding: 10px 14px; border-radius: 10px; background: var(--tone-warn-bg); color: var(--tone-warn); font-size: var(--fs-sm); }
 .reg-problems ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 2px; }
 .register-dialog .dialog__actions { padding-top: 12px; border-top: 1px solid var(--border); }
+
+/* v20: 등록 창 3단계 — 위쪽 진행 막대(AI 간편 의뢰 .qr-progress 와 같은 모양) + [이전]/[다음] */
+.register-dialog h2#register-title { margin-bottom: 12px; }
+.reg-progress { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.reg-progress button { display: grid; gap: 6px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--text-muted); text-align: left; }
+.reg-progress button::before { content: ""; height: 4px; border-radius: 99px; background: var(--surface-sunken); box-shadow: inset 0 0 0 1px var(--border); transition: background .35s var(--ease-soft); }
+.reg-progress li.is-done button::before { background: color-mix(in srgb, var(--cyan) 60%, var(--surface)); box-shadow: none; }
+.reg-progress li.is-current button::before { background: var(--cyan); box-shadow: none; }
+.reg-progress__label { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
+.reg-progress__num {
+  flex-shrink: 0; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; border: 1px solid var(--border-strong);
+  background: var(--surface); font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums;
+}
+.reg-progress small { padding-left: 27px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); }
+.reg-progress li.is-current .reg-progress__label { color: var(--text); }
+.reg-progress li.is-current .reg-progress__num { border-color: var(--cyan); background: var(--cyan); color: var(--primary-ink); }
+.reg-progress li.is-done .reg-progress__label { color: var(--text-secondary); }
+.reg-progress li.is-done .reg-progress__num { border-color: color-mix(in srgb, var(--cyan) 45%, transparent); background: var(--accent-background); color: var(--cyan); }
+.reg-progress button:not(:disabled):hover .reg-progress__label { color: var(--text); }
+@media (max-width: 560px) { .reg-progress small { display: none; } .reg-progress__label { font-size: var(--fs-xs); gap: 5px; } }
+.reg-step { animation: v6-rise .3s var(--ease-soft) both; }
+.reg-section h3 { font-size: var(--fs-sm); }
+.reg-actions { align-items: center; }
+.reg-actions > .button:first-child { margin-right: auto; }
+.reg-actions__count { color: var(--text-muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.reg-similar-note { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; color: var(--tone-update); font-size: var(--fs-xs); }
+.reg-similar-note svg { flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) { .reg-step { animation: none; } }
 
 /* ── 라이트 모드: 기존에 어두운 배경 기준으로 고정했던 색을 토큰으로 ───────── */
 .status-chip--green { color: var(--tone-ok); border-color: color-mix(in srgb, var(--tone-ok) 40%, transparent); background: var(--tone-ok-bg); }
