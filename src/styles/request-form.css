@@ -9,6 +9,11 @@
   border: 1px solid var(--blue-border); border-radius: 11px; background: var(--blue-soft); color: var(--blue); font-size: var(--fs-sm);
 }
 .request-form__ai span { flex: 1; color: var(--text-secondary); }
+/* 가상 시뮬레이션에서 넘어와 채운 내용 안내 */
+.request-form__sim { align-items: flex-start; }
+.request-form__sim > svg { flex-shrink: 0; margin-top: 2px; }
+.request-form__sim b { color: var(--text); font-weight: 650; }
+.request-form__sim small { display: block; margin-top: 3px; color: var(--text-muted); font-size: var(--fs-xs); }
 .request-form__aside { position: sticky; top: calc(var(--header-h) + 16px); }
 .request-summary { padding: 18px; display: grid; gap: 14px; }
 .request-summary__equipment { display: grid; gap: 4px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }

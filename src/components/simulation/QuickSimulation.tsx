@@ -6,6 +6,7 @@ import { Button, Panel } from "../ui";
 import ApiState from "../ui/ApiState";
 import { LineChart } from "./LineChart";
 import { valueText } from "../../domain/constants";
+import type { SimFact } from "../../domain/simulationPrefill";
 
 /**
  * 간이 가상 시뮬레이션 (3D 없이, 서버 없이 바로 계산)
@@ -156,6 +157,67 @@ const FIELDS: Record<Kind, { group: string; fields: FieldDef[] }[]> = {
     ] },
   ],
 };
+/**
+ * 시뮬레이션 입력 → 의뢰서 조건 칸 후보 (domain/simulationPrefill 이 conditionRules 와 맞춤)
+ * keys 앞쪽은 명세에 나온 키(sample_mass·fixture_mass·frequency·excitation_axis), 나머지는 흔한 이름 후보.
+ */
+function prefillFacts(kind: Kind, v: Record<string, string>): SimFact[] {
+  const n = (key: string) => num(v[key]);
+  const range = (label: string, keys: string[], words: string[], unit: string, a: string, b: string): SimFact =>
+    ({ label, keys, words, unit, min: Math.min(n(a), n(b)), max: Math.max(n(a), n(b)) });
+  const one = (label: string, keys: string[], words: string[], unit: string | null, key: string): SimFact => ({ label, keys, words, unit, value: n(key) });
+  const mass = (key: string) => one("시료 질량", ["sample_mass", "mass", "specimen_mass"], ["시료질량", "시료무게", "시편질량", "시편무게", "질량", "무게"], "kg", key);
+  const freq = (unit: string, a: string, b: string) => range("주파수 범위", ["frequency", "frequency_range"], ["주파수"], unit, a, b);
+  const temp = (a: string, b: string) => range("온도 범위", ["temperature", "temperature_range"], ["온도"], "℃", a, b);
+  const facts: Record<Kind, SimFact[]> = {
+    VIBRATION: [
+      mass("mass"),
+      one("고정구 질량", ["fixture_mass"], ["고정구", "지그", "치구"], "kg", "fixture"),
+      freq("Hz", "fmin", "fmax"),
+      one("가속도", ["acceleration", "sine_acceleration", "accel"], ["가속도", "진동세기"], "g", "accel"),
+      { label: "가진 축", keys: ["excitation_axis", "axis"], words: ["가진축", "축", "방향"], unit: null,
+        valueText: Math.round(n("axes")) === 3 ? "X·Y·Z 3축" : `${Math.round(n("axes"))}축` },
+    ],
+    THERMAL_VACUUM: [
+      temp("cold", "hot"),
+      one("사이클 횟수", ["cycles", "cycle_count", "thermal_cycles"], ["사이클", "반복"], "회", "cycles"),
+      one("유지 시간", ["dwell_time", "dwell"], ["유지"], "시간", "dwell"),
+      one("온도 변화율", ["ramp_rate", "temperature_rate"], ["변화율", "승온", "램프"], "℃/분", "ramp"),
+    ],
+    SHOCK: [
+      one("최대 SRS", ["srs_peak", "srs", "peak_acceleration"], ["srs", "충격"], "g", "srs"),
+      freq("Hz", "f1", "f2"),
+      mass("smass"),
+      one("충격 횟수", ["shock_count", "shots"], ["횟수"], "회", "shots"),
+    ],
+    TEMPERATURE_HUMIDITY: [
+      temp("thCold", "thHot"),
+      one("최고 습도", ["humidity", "humidity_max", "max_humidity"], ["습도"], "%RH", "thRh"),
+      one("사이클 횟수", ["cycles", "cycle_count"], ["사이클", "반복"], "회", "thCycles"),
+      one("유지 시간", ["dwell_time", "dwell"], ["유지"], "시간", "thDwell"),
+    ],
+    ACOUSTIC_NOISE: [
+      one("전체 음압", ["oaspl", "spl", "sound_pressure_level"], ["음압", "oaspl"], "dB", "acSpl"),
+      freq("Hz", "acF1", "acF2"),
+      one("시험 시간", ["duration", "test_duration"], ["시험시간", "지속"], "초", "acDur"),
+    ],
+    EMC: [
+      freq("MHz", "emcF1", "emcF2"),
+      one("전계 세기", ["field_strength", "field"], ["전계", "필드"], "V/m", "emcField"),
+    ],
+    ELECTRICAL_RF_ANALYSIS: [
+      freq("GHz", "rfF1", "rfF2"),
+      one("안테나 크기", ["antenna_size", "aperture", "antenna_diameter"], ["안테나", "지름", "개구"], "m", "rfSize"),
+    ],
+    X_RAY_INSPECTION: [
+      mass("xrMass"),
+      one("투과 두께", ["thickness", "max_thickness"], ["두께"], "mm", "xrThick"),
+      one("분해능", ["resolution"], ["분해능", "해상도"], "µm", "xrRes"),
+    ],
+  };
+  return facts[kind].filter((f) => f.valueText != null || Number.isFinite(f.value ?? f.min ?? NaN));
+}
+
 const STATE_TEXT = { ok: "적합", tight: "여유 적음", over: "초과", na: "확인 필요" } as const;
 const stateOf = (c: Check) => (c.ratio == null ? "na" : c.ratio > 1 ? "over" : c.ratio > 0.85 ? "tight" : "ok");
 
@@ -204,7 +266,7 @@ const GROUP_INTRO: Record<string, string> = {
  * ① 시험 종류 → ② 장비 → ③~ 조건 묶음 → 결과
  */
 export default function QuickSimulation({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
-  const { equipmentList, simulationEquipmentId, setSelectedEquipment, setDraftRequestId, setRequirementId, setTestCondition, resolveEquipment, user } = useWorkspace();
+  const { equipmentList, simulationEquipmentId, setSelectedEquipment, setDraftRequestId, setRequirementId, setTestCondition, setSimulationPrefill, resolveEquipment, user } = useWorkspace();
   const initial = equipmentList.find((e) => e.id === simulationEquipmentId);
   // v12: 등록된 장비가 하나라도 있는 시험 종류만 보여줍니다.
   const kinds = useMemo(() => KINDS.filter((k) => equipmentList.some((e) => e.testTypes.includes(k.key))), [equipmentList]);
@@ -265,7 +327,17 @@ export default function QuickSimulation({ setActiveMenu }: { setActiveMenu: (men
       const detail = await resolveEquipment(equipment.id, new AbortController().signal);
       setDraftRequestId(null); setRequirementId(null);
       setSelectedEquipment(detail);
-      setTestCondition(`[간이 시뮬레이션] ${result.summary}`);
+      // 의뢰서에 그대로 채울 값: 시험 종류 · 조건 칸(시뮬레이션 입력) · 세부 시험조건 메모(요약·판정·예상)
+      const notes = [
+        `[가상 시뮬레이션] ${result.summary}`,
+        `판정: ${verdict === "ok" ? "장비 범위 안" : verdict === "tight" ? "가능하지만 장비 한계에 가까움" : "장비 범위를 벗어남"} — ${reason}`,
+        `예상: ${result.facts.map((f) => `${f.label} ${f.value}`).join(" · ")}`,
+      ].join("\n");
+      setTestCondition(notes);
+      setSimulationPrefill({
+        testTypeCode: kind, equipmentId: detail?.id ?? equipment.id, facts: prefillFacts(kind, v), notes,
+        ...(kind === "X_RAY_INSPECTION" ? { sampleQuantity: Math.max(1, Math.round(num(v.xrCount))) } : {}),
+      });
       setActiveMenu("reservation");
     } catch (err) { setRequestError(err as Error); } finally { setBusy(false); }
   };

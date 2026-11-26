@@ -4,6 +4,7 @@ import type { User } from "../services/authService";
 import type { Equipment } from "../services/equipmentService";
 import type { useApiQuery } from "../hooks/useApiQuery";
 import type { MatchRun, ResourceId } from "../services/contracts";
+import type { SimulationPrefill } from "../domain/simulationPrefill";
 
 type Setter<T> = Dispatch<SetStateAction<T>>;
 
@@ -30,6 +31,9 @@ interface WorkspaceContext {
   setTestTypeCode: Setter<string>;
   simulationEquipmentId: number | null;
   setSimulationEquipmentId: Setter<number | null>;
+  /** 가상 시뮬레이션 [이 조건으로 의뢰서 작성] → 의뢰서가 한 번 가져가고 비움 */
+  simulationPrefill: SimulationPrefill | null;
+  setSimulationPrefill: Setter<SimulationPrefill | null>;
   autoRunId: number | null;
   setAutoRunId: Setter<number | null>;
   openSimulation: (id: number) => void;

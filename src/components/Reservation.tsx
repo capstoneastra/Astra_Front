@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ArrowRight, Building2, Check, Circle, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Building2, Check, Circle, Gauge, Sparkles } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -11,6 +11,8 @@ import ConditionEditor from "./workflow/ConditionEditor";
 import { Feedback } from "./workflow/Feedback";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
+import { conditionsFromSimulation } from "../domain/simulationPrefill";
+import { testTypeLabel } from "../services/equipmentService";
 
 type Content = RequestContent & { notes?: string; test: RequestContent["test"] & { standard?: string } };
 
@@ -19,12 +21,16 @@ type Content = RequestContent & { notes?: string; test: RequestContent["test"] &
  * 피드백에 따라 '초안 저장' 단계를 없앴습니다. 새 의뢰는 화면에서 바로 작성하고
  * [의뢰서 제출] 한 번으로 생성 → 내용 저장 → 제출이 이어서 처리됩니다.
  * (AI 자동 작성 등으로 이미 만들어진 초안은 불러와서 이어서 작성할 수 있습니다.)
+ * 가상 시뮬레이션 [이 조건으로 의뢰서 작성]으로 오면 시험 종류·조건 칸·시료 수량·세부 시험조건을 시뮬레이션 값으로 채웁니다.
  */
 export default function Reservation({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
   const {
     testCondition, setTestCondition, selectedEquipment, setSelectedEquipment, equipmentList,
-    requirementId, draftRequestId, setDraftRequestId, user,
+    requirementId, draftRequestId, setDraftRequestId, user, simulationPrefill, setSimulationPrefill,
   } = useWorkspace();
+  // 가상 시뮬레이션에서 넘어온 값은 이 화면이 한 번 가져가고 전역에서는 비움 (다른 경로로 들어온 의뢰서에 섞이지 않게)
+  const [sim] = useState(() => simulationPrefill);
+  useEffect(() => { if (simulationPrefill) setSimulationPrefill(null); }, [simulationPrefill, setSimulationPrefill]);
   const action = useAction();
   const [reviewed, setReviewed] = useState(false);
   const [editor, setEditor] = useState<Content | null>(null);
@@ -38,18 +44,29 @@ export default function Reservation({ setActiveMenu }: { setActiveMenu: (menu: s
     return list.filter((equipment) => organizationId == null || equipment.institutionId !== organizationId);
   }, [equipmentList, organizationId, selectedEquipment]);
   const equipment = draft?.equipment ? options.find((e) => e.id === draft.equipment.id) ?? null : selectedEquipment;
+  /** 시뮬레이션 값은 새 의뢰서이고, 시뮬레이션한 그 장비일 때만 씀 (장비를 바꾸면 쓰지 않음) */
+  const simActive = sim && !draftRequestId && equipment?.id === sim.equipmentId ? sim : null;
 
   const blank: Content = useMemo(() => ({
     applicant: { companyName: user.organization?.name ?? "", contactName: user.name ?? "", email: user.email ?? "", phone: user.phone ?? "" },
-    test: { testTypeCode: selectedEquipment?.testTypes?.[0], purpose: "", conditions: [] },
+    test: {
+      testTypeCode: simActive && selectedEquipment?.testTypes?.includes(simActive.testTypeCode) ? simActive.testTypeCode : selectedEquipment?.testTypes?.[0],
+      purpose: "", conditions: [],
+    },
     schedule: { desiredStartDate: null, desiredEndDate: null },
-    sample: { name: "", quantity: 1, readyDate: null },
+    sample: { name: "", quantity: simActive?.sampleQuantity ?? 1, readyDate: null },
     conditions: [],
     notes: testCondition,
-  }), [user, selectedEquipment, testCondition]);
-  const content: Content = editor ?? (draft?.revision.content as Content) ?? blank;
-  const testTypeCode = content.test.testTypeCode ?? equipment?.testTypes?.[0];
+  }), [user, selectedEquipment, testCondition, simActive]);
+  const baseContent: Content = editor ?? (draft?.revision.content as Content) ?? blank;
+  const testTypeCode = baseContent.test.testTypeCode ?? equipment?.testTypes?.[0];
   const rules = useApiQuery((signal) => catalogService.testType(testTypeCode, signal), `test-type:${testTypeCode}`, Boolean(testTypeCode));
+  // 조건 칸은 시험 종류의 conditionRules 가 와야 만들 수 있어, 규칙이 오면 시뮬레이션 값을 맞춰 채움 (담당자가 고친 뒤에는 고친 값)
+  const simFill = useMemo(
+    () => (simActive && rules.data ? conditionsFromSimulation(rules.data.conditionRules, simActive.facts) : null),
+    [simActive, rules.data],
+  );
+  const content: Content = simFill && !baseContent.conditions?.length ? { ...baseContent, conditions: simFill.conditions } : baseContent;
 
   const change = <K extends keyof Content>(section: K, key: string, value: unknown) => {
     setEditor({ ...content, [section]: { ...(content[section] as object), [key]: value } });
@@ -115,6 +132,16 @@ export default function Reservation({ setActiveMenu }: { setActiveMenu: (menu: s
                 </select>
               </FormField>
             </div>
+            {simActive && (
+              <div className="request-form__ai request-form__sim" role="status">
+                <Gauge size={16} aria-hidden="true" />
+                <span>
+                  가상 시뮬레이션 조건으로 채웠어요 · 시험 종류 <b>{testTypeLabel(simActive.testTypeCode)}</b>
+                  {simFill ? <> · 조건 <b>{simFill.conditions.length}</b>개</> : rules.loading ? " · 조건 칸 준비 중…" : ""} · 세부 시험조건
+                  {simFill && simFill.unused.length > 0 && <small>조건 칸에 없는 값({simFill.unused.map((f) => f.label).join(", ")})은 세부 시험조건에 적어 두었어요.</small>}
+                </span>
+              </div>
+            )}
             {requirementId && !draftRequestId && equipment && (
               <div className="request-form__ai">
                 <Sparkles size={16} aria-hidden="true" />

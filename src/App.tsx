@@ -32,6 +32,7 @@ import ApiState from "./components/ui/ApiState";
 import AiAssistant from "./components/assistant/AiAssistant";
 import RequestDetailDialog from "./components/workflow/RequestDetailDialog";
 import type { NotificationTarget } from "./domain/notificationTarget";
+import type { SimulationPrefill } from "./domain/simulationPrefill";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import { addRecentSearch } from "./domain/recentSearches";
 import { useSidebarCollapse } from "./hooks/useSidebarCollapse";
@@ -93,6 +94,7 @@ function Workspace() {
   const [comparisonIds, setComparisonIds] = useState<number[]>([]);
   const [testTypeCode, setTestTypeCode] = useState("VIBRATION");
   const [simulationEquipmentId, setSimulationEquipmentId] = useState<number | null>(null);
+  const [simulationPrefill, setSimulationPrefill] = useState<SimulationPrefill | null>(null);
   const [autoRunId, setAutoRunId] = useState<number | null>(null);
   const [testCondition, setTestCondition] = useState("");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -321,6 +323,8 @@ function Workspace() {
         setTestTypeCode,
         simulationEquipmentId,
         setSimulationEquipmentId,
+        simulationPrefill,
+        setSimulationPrefill,
         autoRunId,
         setAutoRunId,
         openSimulation: (id) => {
@@ -333,7 +337,7 @@ function Workspace() {
         },
       }), [
     testCondition, selectedEquipment, equipmentList, catalogQuery, user, requirementId, chatSessionId, matchRun,
-    draftRequestId, comparisonIds, testTypeCode, simulationEquipmentId, autoRunId,
+    draftRequestId, comparisonIds, testTypeCode, simulationEquipmentId, simulationPrefill, autoRunId,
   ]);
 
   return (
