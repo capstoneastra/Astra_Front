@@ -617,7 +617,6 @@ export default function QuickRequest({ setActiveMenu }: { setActiveMenu: (menu: 
               <footer className="sim-card__actions qr-foot qr-write-actions">
                 <Button variant="secondary" onClick={() => setStep(1)}>이전</Button>
                 <span className="qr-write-actions__count">제출 필수 <b>{formDone}/{reqFields.length}</b></span>
-                <Button variant="secondary" disabled={writer.busy} onClick={() => write(false)}>임시 저장</Button>
                 <Button icon={Send} disabled={writer.busy} onClick={() => write(true)}>{writer.busy ? "처리 중…" : "제출하기"}</Button>
               </footer>
             </section>

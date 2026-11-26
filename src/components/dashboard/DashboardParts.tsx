@@ -6,7 +6,6 @@ import type { LucideIcon } from "lucide-react";
 
 /** 의뢰 진행 단계 — 실무자가 '지금 어디까지 왔는지' 한 줄로 보도록 상태를 묶습니다. */
 export const STAGES: { key: string; label: string; statuses: RequestStatus[]; attention?: "requester" | "provider" }[] = [
-  { key: "draft", label: "작성 중", statuses: ["DRAFT"], attention: "requester" },
   { key: "review", label: "접수·검토", statuses: ["SUBMITTED", "UNDER_REVIEW", "RESUBMITTED"], attention: "provider" },
   { key: "supplement", label: "보완 요청", statuses: ["SUPPLEMENT_REQUESTED"], attention: "requester" },
   { key: "scheduling", label: "일정 협의", statuses: ["SCHEDULING"] },

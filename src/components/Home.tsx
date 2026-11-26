@@ -161,7 +161,8 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
   const sum = (...statuses: RequestStatus[]) => (counts ? statuses.reduce((total, status) => total + counts[status], 0) : null);
 
   const tasks = useMemo(() => {
-    const list = ready ? [...(provider ? summary.pendingReview ?? [] : summary.actionRequired ?? [])] : [];
+    // 임시저장(작성 중) 의뢰는 쓰지 않으므로 할 일에서 뺀다 (11/27)
+    const list = ready ? [...(provider ? summary.pendingReview ?? [] : summary.actionRequired ?? [])].filter((item) => item.status !== "DRAFT") : [];
     const priority = (item: DashboardRequest) =>
       item.status === "SUPPLEMENT_REQUESTED" ? 0 : item.status === "SCHEDULING" ? 1 : item.status === "RESUBMITTED" ? 0 : 2;
     return list.sort((a, b) => priority(a) - priority(b) || (readTime(a.dueDate) || Infinity) - (readTime(b.dueDate) || Infinity) ||
@@ -186,7 +187,7 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
     return { ...u, title: r?.title, party: provider ? r?.revision?.content?.applicant?.companyName : r?.institution?.name };
   });
   const progressItems: ProgressItem[] | null = sentRequests.data ? sentRequests.data.content
-    .filter((r) => !["COMPLETED", "REJECTED", "CANCELED"].includes(r.status))
+    .filter((r) => !["DRAFT", "COMPLETED", "REJECTED", "CANCELED"].includes(r.status))
     .map((r) => {
       const task = summary?.actionRequired?.find((t) => t.requestId === r.id);
       const next = upcoming.find((u) => u.requestId === r.id);

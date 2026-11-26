@@ -9,13 +9,12 @@ import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
 import { seoulDate } from "../domain/calendar";
-import type { RequestBox, RequestSummary } from "../services/contracts";
+import type { RequestBox } from "../services/contracts";
 
 /** 상태 묶음 — 목록 상단의 탭(칩)으로 표시합니다. */
 const groups: { id: string; label: string; statuses: string[] }[] = [
   { id: "", label: "전체", statuses: [] },
   { id: "REVIEW_QUEUE", label: "검토 대기", statuses: ["SUBMITTED", "RESUBMITTED"] },
-  { id: "DRAFT", label: "작성 중", statuses: ["DRAFT"] },
   { id: "UNDER_REVIEW", label: "검토 중", statuses: ["SUBMITTED", "UNDER_REVIEW", "RESUBMITTED"] },
   { id: "SUPPLEMENT_REQUESTED", label: "보완 요청", statuses: ["SUPPLEMENT_REQUESTED"] },
   { id: "SCHEDULING", label: "일정 협의", statuses: ["SCHEDULING"] },
@@ -37,13 +36,13 @@ export default function ReservationCheck({
   initialStatus?: string;
   institutionView?: boolean;
 }) {
-  const { user, setDraftRequestId, setSelectedEquipment, equipmentList } = useWorkspace();
+  const { user } = useWorkspace();
   const [selected, setSelected] = useState<number | null>(null);
   const [keyword, setKeyword] = useState("");
   const admin = user.role === "ADMIN";
   const received = institutionView && !admin;
   const box: RequestBox | undefined = admin ? undefined : received ? "RECEIVED" : "SENT";
-  const visibleGroups = groups.filter((g) => (received ? g.id !== "DRAFT" && g.id !== "UNDER_REVIEW" : g.id !== "REVIEW_QUEUE"));
+  const visibleGroups = groups.filter((g) => (received ? g.id !== "UNDER_REVIEW" : g.id !== "REVIEW_QUEUE"));
   const normalized = visibleGroups.some((g) => g.id === initialStatus) ? initialStatus
     : groups.find((g) => g.statuses.includes(initialStatus) && visibleGroups.includes(g))?.id ?? "";
   const [group, setGroup] = useState(normalized);
@@ -52,7 +51,8 @@ export default function ReservationCheck({
     (signal) => requestService.list({ ...(box && { box }) }, signal),
     `requests:${user.id}:${box ?? "ALL"}`,
   );
-  const all = useMemo(() => query.data?.content ?? [], [query.data]);
+  // 임시저장(작성 중) 의뢰는 쓰지 않으므로 목록·건수에서 뺀다 (11/27)
+  const all = useMemo(() => (query.data?.content ?? []).filter((r) => r.status !== "DRAFT"), [query.data]);
   const count = (id: string) => {
     const g = groups.find((x) => x.id === id);
     return g.statuses.length ? all.filter((r) => g.statuses.includes(r.status)).length : all.length;
@@ -63,11 +63,6 @@ export default function ReservationCheck({
     .filter((r) => !current.statuses.length || current.statuses.includes(r.status))
     .filter((r) => !term || `${r.title} ${r.requestNo} ${r.equipment?.name ?? ""} ${r.institution?.name ?? ""} ${r.revision?.content?.applicant?.companyName ?? ""}`.toLowerCase().includes(term));
 
-  const continueDraft = (item: RequestSummary) => {
-    setDraftRequestId(item.id);
-    setSelectedEquipment(equipmentList.find((e) => e.id === item.equipment?.id) ?? null);
-    setActiveMenu("reservation");
-  };
 
   return (
     <div className="content-page page-enter requests-page">
@@ -120,10 +115,7 @@ export default function ReservationCheck({
                   <span className="requests-row__date">{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</span>
                   <span><Badge tone={tone[item.status]} dot>{requestStatusLabels[item.status] ?? item.status}</Badge></span>
                   <span className="requests-row__cta">
-                    {!received && item.status === "DRAFT" ? (
-                      <span role="button" tabIndex={0} className="text-link" onClick={(e) => { e.stopPropagation(); continueDraft(item); }}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); continueDraft(item); } }}>이어 쓰기</span>
-                    ) : <ArrowRight size={15} aria-hidden="true" />}
+                    <ArrowRight size={15} aria-hidden="true" />
                   </span>
                 </button>
               </li>
