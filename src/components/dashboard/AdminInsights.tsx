@@ -5,6 +5,7 @@ import { useApiQuery } from "../../hooks/useApiQuery";
 import { catalogService } from "../../services/catalogService";
 import { requestService } from "../../services/requestService";
 import { loadCalendar } from "../../services/calendarService";
+import { timeLabel } from "../../domain/calendar";
 import type { Schedule } from "../../domain/calendar";
 import type { DashboardSummary, RequestStatus } from "../../services/dashboardService";
 import type { BarRow } from "./BarChart";
@@ -147,10 +148,18 @@ function BookerList({ title, rows }: { title: string; rows: Booker[] }) {
 }
 
 /** 회의(11/26): 관리자 대시보드에 예약이 가장 많은 기업·기관 상위 3곳 */
-export function TopBookers() {
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+/** 한국 시간 날짜 칩용: 12/4 (금) */
+const dayChip = (iso: string) => {
+  const d = new Date(Date.parse(iso) + 9 * 3600_000);
+  return { md: `${d.getUTCMonth() + 1}/${d.getUTCDate()}`, wd: WEEK[d.getUTCDay()] };
+};
+
+export function TopBookers({ upcoming = 0 }: { upcoming?: number }) {
   const { user } = useWorkspace();
   // 예약 캘린더(관리자 전체)와 같은 캐시 키를 써서 두 화면이 한 번만 불러온다
   const calendar = useApiQuery((signal) => loadCalendar(signal), `calendar:${user.id}:ALL`);
+  const [now] = useState(() => Date.now());
   if (calendar.loading) return <div className="dash-skeleton" aria-hidden="true"><span /><span /><span /></div>;
   if (calendar.error) return <p className="dash-empty">{calendar.error.message}</p>;
   const requests = new Map((calendar.data?.requests ?? []).map((r) => [r.id, r]));
@@ -158,6 +167,9 @@ export function TopBookers() {
   const companies = rankBookers(schedules, (s) => s.companyName ?? (requests.get(s.requestId) as { companyName?: string } | undefined)?.companyName);
   const institutions = rankBookers(schedules, (s) => s.institution?.name);
   const total = schedules.filter((s) => s.status !== "CANCELED").length;
+  // 넓은 칸에서는 아래에 '다가오는 예약'(플랫폼 전체)을 이어서 보여 준다
+  const next = upcoming ? schedules.filter((s) => s.status !== "CANCELED" && Date.parse(s.endAt) > now)
+    .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)).slice(0, upcoming) : [];
   return (
     <div className="bookers">
       <p className="insight__number"><b>{total}</b>건 <small>예약 (취소 제외)</small></p>
@@ -165,6 +177,23 @@ export function TopBookers() {
         <BookerList title="기업" rows={companies} />
         <BookerList title="시험기관" rows={institutions} />
       </div>
+      {upcoming > 0 && <div className="bookers__upcoming">
+        <p className="bookers__title">다가오는 예약</p>
+        {next.length ? <ul>
+          {next.map((s) => {
+            const chip = dayChip(s.startAt);
+            const company = s.companyName ?? (requests.get(s.requestId) as { companyName?: string } | undefined)?.companyName;
+            return <li key={s.id} title={`${s.title ?? s.requestNo}, ${timeLabel(s.startAt)} 시작`}>
+              <span className="bookers__chip"><b>{chip.md}</b><small>{chip.wd}</small></span>
+              <span className="bookers__what">
+                <strong>{s.equipment?.name ?? s.title ?? s.requestNo}</strong>
+                <small>{[company, s.institution?.name].filter(Boolean).join(" → ")}, {timeLabel(s.startAt)} 시작</small>
+              </span>
+              <span className={`bookers__state${s.status === "CONFIRMED" ? " is-confirmed" : ""}`}>{s.status === "CONFIRMED" ? "확정" : "조율 중"}</span>
+            </li>;
+          })}
+        </ul> : <p className="dash-empty">앞으로 잡힌 예약이 없습니다.</p>}
+      </div>}
     </div>
   );
 }

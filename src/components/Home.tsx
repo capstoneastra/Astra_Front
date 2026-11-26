@@ -89,12 +89,18 @@ function ApprovalQueue({ onOpenAll }: { onOpenAll: (focus: ApprovalFocus) => voi
     ...(organizations.data ?? []).map((org) => ({ kind: "org" as const, id: org.id, title: org.name, detail: org.orgType === "UNIVERSITY" ? "대학 등록 신청" : "기관 등록 신청" })),
     ...(members.data?.content ?? []).map((user) => ({ kind: "user" as const, id: user.id, title: `${user.name} · ${roleLabels[user.role]}`, detail: `${user.organization?.name ?? "소속 없음"} · ${user.email}` })),
   ];
+  // 가입 신청은 많지 않으므로 작은 카드: 건수와 2건만 바로 처리, 나머지는 '승인 관리'에서
+  const LIMIT = 2;
+  const userCount = members.data?.content.length ?? 0;
+  const orgCount = organizations.data?.length ?? 0;
   return (
-    <Section title="승인 대기" count={loading ? undefined : rows.length} className="dash-approvals"
-      action={<TextLink onClick={() => onOpenAll("members")}>승인 관리</TextLink>}>
-      {loading ? <Skeleton /> : members.error ? <ApiState error={members.error} onRetry={members.reload} /> : rows.length === 0 ? <Empty>처리할 승인 요청이 없습니다.</Empty> : (
-        <ul className="dash-list">
-          {rows.map((row) => (
+    <Section title="승인 대기" className="insight dash-approvals"
+      action={<TextLink onClick={() => onOpenAll(userCount || !orgCount ? "members" : "organizations")}>승인 관리</TextLink>}>
+      {loading ? <Skeleton rows={2} /> : members.error ? <ApiState error={members.error} onRetry={members.reload} /> : <>
+        <p className="insight__number"><b>{rows.length}</b>건 <small>회원 {userCount} · 기관·대학 {orgCount}</small></p>
+        {rows.length === 0 ? <p className="dash-empty">처리할 승인 요청이 없습니다.</p> : (
+        <ul className="dash-list approval-mini">
+          {rows.slice(0, LIMIT).map((row) => (
             <li key={`${row.kind}-${row.id}`} className="approval-row">
               <span className={`approval-row__icon approval-row__icon--${row.kind}`}>{row.kind === "org" ? <Building2 size={16} /> : <Users size={16} />}</span>
               <span className="approval-row__main"><strong>{row.title}</strong><small>{row.detail}</small></span>
@@ -106,16 +112,22 @@ function ApprovalQueue({ onOpenAll }: { onOpenAll: (focus: ApprovalFocus) => voi
                   <button type="button" className="icon-button" aria-label="취소" onClick={() => setRejecting(null)}><X size={14} /></button>
                 </span>
               ) : (
-                <span className="approval-row__actions">
-                  {row.kind === "user" && <Button variant="ghost" disabled={action.busy} onClick={() => setRejecting(row.id)}>거절</Button>}
-                  <Button variant="secondary" icon={Check} disabled={action.busy}
+                // 승인(왼쪽)·거절(오른쪽), 같은 크기 테두리 버튼 (회원·기관 승인 화면과 같게)
+                <span className="approval-row__actions admin-actions">
+                  <Button variant="secondary" icon={Check} className="admin-btn admin-btn--approve" disabled={action.busy}
                     onClick={() => action.run(() => (row.kind === "org" ? adminService.verify(row.id) : adminService.approve(row.id)))}>승인</Button>
+                  {row.kind === "user" && <Button variant="secondary" icon={X} className="admin-btn admin-btn--reject" disabled={action.busy}
+                    onClick={() => setRejecting(row.id)}>거절</Button>}
                 </span>
               )}
             </li>
           ))}
+          {rows.length > LIMIT && <li className="approval-mini__more">
+            <button type="button" onClick={() => onOpenAll("members")}>외 {rows.length - LIMIT}건 승인 관리에서 보기</button>
+          </li>}
         </ul>
-      )}
+        )}
+      </>}
       {action.error && <p className="dash-inline-error" role="alert">{action.error.message}</p>}
     </Section>
   );
@@ -290,12 +302,12 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
           <Section title="장비 정보 검증률" className="insight">
             {loading ? <Skeleton rows={2} /> : <VerificationRing summary={summary} />}
           </Section>
-          <Section title="예약이 많은 곳" className="insight">
-            <TopBookers />
-          </Section>
+          <ApprovalQueue onOpenAll={openApprovals} />
         </div>
         <div className="dash-grid dash-grid--main dash-fill">
-          <ApprovalQueue onOpenAll={openApprovals} />
+          <Section title="예약 현황" className="dash-bookers">
+            <TopBookers upcoming={8} />
+          </Section>
           <Section title="기관별 장비 정보 검증" className="dash-verification"
             action={verifiedRate != null ? <span className="dash-section__meta">전체 {verifiedRate}% 검증</span> : undefined}>
             {loading ? <Skeleton /> : verification.length ? (

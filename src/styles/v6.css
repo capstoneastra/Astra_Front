@@ -330,3 +330,31 @@ body.qsearch-open .app-header__location, body.qsearch-open .app-header__tools { 
 .bookers__list b { color: var(--text); font-variant-numeric: tabular-nums; }
 .bookers__bar { grid-column: 2 / -1; display: block; height: 4px; border-radius: 2px; background: var(--surface-sunken, rgba(127,127,127,.15)); overflow: hidden; }
 .bookers__bar > i { display: block; height: 100%; border-radius: 2px; background: var(--accent, var(--cyan)); }
+
+/* 관리자 대시보드 재배치 (11/26): 승인 대기는 위쪽 작은 카드, 예약이 많은 곳은 아래 넓은 칸 */
+.approval-mini { margin: 0 -8px; }
+.approval-mini .approval-row { gap: 8px; padding: 6px 8px; }
+.approval-mini .approval-row__icon { width: 26px; height: 26px; border-radius: 7px; }
+.approval-mini .approval-row__main strong { font-size: var(--fs-sm); }
+.approval-mini .admin-btn { min-width: 0; min-height: 28px; padding: 3px 9px; }
+.approval-mini__more button { width: 100%; padding: 6px 8px; border: 0; background: none; color: var(--text-muted); font-size: var(--fs-xs); text-align: left; cursor: pointer; }
+.approval-mini__more button:hover { color: var(--text); }
+.dash-bookers .dash-section__body { padding: 4px 18px 16px; }
+.dash-bookers .bookers__cols { gap: 28px; }
+.dash-bookers .bookers__list { gap: 10px; }
+.dash-bookers .bookers__list li { font-size: var(--fs-md, 14px); grid-template-columns: 22px minmax(0, 1fr) auto; }
+.dash-bookers .bookers__rank { width: 22px; height: 22px; font-size: 12px; }
+.dash-bookers .bookers__bar { height: 6px; }
+.bookers__upcoming { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.bookers__upcoming ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.bookers__upcoming li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 0; }
+.bookers__upcoming li + li { border-top: 1px solid var(--border); }
+.bookers__chip { display: grid; place-items: center; padding: 3px 0; border-radius: 8px; background: var(--surface-sunken, rgba(127,127,127,.12)); line-height: 1.15; }
+.bookers__chip b { color: var(--text); font-size: var(--fs-sm, 13px); font-variant-numeric: tabular-nums; }
+.bookers__chip small { color: var(--text-muted); font-size: 11px; }
+.bookers__what { display: grid; gap: 1px; min-width: 0; }
+.bookers__what strong, .bookers__what small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bookers__what strong { color: var(--text); font-size: var(--fs-sm, 13px); font-weight: 560; }
+.bookers__what small { color: var(--text-muted); font-size: var(--fs-xs, 12px); }
+.bookers__state { padding: 2px 8px; border-radius: 999px; background: var(--surface-sunken, rgba(127,127,127,.12)); color: var(--text-muted); font-size: 11px; font-weight: 600; }
+.bookers__state.is-confirmed { background: color-mix(in srgb, var(--green, #2e9d5b) 16%, transparent); color: var(--text); }
