@@ -212,11 +212,6 @@ function Workspace() {
     else navigate(target.menu);
   };
 
-  const openCalendar = (box?: RequestBox) => {
-    setCalendarBox(box);
-    navigate("calendar");
-  };
-
   const openChat = (id: number) => {
     if (chatSessionId !== id) {
       setChatSessionId(id);
@@ -244,7 +239,7 @@ function Workspace() {
       case "home":
         return <Home view={dashboardView} setActiveMenu={navigate} onSearch={searchEquipment}
           openRequests={(box, status) => workspaceNavigation.go(box === "RECEIVED" ? "review" : "reservationCheck", null, { requestStatus: status })}
-          openCalendar={openCalendar} openChat={openChat}
+          openChat={openChat}
           openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} />;
       case "search":
         return (

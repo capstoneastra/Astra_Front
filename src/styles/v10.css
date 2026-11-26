@@ -220,7 +220,8 @@
   .work-dashboard .dash-fill .progress-row, .work-dashboard .dash-fill .dash-row { padding-top: 7px; padding-bottom: 7px; }
   .work-dashboard .dash-fill .progress-summary { margin-bottom: 2px; }
   /* 한 화면 대시보드에서는 달력 칸을 조금 줄여 아래 일정 목록 자리를 남김 */
-  .work-dashboard .dash-fill .sched-cal__grid { grid-template-rows: 18px; grid-auto-rows: 30px; }
+  .work-dashboard .dash-fill .sched-cal__grid { grid-template-rows: 18px; grid-auto-rows: minmax(30px, 1fr); }
+  .work-dashboard .dash-fill .sched-agenda__head { min-height: 26px; }
   .work-dashboard .dash-fill .sched-cal__nav .icon-button { width: 26px; height: 26px; }
   .work-dashboard .dash-fill .dash-tasks__foot { padding-top: 8px; }
 }

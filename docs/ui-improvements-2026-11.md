@@ -437,3 +437,8 @@
 - '첨부 파일' 칸 추가. [임시 저장]/[제출하기] 때 `PUT …/draft` 다음 `POST /test-requests/{id}/attachments`(multipart `file`, `category=GENERAL`)로 아직 안 올린 파일만 올린 뒤 제출. 완료 화면에 올린 개수 표시. (`requestService.attach`)
 - '공인성적서 필요 여부' 조건을 `content.serviceRequirements.accreditedRequired`(필요 true · 불필요 false · 모름 null)로도 넣음(명세 §5 content 스키마).
 - 제출 `400 VALIDATION_FAILED`의 `details.missingItems`를 '희망 시작일, 회계 담당자 연락처'처럼 화면 이름으로 안내(`ApiErrorDetails.missingItems`).
+
+### 대시보드 캘린더 카드 (기업 '다가오는 시험' · 기관/대학 '장비·시험 일정')
+- 카드 오른쪽 위 '예약 캘린더' 링크 삭제(예약 캘린더는 사이드바 메뉴로 이동). 쓰이지 않게 된 `Home`의 `openCalendar` prop·`App`의 `openCalendar` 삭제.
+- 달력이 카드 위쪽에 몰려 있던 것: 날짜 칸 높이를 고정(34px·한 화면 대시보드 30px) → `minmax(최소, 1fr)`로 바꿔, 달력·목록이 좌우일 때 달력이 카드 높이를 고르게 채움. 위아래 배치에서는 지금처럼 최소 높이.
+- 다가오는 일정: 머리 줄 높이를 달력의 '○년 ○월' 줄과 맞춤, 여러 날 시험은 '11/29' 아래 '~12/2' 두 줄로 써서 날짜 칸(62px)을 넘지 않게, 일정이 없을 때 안내 문구를 칸 가운데로.

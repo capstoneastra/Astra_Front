@@ -47,11 +47,12 @@
   .sched-cal__layout { grid-template-columns: minmax(240px, .9fr) minmax(0, 1.1fr); grid-template-rows: minmax(0, 1fr); gap: 18px; }
   .sched-agenda { border-top: 0; border-left: 1px solid var(--border); padding: 0 0 0 16px; }
 }
-.sched-cal__month { display: grid; gap: 6px; align-content: start; }
+/* 달력이 위로 쏠리지 않게: 달력·목록이 좌우일 때는 날짜 칸이 카드 높이를 나눠 가짐 (위아래 배치에서는 최소 높이 그대로) */
+.sched-cal__month { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-height: 0; }
 .sched-cal__nav { display: flex; align-items: center; justify-content: space-between; }
 .sched-cal__nav strong { font-size: var(--fs-md); font-weight: 650; font-variant-numeric: tabular-nums; }
 .sched-cal__nav .icon-button { width: 28px; height: 28px; }
-.sched-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: 20px; grid-auto-rows: 34px; gap: 1px; }
+.sched-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: 20px; grid-auto-rows: minmax(34px, 1fr); gap: 1px; }
 .sched-cal__wd { display: grid; place-items: center; color: var(--text-muted); font-size: 11px; font-weight: 600; }
 .sched-cal__wd.is-sun { color: var(--tone-danger); }
 .sched-cal__wd.is-sat { color: var(--blue); }
@@ -78,7 +79,8 @@
 .series-4 { background: var(--series-4); } .series-5 { background: var(--series-5); } .series-6 { background: var(--series-6); } .series-7 { background: var(--series-7); }
 
 .sched-agenda { display: flex; flex-direction: column; min-height: 0; padding-top: 10px; border-top: 1px solid var(--border); }
-.sched-agenda__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; margin-bottom: 2px; }
+/* 머리 줄 높이를 달력의 '○년 ○월' 줄(28px)과 맞춤 */
+.sched-agenda__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; margin-bottom: 2px; }
 .sched-agenda__head strong { color: var(--text-secondary); font-size: var(--fs-sm); font-weight: 650; }
 .sched-agenda__reset { padding: 2px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--blue); font-size: var(--fs-xs); font-weight: 650; }
 .sched-agenda__reset:hover { background: var(--control-hover); }
@@ -94,13 +96,15 @@
 }
 .sched-agenda li button:hover { background: var(--control-hover); }
 .sched-agenda li button > i { align-self: stretch; min-height: 30px; border-radius: 2px; }
-.sched-agenda__time { color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sched-agenda__time { display: grid; gap: 1px; color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 여러 날 시험: 시작일 아래에 ~끝나는 날 (62px 칸 안에 들어가게) */
+.sched-agenda__time small { color: var(--text-muted); font-size: 11px; font-weight: 500; }
 .sched-agenda__body { display: grid; gap: 1px; min-width: 0; }
 .sched-agenda__body strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); font-weight: 600; }
 .sched-agenda__body small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: var(--fs-xs); }
 .sched-agenda em { font-style: normal; color: var(--blue); font-size: var(--fs-xs); font-weight: 700; white-space: nowrap; }
 .sched-agenda em.is-soon { color: var(--tone-warn); }
-.sched-agenda__empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 18px 6px; color: var(--text-muted); font-size: var(--fs-sm); }
+.sched-agenda__empty { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 18px 6px; color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
 
 /* ── 장비 등록 창 ──────────────────────────────────────────────────── */
 .register-dialog { width: min(720px, calc(var(--vw-full) - 32px)); }

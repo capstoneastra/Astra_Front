@@ -33,7 +33,6 @@ interface HomeProps {
   setActiveMenu: (menu: string) => void;
   onSearch: (query: string, options?: { institutionId?: number; testType?: string; region?: string }) => void;
   openRequests: (box?: RequestBox, status?: RequestStatus | "REVIEW_QUEUE") => void;
-  openCalendar: (box?: RequestBox) => void;
   openApprovals: (focus: ApprovalFocus) => void;
   openChat: (id: number) => void;
 }
@@ -133,7 +132,7 @@ function ApprovalQueue({ onOpenAll }: { onOpenAll: (focus: ApprovalFocus) => voi
   );
 }
 
-export default function Home({ view, setActiveMenu, onSearch, openRequests, openCalendar, openApprovals }: HomeProps) {
+export default function Home({ view, setActiveMenu, onSearch, openRequests, openApprovals }: HomeProps) {
   const { user, setDraftRequestId, equipmentList, catalogQuery } = useWorkspace();
   const [registerDraft, setRegisterDraft] = useState<EquipmentDraft | null>(null);
   const [registered, setRegistered] = useState(false);
@@ -252,8 +251,7 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
                   onOpen={(item) => openTask(item as DashboardRequest)} />
               ) : <Empty>진행 중인 의뢰가 없습니다. 위에서 시험을 찾거나 AI 간편 의뢰로 시작해 보세요.</Empty>}
           </Section>
-          <Section title="다가오는 시험" count={ready ? upcoming.length : undefined} className="dash-calendar"
-            action={<TextLink onClick={() => openCalendar("SENT")}>예약 캘린더</TextLink>}>
+          <Section title="다가오는 시험" count={ready ? upcoming.length : undefined} className="dash-calendar">
             {loading ? <Skeleton /> : <ScheduleCalendar items={labeled} today={today} onOpen={(i) => setSelectedRequest({ id: i.requestId, box })} />}
           </Section>
         </div>
@@ -276,8 +274,7 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
               </div>
             )}
           </Section>
-          <Section title="장비·시험 일정" count={ready ? upcoming.length : undefined} className="dash-calendar"
-            action={<TextLink onClick={() => openCalendar("RECEIVED")}>예약 캘린더</TextLink>}>
+          <Section title="장비·시험 일정" count={ready ? upcoming.length : undefined} className="dash-calendar">
             {loading || catalogQuery.loading ? <Skeleton /> : (
               <ScheduleCalendar items={labeled} today={today} colorBy="equipment" equipmentNames={owned.map((e) => e.name)}
                 onOpen={(i) => setSelectedRequest({ id: i.requestId, box })} />

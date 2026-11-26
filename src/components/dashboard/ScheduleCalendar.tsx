@@ -155,7 +155,7 @@ export function ScheduleCalendar({ items, today, colorBy, equipmentNames = [], o
                         <button type="button" onClick={() => onOpen(item)}>
                           <i className={tone(item)} aria-hidden="true" />
                           <span className="sched-agenda__time">
-                            {multi ? `${shortDate(startDay(item))}~${shortDate(endDay(item))}` : timeLabel(item.startAt)}
+                            {multi ? <>{shortDate(startDay(item))}<small>~{shortDate(endDay(item))}</small></> : timeLabel(item.startAt)}
                           </span>
                           <span className="sched-agenda__body">
                             <strong>{item.title ?? item.equipmentName}</strong>
