@@ -168,8 +168,8 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 - **권한:** 본인 보낸 의뢰(SENT), 소속 조직 장비로 받은 제출 의뢰(RECEIVED), 관리자 전체. 다른 기업 의뢰 ID 직접 조회는 서버 403. box 생략 시 기관 담당자는 RECEIVED, 다른 일반 회원은 SENT.
 - **상태 처리:** 생성/저장/제출 중 상태, 400 missingItems, 자기 조직 장비 금지, 409 version 재조회, 정상 빈 의뢰 목록, 서버 오류를 별도로 다룬다.
 - **버튼·이동:** 저장 후 사용자 확인 → submit → `/#/reservationCheck`, 행 클릭 → 의뢰 상세, 일정 보기 → `/#/calendar`, 작성 중 의뢰 → 기존 draft 편집.
-- **현재 구현:** 작성·저장·직접 제출·목록·상세·상태 이력 서비스/UI 존재. 시험 의뢰 관리에서 보낸/받은 의뢰에 `box=SENT`/`RECEIVED`를 전달하고, 관리자는 전체 조회도 사용한다. 목록은 최초 100개 위주다. actualUser/accounting 등 최신 필수 필드 폼·타입이 누락되어 실제 제출 완료를 보장할 수 없음. 가짜 의뢰 DB 제거.
-- **후속 연동:** 위 필수 필드/오류 매핑, 보낸/받은 의뢰함 조회 범위 검증과 페이지 처리, 결과/예상료/첨부 업로드·다운로드 API(§5) UI 연동. **백엔드 미배포로 테스트 불가**.
+- **현재 구현:** 작성·저장·직접 제출·목록·상세·상태 이력 서비스/UI 존재. 시험 의뢰 관리에서 보낸/받은 의뢰에 `box=SENT`/`RECEIVED`를 전달하고, 관리자는 전체 조회도 사용한다. 목록은 최초 100개 위주다. actualUser/accounting 등 최신 필수 필드 폼·타입이 누락되어 실제 제출 완료를 보장할 수 없음. 가짜 의뢰 DB 제거. AI 간편 의뢰(`QuickRequest`)는 actualUser/accounting/schedule 필수 입력, `serviceRequirements.accreditedRequired`, 첨부 업로드(`POST /test-requests/{id}/attachments`, GENERAL), 제출 400 `missingItems` 안내까지 연결.
+- **후속 연동:** 위 필수 필드/오류 매핑(일반 의뢰 폼), 보낸/받은 의뢰함 조회 범위 검증과 페이지 처리, 결과/예상료/첨부 목록·다운로드 API(§5) UI 연동. **백엔드 미배포로 테스트 불가**.
 
 ## 10. 기관 검토 및 정보 보완
 

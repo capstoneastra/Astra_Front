@@ -1,4 +1,6 @@
 import { getData, mutate } from "./http";
+import { apiClient, responseData } from "../api/client";
+import { invalidateData } from "../api/cache";
 import { contractError } from "../api/errors";
 import type { NamedResource, Page, RequestDetail, RequestRevision, RequestSummary, ResourceId, TimeInterval } from "./contracts";
 
@@ -9,6 +11,18 @@ interface RequestHistoryEntry {
   createdAt: string;
   changedBy: NamedResource;
   note?: string | null;
+}
+
+/** POST /test-requests/{id}/attachments 응답 (명세 §5) */
+export interface RequestAttachment {
+  id: number;
+  requestId: number;
+  category: "GENERAL" | "RESULT_REPORT" | string;
+  fileName: string;
+  mimeType?: string;
+  sizeBytes: number;
+  createdAt?: string;
+  downloadUrl?: string;
 }
 
 interface DraftResult {
@@ -29,6 +43,15 @@ export const requestService = {
     mutate<DraftResult>("POST", "/test-requests/ai-draft", body, signal),
   save: (id: ResourceId, version: number, content: object, signal?: AbortSignal) =>
     mutate<RequestDetail>("PUT", `/test-requests/${id}/draft`, { version, content }, signal),
+  /** 첨부 업로드 (multipart: file, category). 파일당 20MB — 큰 파일을 고려해 시간 제한을 늘림 */
+  attach: async (id: ResourceId, file: File, category: "GENERAL" | "RESULT_REPORT" = "GENERAL", signal?: AbortSignal) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("category", category);
+    const result = responseData<RequestAttachment>(await apiClient.post(`/test-requests/${id}/attachments`, form, { signal, timeout: 120_000 }));
+    invalidateData(`/test-requests/${id}/attachments`);
+    return result;
+  },
   submit: (id: ResourceId, version: number, signal?: AbortSignal) =>
     mutate("POST", `/test-requests/${id}/submit`, { version }, signal),
   action: (id: ResourceId, action: string, version: number, fields: object = {}, signal?: AbortSignal) =>

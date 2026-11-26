@@ -4,6 +4,8 @@ export interface ApiErrorDetails {
   remainingAttempts?: number;
   retryAfter?: number;
   fieldErrors?: Record<string, string>;
+  /** POST /test-requests/{id}/submit 400 — 빠진 제출 필수 항목 경로 (예: schedule.desiredStartDate, accounting.contact) */
+  missingItems?: string[];
 }
 
 interface ApiErrorOptions {
