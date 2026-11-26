@@ -4,6 +4,7 @@ import { useWorkspace } from "../../context/AppContext";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { catalogService } from "../../services/catalogService";
 import { requestService } from "../../services/requestService";
+import { dashboardService } from "../../services/dashboardService";
 import { loadCalendar } from "../../services/calendarService";
 import { timeLabel } from "../../domain/calendar";
 import type { Schedule } from "../../domain/calendar";
@@ -16,12 +17,16 @@ import { STAGES } from "./DashboardParts";
  * (백엔드 집계 API 가 생기면 이 훅만 교체하면 됩니다.)
  */
 export function useAdminInsights(enabled = true) {
-  const { equipmentList, catalogQuery } = useWorkspace();
+  const { equipmentList, catalogQuery, user } = useWorkspace();
   const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types", enabled);
   const requests = useApiQuery((signal) => requestService.list({ size: 100 }, signal), "admin-insight-requests", enabled);
 
+  // 서버 요약의 시험 종류별 의뢰 수를 먼저 쓴다. (지금 의뢰 목록 응답에는 시험 종류가 없어 화면에서 셀 수 없다)
+  const summary = useApiQuery((signal) => dashboardService.summary(user, "ADMIN", signal), `summary:${user.id}:none:ADMIN`, enabled);
+  const byType = new Map((summary.data?.byTestType ?? []).map((row) => [row.code, row]));
   const demand = new Map<string, number>();
-  for (const item of requests.data?.content ?? []) {
+  for (const row of summary.data?.byTestType ?? []) if (row.requestCount) demand.set(row.code, row.requestCount);
+  if (!demand.size) for (const item of requests.data?.content ?? []) {
     if (["DRAFT", "CANCELED"].includes(item.status)) continue;
     const code = item.revision?.content?.test?.testTypeCode;
     if (code) demand.set(code, (demand.get(code) ?? 0) + 1);
@@ -29,7 +34,7 @@ export function useAdminInsights(enabled = true) {
   const ratioRows = (types.data ?? [])
     .map((type) => {
       const count = demand.get(type.code) ?? 0;
-      const machines = type.equipmentCount ?? equipmentList.filter((e) => e.testTypes.includes(type.code)).length;
+      const machines = byType.get(type.code)?.equipmentCount ?? type.equipmentCount ?? equipmentList.filter((e) => e.testTypes.includes(type.code)).length;
       return { type, count, machines, ratio: machines ? count / machines : count ? Infinity : 0 };
     })
     .filter((row) => row.count > 0)
@@ -52,7 +57,7 @@ export function useAdminInsights(enabled = true) {
     detail: `보유 기관·대학 ${new Set(equipmentList.filter((e) => (e.region || "미등록") === region).map((e) => e.institutionId)).size}곳`,
   }));
 
-  return { types, requests, catalogQuery, demandBars, top, regionBars };
+  return { types, requests: summary.data?.byTestType ? summary : requests, catalogQuery, demandBars, top, regionBars };
 }
 
 const STAGE_TONE: Record<string, string> = { draft: "muted", review: "blue", supplement: "amber", scheduling: "violet", confirmed: "cyan", completed: "green" };

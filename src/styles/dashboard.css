@@ -166,3 +166,49 @@
 
 .dash-section__meta { color: var(--text-secondary); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 
+
+/* ── 운영 통계 (11/26 추가) ── */
+.tone-red { background: var(--red); }
+.ops-group { margin: 6px 0 -4px; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 650; letter-spacing: 0.02em; }
+.ops-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--stack); }
+@media (max-width: 900px) { .ops-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ops-kpi { display: grid; gap: 2px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-raised, var(--surface)); }
+.ops-kpi > span { color: var(--text-muted); font-size: var(--fs-sm); }
+.ops-kpi > strong { color: var(--text); font-size: clamp(22px, 1vw + 12px, 28px); font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.ops-kpi > strong small { margin-left: 2px; font-size: var(--fs-md); font-weight: 560; }
+.ops-kpi > small { min-height: 1.3em; color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* 월별 접수: 세로 막대 6개 */
+.ops-columns { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; height: 170px; margin: 4px 0 0; padding: 0; list-style: none; }
+.ops-columns li { display: grid; grid-template-rows: auto 1fr auto; gap: 4px; justify-items: center; min-height: 0; }
+.ops-columns b { color: var(--text); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.ops-columns__track { display: flex; align-items: flex-end; width: min(36px, 70%); height: 100%; border-radius: 6px 6px 0 0; background: var(--surface-sunken); overflow: hidden; }
+.ops-columns__track i { display: block; width: 100%; border-radius: 6px 6px 0 0; background: var(--blue); transform-origin: bottom; animation: bar-grow .8s var(--ease-soft, ease) both; animation-delay: calc(var(--i) * 60ms); }
+.ops-columns small { color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* 오래 기다리는 의뢰 */
+.ops-buckets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.ops-buckets span { display: inline-flex; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 999px; background: var(--surface-sunken); color: var(--text-muted); font-size: var(--fs-xs); }
+.ops-buckets b { color: var(--text); font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
+.ops-buckets .is-warn b { color: var(--amber); }
+.ops-buckets .is-late b { color: var(--red); }
+.ops-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.ops-list li + li { border-top: 1px solid var(--border); }
+.ops-list button { display: flex; gap: 10px; align-items: center; justify-content: space-between; width: 100%; padding: 7px 4px; border: 0; background: none; text-align: left; cursor: pointer; }
+.ops-list button:hover { background: var(--control-hover); }
+.ops-list__main { display: grid; gap: 1px; min-width: 0; }
+.ops-list__main strong, .ops-list__main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-list__main strong { color: var(--text); font-size: var(--fs-sm); font-weight: 560; }
+.ops-list__main small { color: var(--text-muted); font-size: var(--fs-xs); }
+.ops-list__days { flex: none; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 650; font-variant-numeric: tabular-nums; }
+.ops-list__days.is-warn { color: var(--amber); }
+.ops-list__days.is-late { color: var(--red); }
+
+/* 기관별 처리 현황 */
+.ops-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); table-layout: fixed; }
+.ops-table th, .ops-table td { padding: 7px 6px; border-top: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+.ops-table th { border-top: 0; color: var(--text-muted); font-size: var(--fs-xs); font-weight: 600; }
+.ops-table th:first-child, .ops-table td:first-child { width: 42%; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.ops-table td b { color: var(--text); }
+.ops-table td.is-open { color: var(--blue); font-weight: 650; }
+.admin-stats .dash-grid--insights { align-items: stretch; }

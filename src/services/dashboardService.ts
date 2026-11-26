@@ -65,6 +65,8 @@ export interface DashboardSummary {
   institutionVerification?: InstitutionVerification[];
   pendingUsers?: number;
   pendingInstitutions?: number;
+  /** 관리자: 시험 종류별 의뢰 수(작성 중 제외)·장비 수 */
+  byTestType?: { code: string; nameKo: string; requestCount: number; equipmentCount: number }[];
 }
 
 const isCount = (value: number) => Number.isSafeInteger(value) && value >= 0;
