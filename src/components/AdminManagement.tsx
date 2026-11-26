@@ -178,7 +178,7 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
                     </span>
                   )
                 ) : ["ACTIVE", "SUSPENDED"].includes(member.status) && member.id !== user.id ? (
-                  <Button variant="secondary" className={`admin-btn${member.status === "ACTIVE" ? " admin-btn--reject" : ""}`} disabled={action.busy}
+                  <Button variant="secondary" className={`admin-btn${member.status === "ACTIVE" ? " admin-btn--danger" : ""}`} disabled={action.busy}
                     onClick={() => action.run(() => adminService.status(member.id, member.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE"), "계정 상태를 변경했습니다.")}>
                     {member.status === "ACTIVE" ? "이용 정지" : "정지 해제"}
                   </Button>
