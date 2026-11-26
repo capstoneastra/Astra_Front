@@ -56,3 +56,17 @@
 .admin-table__num { color: var(--text-secondary); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 .admin-table__count { text-align: right; font-variant-numeric: tabular-nums; }
 .admin-table td strong + small, .admin-table td small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── 칸 사이 공백 줄이기 (11/26): 표가 화면 끝까지 늘어나지 않게 폭 상한, 짧은 칸은 내용 폭만 ── */
+.admin-page { max-width: 1320px; width: 100%; margin-inline: auto; }
+/* 모든 칸을 '내용 폭' 기준으로 두면 남는 폭이 한두 칸에 몰리지 않고 칸마다 고르게 나뉜다 */
+.admin-table--members th, .admin-table--members td,
+.admin-table--orgs th, .admin-table--orgs td { width: 1%; white-space: nowrap; }
+/* 이름·소속·연락처 글이 길면 칸을 넓히지 않고 말줄임 (마우스를 올리면 전체) */
+.admin-table td strong, .admin-table td small { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-table th, .admin-table td { padding-inline: 14px; }
+/* 표 안 모든 버튼(승인·거절·이용 정지·정지 해제·수정·기관 승인)을 같은 테두리 상자로 */
+.admin-table .admin-btn { min-width: 76px; min-height: 32px; justify-content: center; }
+.admin-table .admin-btn--reject { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, var(--border)); }
+.admin-table .admin-btn--reject:hover:not(:disabled) { background: color-mix(in srgb, var(--red) 10%, transparent); }
+.admin-table--members th.admin-table__check, .admin-table--members td.admin-table__check { width: 0.1%; }

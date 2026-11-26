@@ -134,7 +134,7 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
 
   const memberTable = (rows: typeof memberRows, withSelect: boolean) => (
     <div className="table-scroll">
-      <table className="admin-table">
+      <table className={`admin-table admin-table--members${withSelect ? " has-check" : ""}`}>
         <thead>
           <tr>
             {withSelect && <th className="admin-table__check">
@@ -152,8 +152,8 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
                 <input type="checkbox" aria-label={`${member.name} 선택`} checked={selected.includes(member.id)}
                   onChange={(e) => setSelected((ids) => e.target.checked ? [...ids, member.id] : ids.filter((x) => x !== member.id))} />
               </td>}
-              <td><strong>{member.name}</strong><small>{member.email}</small></td>
-              <td>{member.organization?.orgType === "UNIVERSITY" ? "대학 담당자" : roleLabels[member.role]}<small>{member.organization?.name ?? "소속 없음"}</small></td>
+              <td title={`${member.name}, ${member.email}`}><strong>{member.name}</strong><small>{member.email}</small></td>
+              <td title={member.organization?.name ?? undefined}>{member.organization?.orgType === "UNIVERSITY" ? "대학 담당자" : roleLabels[member.role]}<small>{member.organization?.name ?? "소속 없음"}</small></td>
               <td className="admin-table__fit admin-table__num">{member.phone || <span className="admin-muted">—</span>}</td>
               <td className="admin-table__fit admin-table__num">{shortDate((member as MemberDates).createdAt)}</td>
               <td className="admin-table__fit admin-table__num">{member.status === "PENDING" ? <span className="admin-muted">승인 전</span> : agoText((member as MemberDates).lastLoginAt, now)}</td>
@@ -178,7 +178,7 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
                     </span>
                   )
                 ) : ["ACTIVE", "SUSPENDED"].includes(member.status) && member.id !== user.id ? (
-                  <Button variant="ghost" disabled={action.busy}
+                  <Button variant="secondary" className={`admin-btn${member.status === "ACTIVE" ? " admin-btn--reject" : ""}`} disabled={action.busy}
                     onClick={() => action.run(() => adminService.status(member.id, member.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE"), "계정 상태를 변경했습니다.")}>
                     {member.status === "ACTIVE" ? "이용 정지" : "정지 해제"}
                   </Button>
@@ -193,14 +193,14 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
 
   const orgTable = (rows: typeof orgRows) => (
     <div className="table-scroll">
-      <table className="admin-table">
+      <table className="admin-table admin-table--orgs">
         <thead><tr><th>조직</th><th className="admin-table__fit">유형</th><th className="admin-table__fit">지역</th><th>연락처</th>
           <th className="admin-table__fit admin-table__count">회원</th><th className="admin-table__fit admin-table__count">장비</th><th className="admin-table__fit">등록일</th>
           <th className="admin-table__fit">상태</th><th className="admin-table__actions">처리</th></tr></thead>
         <tbody>
           {rows.map((org) => (
             <tr key={org.id}>
-              <td><strong>{org.name}</strong>{(org.address || org.homepageUrl) && <small>{org.address || org.homepageUrl}</small>}</td>
+              <td title={[org.name, org.address].filter(Boolean).join(", ")}><strong>{org.name}</strong>{(org.address || org.homepageUrl) && <small>{org.address || org.homepageUrl}</small>}</td>
               <td className="admin-table__fit">{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
               <td className="admin-table__fit">{org.region || <span className="admin-muted">—</span>}</td>
               <td>{org.phone || org.email ? <>{org.phone}{org.email && <small>{org.email}</small>}</> : <span className="admin-muted">—</span>}</td>
@@ -210,10 +210,10 @@ export default function AdminManagement({ approvalFocus, initialKeyword = "" }: 
               <td className="admin-table__fit"><Badge tone={org.isVerified ? "green" : "amber"}>{org.isVerified ? "승인" : "확인 필요"}</Badge></td>
               <td className="admin-table__actions">
                 {org.orgType !== "COMPANY" && !org.isVerified ? (
-                  <Button variant="secondary" icon={Check} disabled={action.busy}
+                  <Button variant="secondary" icon={Check} className="admin-btn" disabled={action.busy}
                     onClick={() => action.run(() => adminService.verify(org.id), `${org.name}을(를) 승인했습니다.`)}>기관 승인</Button>
                 ) : (
-                  <Button variant="ghost" icon={Pencil} disabled={action.busy} onClick={() => setOrgEditing(org)}>수정</Button>
+                  <Button variant="secondary" icon={Pencil} className="admin-btn" disabled={action.busy} onClick={() => setOrgEditing(org)}>수정</Button>
                 )}
               </td>
             </tr>
