@@ -260,14 +260,6 @@
   }
 }
 
-/* ── 장비 검색: '조건으로 추천받기'를 결과 줄 오른쪽 끝 작은 링크로 ── */
-.results-heading .eq-recommend {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px;
-  border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 600;
-  transition: color .2s, border-color .2s, background .2s;
-}
-.results-heading .eq-recommend svg { color: var(--violet); }
-.results-heading .eq-recommend:hover { color: var(--text); border-color: var(--border-strong); background: var(--control-hover); }
 
 
 /* 그림이 화면 밖이거나 탭이 가려지면 애니메이션 정지 (Hero.tsx 의 HeroArt) */

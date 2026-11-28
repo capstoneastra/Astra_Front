@@ -11,7 +11,6 @@ import {
   Info,
   Search as SearchIcon,
   SlidersHorizontal,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
@@ -267,9 +266,6 @@ export default function EquipmentSearch({
             {filtersActive && <button type="button" className="eq-filterbar__reset" onClick={resetFilters}>필터 초기화</button>}
             {filterType === "natural" && <small><SlidersHorizontal size={12} /> 문장을 해석해 최대 20개 후보를 보여줍니다</small>}
             <span className="eq-filterbar__tools">
-              <button type="button" className="eq-recommend" onClick={() => setActiveMenu("matching")}>
-                <Sparkles size={13} aria-hidden="true" />조건으로 추천받기
-              </button>
               <label className="sr-only" htmlFor="equipment-sort">정렬</label>
               <select id="equipment-sort" value={sort} disabled={filterType === "natural"} onChange={(e) => { setSort(e.target.value); setPage(0); }}>
                 <option value="externalId,asc">등록번호순</option>

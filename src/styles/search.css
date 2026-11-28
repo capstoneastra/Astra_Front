@@ -197,7 +197,6 @@
 .eq-filterbar__result { margin: 0; padding: 8px 12px; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 .eq-filterbar__result strong { color: var(--text); font-size: var(--fs-md); }
 .eq-filterbar__tools { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
-.results-heading .eq-filterbar__tools .eq-recommend { margin-left: 0; }
 #equipment-sort { min-height: 32px; padding: 0 30px 0 10px; border-radius: 8px; font-size: var(--fs-sm); font-weight: 600; }
 @media (max-width: 760px) {
   .eq-searchbar { height: 50px; padding-left: 14px; gap: 8px; }
