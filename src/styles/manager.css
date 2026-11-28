@@ -132,3 +132,39 @@
 .mgr-more { display: flex; justify-content: center; padding: 12px; border-top: 1px solid var(--border); }
 .mgr-more small { margin-left: 6px; color: var(--text-muted); font-weight: 500; }
 .mgr-row__muted { color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* ── 보유 장비 관리 › 정보 수정 창: 기관 등록 REAL 사양 ─────────────────────
+   [장비 정보 저장] 줄과 붙어 있던 것을 구분선·여백으로 떼고, 사양은 한 줄 요약으로 접어 두었다가 펼쳐서 수정 */
+.edit-specs { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.edit-specs__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.edit-specs__head h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-md, 14px); font-weight: 650; }
+.edit-specs__head h3 small { color: var(--text-muted); font-size: var(--fs-xs); font-weight: 500; font-variant-numeric: tabular-nums; }
+.edit-specs__head .field-hint { margin: 4px 0 0; }
+.edit-specs__head .text-link { flex: none; margin-top: 2px; }
+.edit-specs__list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.edit-specs__list details { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-sunken); overflow: hidden; }
+.edit-specs__list details[open] { border-color: var(--border-strong); background: var(--surface); }
+.edit-specs__list summary {
+  display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 12px; cursor: pointer; list-style: none;
+  font-size: var(--fs-sm);
+}
+.edit-specs__list summary::-webkit-details-marker { display: none; }
+.edit-specs__list summary:hover { background: var(--control-hover); }
+.edit-specs__list summary strong { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.edit-specs__value { margin-left: auto; flex: none; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.edit-specs__list summary .badge { flex: none; }
+.edit-specs__chev { flex: none; color: var(--text-muted); transition: transform .18s ease; }
+.edit-specs__list details[open] .edit-specs__chev { transform: rotate(90deg); }
+.edit-specs__body { padding: 4px 12px 12px; border-top: 1px solid var(--border); }
+.edit-specs__grid { gap: 12px 14px; margin-top: 10px; }
+.edit-specs__remove { display: flex; justify-content: flex-end; margin-top: 12px; }
+.edit-specs__remove .button { min-height: 34px; padding: 6px 12px; }
+.edit-specs__empty { margin: 0; padding: 14px 12px; border: 1px dashed var(--border-strong); border-radius: 10px; color: var(--text-muted); font-size: var(--fs-sm); text-align: center; }
+.edit-specs__actions { margin-top: 12px; }
+.edit-specs__mock { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0 0; color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.5; }
+.edit-specs__mock .badge { flex: none; }
+@media (max-width: 480px) {
+  .edit-specs__grid { grid-template-columns: minmax(0, 1fr); }
+  .edit-specs__remove .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .edit-specs__chev { transition: none; } }

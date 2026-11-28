@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ChevronRight, Plus, Trash2, X } from "lucide-react";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { useAction } from "../../hooks/useAction";
 import { equipmentService } from "../../services/equipmentService";
@@ -7,6 +7,22 @@ import { catalogService } from "../../services/catalogService";
 import { Badge, Button, FormField } from "../ui/index";
 import ApiState from "../ui/ApiState";
 import { Feedback } from "./Feedback";
+
+/** 접힌 사양 줄에 보이는 값 요약: 단일값 / 최솟값~최댓값 / 이상·이하 */
+function specSummary(spec) {
+  const unit = spec.unit ? ` ${spec.unit}` : "";
+  if (spec.value != null) return `${spec.value}${unit}`;
+  if (spec.min != null && spec.max != null) return `${spec.min} ~ ${spec.max}${unit}`;
+  if (spec.min != null) return `${spec.min}${unit} 이상`;
+  if (spec.max != null) return `${spec.max}${unit} 이하`;
+  return "값 없음";
+}
+/** 저장할 때 화면용 행 번호(_id)는 빼고 보냄 */
+function withoutRowId(spec) {
+  const copy = { ...spec };
+  delete copy._id;
+  return copy;
+}
 
 export default function EquipmentEditDialog({ equipmentId, onClose }) {
   const dialog = useRef(null),
@@ -22,8 +38,14 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
   useEffect(() => {
     dialog.current.showModal();
   }, []);
+  // _id: 화면에서만 쓰는 행 번호 — 사양을 지워도 다른 행의 펼침 상태가 섞이지 않게. 저장할 때는 뺌
   const specs =
-    realSpecs ?? data?.specs.filter((s) => s.sourceType === "REAL") ?? [];
+    realSpecs ??
+    data?.specs.filter((s) => s.sourceType === "REAL").map((s, i) => ({ ...s, _id: `spec-${i}` })) ??
+    [];
+  const mockSpecs = data?.specs.filter((s) => s.sourceType === "MOCK") ?? [];
+  const [openIds, setOpenIds] = useState([]);
+  const allOpen = specs.length > 0 && specs.every((s) => openIds.includes(s._id));
   const setField = (key, text) => setEditor({ ...value, [key]: text });
   const setUsage = (key, text) =>
     setEditor({ ...value, usage: { ...value.usage, [key]: text } });
@@ -167,108 +189,141 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
               </Button>
             </div>
           </form>
-          <h3>기관 등록 REAL 사양</h3>
-          <p className="field-hint">
-            기존 MOCK 사양은 이 입력란에서 수정하지 않습니다. 시연 모드의 입력은
-            실제 장비 검증을 의미하지 않습니다.
-          </p>
-          {specs.map((spec, index) => (
-            <div className="form-grid" key={index}>
-              <FormField id={`spec-key-${index}`} label="사양 키">
-                <input
-                  id={`spec-key-${index}`}
-                  value={spec.key}
-                  onChange={(e) => setSpec(index, "key", e.target.value)}
-                />
-              </FormField>
-              <FormField id={`spec-label-${index}`} label="사양 이름">
-                <input
-                  id={`spec-label-${index}`}
-                  value={spec.label}
-                  onChange={(e) => setSpec(index, "label", e.target.value)}
-                />
-              </FormField>
-              {["value", "min", "max"].map((key) => (
-                <FormField
-                  key={key}
-                  id={`spec-${key}-${index}`}
-                  label={{ value: "단일값", min: "최솟값", max: "최댓값" }[key]}
-                >
-                  <input
-                    id={`spec-${key}-${index}`}
-                    type="number"
-                    step="any"
-                    value={spec[key] ?? ""}
-                    onChange={(e) =>
-                      setSpec(
-                        index,
-                        key,
-                        e.target.value === "" ? null : Number(e.target.value),
-                      )
-                    }
-                  />
-                </FormField>
-              ))}
-              <FormField id={`spec-unit-${index}`} label="단위">
-                <input
-                  id={`spec-unit-${index}`}
-                  value={spec.unit ?? ""}
-                  onChange={(e) =>
-                    setSpec(index, "unit", e.target.value || null)
-                  }
-                />
-              </FormField>
+          <section className="edit-specs" aria-labelledby="edit-specs-title">
+            <header className="edit-specs__head">
+              <div>
+                <h3 id="edit-specs-title">기관 등록 REAL 사양<small>{specs.length}개</small></h3>
+                <p className="field-hint">
+                  기존 MOCK 사양은 이 입력란에서 수정하지 않습니다. 시연 모드의 입력은
+                  실제 장비 검증을 의미하지 않습니다.
+                </p>
+              </div>
+              {specs.length > 1 && (
+                <button type="button" className="text-link" onClick={() => setOpenIds(allOpen ? [] : specs.map((s) => s._id))}>
+                  {allOpen ? "모두 접기" : "모두 펼치기"}
+                </button>
+              )}
+            </header>
+            {specs.length ? (
+              <ul className="edit-specs__list">
+                {specs.map((spec, index) => {
+                  const incomplete = !spec.key.trim() || !spec.label.trim();
+                  return (
+                    <li key={spec._id}>
+                      <details open={openIds.includes(spec._id)} onToggle={(e) => {
+                        const now = e.currentTarget.open;
+                        setOpenIds((ids) => (now ? (ids.includes(spec._id) ? ids : [...ids, spec._id]) : ids.filter((x) => x !== spec._id)));
+                      }}>
+                        <summary>
+                          <ChevronRight size={15} className="edit-specs__chev" aria-hidden="true" />
+                          <strong>{spec.label || spec.key || "새 사양"}</strong>
+                          <span className="edit-specs__value">{specSummary(spec)}</span>
+                          {incomplete && <Badge tone="amber">입력 필요</Badge>}
+                        </summary>
+                        <div className="edit-specs__body">
+                          <div className="form-grid edit-specs__grid">
+                            <FormField id={`spec-key-${spec._id}`} label="사양 키">
+                              <input
+                                id={`spec-key-${spec._id}`}
+                                value={spec.key}
+                                onChange={(e) => setSpec(index, "key", e.target.value)}
+                              />
+                            </FormField>
+                            <FormField id={`spec-label-${spec._id}`} label="사양 이름">
+                              <input
+                                id={`spec-label-${spec._id}`}
+                                value={spec.label}
+                                onChange={(e) => setSpec(index, "label", e.target.value)}
+                              />
+                            </FormField>
+                            {["value", "min", "max"].map((key) => (
+                              <FormField
+                                key={key}
+                                id={`spec-${key}-${spec._id}`}
+                                label={{ value: "단일값", min: "최솟값", max: "최댓값" }[key]}
+                              >
+                                <input
+                                  id={`spec-${key}-${spec._id}`}
+                                  type="number"
+                                  step="any"
+                                  value={spec[key] ?? ""}
+                                  onChange={(e) =>
+                                    setSpec(
+                                      index,
+                                      key,
+                                      e.target.value === "" ? null : Number(e.target.value),
+                                    )
+                                  }
+                                />
+                              </FormField>
+                            ))}
+                            <FormField id={`spec-unit-${spec._id}`} label="단위">
+                              <input
+                                id={`spec-unit-${spec._id}`}
+                                value={spec.unit ?? ""}
+                                onChange={(e) =>
+                                  setSpec(index, "unit", e.target.value || null)
+                                }
+                              />
+                            </FormField>
+                          </div>
+                          <div className="edit-specs__remove">
+                            <Button
+                              variant="danger"
+                              icon={Trash2}
+                              disabled={action.busy}
+                              onClick={() => setSpecs(specs.filter((_, i) => i !== index))}
+                            >
+                              이 사양 제거
+                            </Button>
+                          </div>
+                        </div>
+                      </details>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="edit-specs__empty">등록된 REAL 사양이 없습니다. 아래 [REAL 사양 추가]로 넣을 수 있어요.</p>
+            )}
+            <div className="form-actions edit-specs__actions">
               <Button
                 variant="secondary"
+                icon={Plus}
                 disabled={action.busy}
-                onClick={() => setSpecs(specs.filter((_, i) => i !== index))}
+                onClick={() => {
+                  const _id = `new-${Date.now()}`;
+                  setSpecs([
+                    ...specs,
+                    { _id, key: "", label: "", unit: null, value: null, min: null, max: null },
+                  ]);
+                  setOpenIds((ids) => [...ids, _id]);
+                }}
               >
-                이 사양 제거
+                REAL 사양 추가
+              </Button>
+              <Button
+                disabled={
+                  action.busy ||
+                  specs.some((s) => !s.key.trim() || !s.label.trim())
+                }
+                onClick={() =>
+                  action.run(
+                    () => catalogService.saveSpecs(value.id, specs.map(withoutRowId)),
+                    "REAL 사양을 저장했습니다. MOCK 사양은 유지됩니다.",
+                  )
+                }
+              >
+                REAL 사양 저장
               </Button>
             </div>
-          ))}
-          <div className="form-actions">
-            <Button
-              variant="secondary"
-              disabled={action.busy}
-              onClick={() =>
-                setSpecs([
-                  ...specs,
-                  {
-                    key: "",
-                    label: "",
-                    unit: null,
-                    value: null,
-                    min: null,
-                    max: null,
-                  },
-                ])
-              }
-            >
-              REAL 사양 추가
-            </Button>
-            <Button
-              disabled={
-                action.busy ||
-                specs.some((s) => !s.key.trim() || !s.label.trim())
-              }
-              onClick={() =>
-                action.run(
-                  () => catalogService.saveSpecs(value.id, specs),
-                  "REAL 사양을 저장했습니다. MOCK 사양은 유지됩니다.",
-                )
-              }
-            >
-              REAL 사양 저장
-            </Button>
-          </div>
-          {data.specs
-            .filter((s) => s.sourceType === "MOCK")
-            .map((s, i) => (
-              <p className="field-hint" key={`${s.key}:${i}`}>
-                DEMO · {s.label} (수정하지 않음)
+            {mockSpecs.length > 0 && (
+              <p className="edit-specs__mock">
+                <Badge tone="amber">DEMO</Badge>
+                <span>{mockSpecs.map((s) => s.label || s.key).join(" · ")} <small>(수정하지 않음)</small></span>
               </p>
-            ))}
+            )}
+          </section>
         </>
       )}
       <Feedback action={action} />
