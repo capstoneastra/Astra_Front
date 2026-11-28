@@ -12,9 +12,9 @@ import ApiState from "../ui/ApiState";
 import ConditionEditor from "./ConditionEditor";
 import ReservationControls from "./ReservationControls";
 import { Feedback } from "./Feedback";
+import RequestHistory from "./RequestHistory";
 import {
   requestStatusLabels,
-  formatDate,
   valueText,
 } from "../../domain/constants";
 
@@ -453,51 +453,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
           {rules.error && (
             <ApiState error={rules.error} onRetry={rules.reload} />
           )}
-          <details>
-            <summary>제출본·상태 변경 이력</summary>
-            {history.error || revisions.error ? (
-              <ApiState
-                error={history.error ?? revisions.error}
-                onRetry={() => {
-                  history.reload();
-                  revisions.reload();
-                }}
-              />
-            ) : (
-              <>
-                <ol className="condition-steps">
-                  {history.data?.map((entry) => (
-                    <li key={entry.id}>
-                      {requestStatusLabels[entry.fromStatus]} →{" "}
-                      {requestStatusLabels[entry.toStatus]}
-                      <p>
-                        {formatDate(entry.createdAt)} · {entry.changedBy.name} ·{" "}
-                        {entry.note}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-                {revisions.data?.map((revision) => (
-                  <div className="content-note" key={revision.revisionNo}>
-                    <div>
-                      <strong>제출본 {revision.revisionNo}</strong>
-                      <p>{revision.changeSummary}</p>
-                      {/* 제출본 목록 응답에는 내용(content)이 빠져 올 수 있다(서버가 요약만 줌). 있을 때만 그린다 */}
-                      {(revision.content?.conditions ?? []).map((c) => (
-                        <p key={c.key}>
-                          {c.label ?? c.key}: {valueText(c)}
-                        </p>
-                      ))}
-                      {revision.content?.sample && <p>
-                        준비 완료일{" "}
-                        {revision.content.sample.readyDate ?? "미확인"}
-                      </p>}
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </details>
+          <RequestHistory history={history} revisions={revisions} />
         </>
       )}
       </div>

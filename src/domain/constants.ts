@@ -10,6 +10,11 @@ export const requestStatusLabels = {
   REJECTED: "반려",
   CANCELED: "취소",
 };
+/** 의뢰 상태 배지 색 (시험 의뢰 관리 목록·상세 이력이 같이 씀) */
+export const requestStatusTones: Record<string, string> = {
+  DRAFT: "neutral", SUBMITTED: "cyan", UNDER_REVIEW: "cyan", RESUBMITTED: "cyan", SUPPLEMENT_REQUESTED: "amber",
+  SCHEDULING: "violet", CONFIRMED: "green", COMPLETED: "neutral", REJECTED: "neutral", CANCELED: "neutral",
+};
 export const checkLabels = {
   MET: "충족",
   NOT_MET: "불일치",

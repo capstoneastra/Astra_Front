@@ -7,7 +7,7 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { requestService } from "../services/requestService";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
-import { requestStatusLabels } from "../domain/constants";
+import { requestStatusLabels, requestStatusTones } from "../domain/constants";
 import { seoulDate } from "../domain/calendar";
 import type { RequestBox } from "../services/contracts";
 
@@ -22,10 +22,6 @@ const groups: { id: string; label: string; statuses: string[] }[] = [
   { id: "COMPLETED", label: "완료", statuses: ["COMPLETED"] },
   { id: "CLOSED", label: "반려·취소", statuses: ["REJECTED", "CANCELED"] },
 ];
-const tone: Record<string, string> = {
-  DRAFT: "neutral", SUBMITTED: "cyan", UNDER_REVIEW: "cyan", RESUBMITTED: "cyan", SUPPLEMENT_REQUESTED: "amber",
-  SCHEDULING: "violet", CONFIRMED: "green", COMPLETED: "neutral", REJECTED: "neutral", CANCELED: "neutral",
-};
 
 export default function ReservationCheck({
   setActiveMenu,
@@ -115,7 +111,7 @@ export default function ReservationCheck({
                   <span className="requests-row__date">{received && <span className="requests-row__date-label">희망 시험일</span>}{item.revision?.content?.schedule?.desiredStartDate ?? "협의"}</span>
                   <span className="requests-row__date">{received && <span className="requests-row__date-label">접수일</span>}{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</span>
                   <span className={received ? "requests-row__status" : undefined}>
-                    <Badge tone={tone[item.status]} dot>{requestStatusLabels[item.status] ?? item.status}</Badge>
+                    <Badge tone={requestStatusTones[item.status]} dot>{requestStatusLabels[item.status] ?? item.status}</Badge>
                     {received && <span className="requests-row__cta">
                       {["SUBMITTED", "RESUBMITTED", "UNDER_REVIEW"].includes(item.status) ? "검토하기" : "상세 보기"}
                       <ArrowRight size={15} aria-hidden="true" />
