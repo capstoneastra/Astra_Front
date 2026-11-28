@@ -272,3 +272,11 @@
 
 /* 그림이 화면 밖이거나 탭이 가려지면 애니메이션 정지 (Hero.tsx 의 HeroArt) */
 .hero__art[data-paused="true"] *, .hero__art[data-paused="true"] *::before, .hero__art[data-paused="true"] *::after { animation-play-state: paused !important; }
+
+/* ── 대시보드 카드 제목이 위로 쏠리던 문제 ──
+ * 한 화면 대시보드에서 카드는 세로 flex(제목 + 본문)인데 제목 줄도 줄어들 수 있어서,
+ * 의뢰·일정이 많아 본문이 길어지면 제목 줄까지 눌려 글자가 위로 밀렸음 → 제목 줄은 줄지 않게 */
+.dash-section > .panel__header { flex-shrink: 0; }
+/* 제목 아래 고정 줄(진행 중인 의뢰의 내 차례·기관 처리 중·이번 달 완료) — 목록만 카드 안에서 스크롤 */
+.dash-section__lead { flex: none; padding: 0 8px; }
+.dash-section__lead .progress-summary { margin: 0 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }

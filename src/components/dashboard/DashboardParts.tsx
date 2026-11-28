@@ -13,11 +13,13 @@ export const STAGES: { key: string; label: string; statuses: RequestStatus[]; at
   { key: "completed", label: "시험 완료", statuses: ["COMPLETED"] },
 ];
 
-export function Section({ title, action, children, className = "", count }: {
-  title: string; action?: ReactNode; children: ReactNode; className?: string; count?: number;
+/** lead: 제목 바로 아래 고정 줄(요약 등) — 본문이 카드 안에서 스크롤돼도 따라 내려가지 않음 */
+export function Section({ title, action, children, className = "", count, lead }: {
+  title: string; action?: ReactNode; children: ReactNode; className?: string; count?: number; lead?: ReactNode;
 }) {
   return (
     <Panel className={`dash-section ${className}`} title={<>{title}{count != null && <span className="dash-section__count">{count}</span>}</>} action={action}>
+      {lead && <div className="dash-section__lead">{lead}</div>}
       <div className="dash-section__body">{children}</div>
     </Panel>
   );

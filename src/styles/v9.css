@@ -29,9 +29,9 @@
 }
 
 /* ── 대시보드 아래 줄 ──────────────────────────────────────────────── */
-.dash-grid--company { grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); }
-.dash-grid--provider { display: grid; align-items: stretch; gap: var(--stack); grid-template-columns: minmax(0, 1fr) minmax(360px, 1.2fr); grid-template-rows: none; }
-.dash-grid--provider > * { grid-column: auto !important; grid-row: auto !important; }
+/* 기업도 기관·대학과 같은 배치(왼쪽 목록 1 : 오른쪽 캘린더 1.2) — 캘린더 카드가 넓어 달력 | 일정 목록이 좌우로 놓임 */
+.dash-grid--company, .dash-grid--provider { display: grid; align-items: stretch; gap: var(--stack); grid-template-columns: minmax(0, 1fr) minmax(360px, 1.2fr); grid-template-rows: none; }
+.dash-grid--company > *, .dash-grid--provider > * { grid-column: auto !important; grid-row: auto !important; }
 @media (max-width: 1023px) { .dash-grid--company, .dash-grid--provider { grid-template-columns: minmax(0, 1fr); } }
 .dash-toast {
   margin: 0; padding: 9px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--tone-ok) 45%, transparent);

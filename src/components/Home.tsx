@@ -238,15 +238,15 @@ export default function Home({ view, setActiveMenu, onSearch, openRequests, open
         <RequestHero popular={popular} onSearch={(query, options) => onSearch(query, options)} onAiRequest={startAiRequest} />
         <div className="dash-grid dash-grid--company dash-fill">
           <Section title="진행 중인 의뢰" count={progressItems ? progressItems.length : undefined} className="dash-progress"
-            action={<TextLink onClick={() => openRequests("SENT")}>전체 의뢰</TextLink>}>
-            {progressItems && progressItems.length > 0 && (
+            action={<TextLink onClick={() => openRequests("SENT")}>전체 의뢰</TextLink>}
+            lead={progressItems && progressItems.length > 0 ? (
               <p className="progress-summary">
                 <span className="is-mine">내 차례 <b>{progressStats.mine}</b></span>
                 <span>기관 처리 중 <b>{progressStats.theirs}</b></span>
                 {progressStats.late > 0 && <span className="is-late">지연 <b>{progressStats.late}</b></span>}
                 <span>이번 달 완료 <b>{sum("COMPLETED") ?? 0}</b></span>
               </p>
-            )}
+            ) : undefined}>
             {loading || sentRequests.loading ? <Skeleton /> : sentRequests.error ? <ApiState error={sentRequests.error} onRetry={sentRequests.reload} />
               : progressItems?.length ? (
                 <RequestProgress items={progressItems} now={now} actionLabel={(item) => taskAction(item as DashboardRequest)}
