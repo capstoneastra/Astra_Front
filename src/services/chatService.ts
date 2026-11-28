@@ -1,9 +1,12 @@
 import { getData, mutate } from "./http";
 import type { Page, Requirement, RequirementCondition, ResourceId } from "./contracts";
 
-interface ChatSession {
+export interface ChatSession {
   id: number;
   title: string;
+  /** 목록 응답에 있으면 '이전 상담'에 날짜로 보여 줌 */
+  updatedAt?: string | null;
+  createdAt?: string | null;
 }
 
 interface ChatMessage {

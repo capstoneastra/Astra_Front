@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUp, Check, CircleHelp, FileText, Plus, RotateCcw, Search, Sparkles, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, CircleHelp, FileText, Plus, Search, Sparkles, X } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -131,14 +131,6 @@ export default function Chatbot({ setActiveMenu }: { setActiveMenu: (menu: strin
     }).finally(() => setPending(null));
   };
 
-  const reset = () => {
-    setChatSessionId(null);
-    setExchange(null);
-    setInput("");
-    setTestCondition("");
-    field.current?.focus();
-  };
-
   const toMatching = () => action.run(async (signal) => {
     const requirement = await chatService.requirement(chatSessionId, signal);
     setRequirementId(requirement.id);
@@ -248,11 +240,6 @@ export default function Chatbot({ setActiveMenu }: { setActiveMenu: (menu: strin
           <Plus size={18} />
         </button>
         <input ref={picker} type="file" multiple hidden onChange={(e) => { void attach(e.target.files); e.target.value = ""; }} />
-        {!empty && (
-          <button type="button" className="chat-composer__reset" onClick={reset} title="새 대화" aria-label="새 대화 시작">
-            <RotateCcw size={16} />
-          </button>
-        )}
         <label className="sr-only" htmlFor="chat-input">메시지</label>
         <textarea
           id="chat-input"

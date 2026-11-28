@@ -226,6 +226,14 @@ function Workspace() {
     }
     openAssistant("chatbot");
   };
+  /** AI 상담 머리글의 [새 상담]: 지금 대화는 서버에 남고(이전 상담에서 다시 열 수 있음) 빈 대화로 */
+  const newChat = () => {
+    setChatSessionId(null);
+    setChatPanelKey((key) => key + 1);
+    setTestCondition("");
+    setRequirementId(null);
+    setMatchRun(null);
+  };
 
   const renderContent = () => {
     if (!canAccessMenu(user.role, activeMenu))
@@ -401,6 +409,9 @@ function Workspace() {
         {canAccessMenu(user.role, "assistant") && (
           <AiAssistant
             chatPanelKey={chatPanelKey}
+            sessionId={chatSessionId}
+            onNewChat={newChat}
+            onOpenChat={openChat}
             open={assistantOpen}
             started={assistantStarted}
             modal={smallScreen}
