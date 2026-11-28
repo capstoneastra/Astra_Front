@@ -319,7 +319,7 @@ export function RegisterHero({ stats, onRegister, onOpenManager }: {
       <div className="hero__copy">
         <span className="hero__eyebrow">ASTRA · 장비 등록</span>
         <h2 id="hero-register-title">새 장비를 등록하세요</h2>
-        <p>사양서 파일을 넣고 →를 누르면 AI가 읽어 등록 양식을 채워 드려요. 파일이 없으면 수동 등록으로 직접 적을 수 있어요.</p>
+        <p>사양서 파일을 넣으시면 AI가 읽어 등록 양식을 채워 드려요. 파일이 없으면 직접 등록할 수 있어요.</p>
         <div className="hero__stats">
           <button type="button" onClick={() => onOpenManager(false)}>보유 장비 <b>{stats.total}</b></button>
           <button type="button" className={stats.stale ? "is-warn" : undefined} onClick={() => onOpenManager(true)}>정보 갱신 필요 <b>{stats.stale}</b></button>
@@ -342,7 +342,7 @@ export function RegisterHero({ stats, onRegister, onOpenManager }: {
               <strong>{over ? "여기에 놓으면 추가돼요"
                 : full ? `파일은 최대 ${MAX_FILES}개까지 넣을 수 있어요`
                 : files.length ? <>사양서 {files.length}개 · <u>더 넣기</u></>
-                : <>사양서 파일을 끌어다 놓거나 <u>눌러서 고르세요</u></>}</strong>
+                : "사양서 파일을 끌어다 놓거나 눌러서 고르세요"}</strong>
               <small className={note ? "is-warn" : undefined}>{note ?? (files.length ? "→를 누르면 AI가 읽어 등록 양식을 채워요" : "txt·csv·md·json·tsv · 최대 5개")}</small>
             </span>
           </button>
