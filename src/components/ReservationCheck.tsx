@@ -98,9 +98,10 @@ export default function ReservationCheck({
             description={group || term ? "다른 상태를 선택하거나 검색어를 지워보세요." : undefined} />
         </Panel>
       ) : (
-        <Panel className="requests-table">
+        <Panel className={received ? "requests-table requests-table--received" : "requests-table"}>
           <div className="requests-row requests-row--head" aria-hidden="true">
-            <span>의뢰</span><span>{received ? "신청 기업" : "보유기관"}</span><span>희망 시험일</span><span>접수일</span><span>상태</span><span />
+            <span>의뢰</span><span>{received ? "신청 기업" : "보유기관"}</span><span>희망 시험일</span><span>접수일</span>
+            <span>{received ? "상태 · 처리" : "상태"}</span>{!received && <span />}
           </div>
           <ul className="request-list">
             {rows.map((item) => (
@@ -111,12 +112,16 @@ export default function ReservationCheck({
                     <small>{item.requestNo} · {item.equipment?.name}</small>
                   </span>
                   <span className="requests-row__org">{received ? item.revision?.content?.applicant?.companyName ?? "—" : item.institution?.name ?? "—"}</span>
-                  <span className="requests-row__date">{item.revision?.content?.schedule?.desiredStartDate ?? "협의"}</span>
-                  <span className="requests-row__date">{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</span>
-                  <span><Badge tone={tone[item.status]} dot>{requestStatusLabels[item.status] ?? item.status}</Badge></span>
-                  <span className="requests-row__cta">
-                    <ArrowRight size={15} aria-hidden="true" />
+                  <span className="requests-row__date">{received && <span className="requests-row__date-label">희망 시험일</span>}{item.revision?.content?.schedule?.desiredStartDate ?? "협의"}</span>
+                  <span className="requests-row__date">{received && <span className="requests-row__date-label">접수일</span>}{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</span>
+                  <span className={received ? "requests-row__status" : undefined}>
+                    <Badge tone={tone[item.status]} dot>{requestStatusLabels[item.status] ?? item.status}</Badge>
+                    {received && <span className="requests-row__cta">
+                      {["SUBMITTED", "RESUBMITTED", "UNDER_REVIEW"].includes(item.status) ? "검토하기" : "상세 보기"}
+                      <ArrowRight size={15} aria-hidden="true" />
+                    </span>}
                   </span>
+                  {!received && <span className="requests-row__cta"><ArrowRight size={15} aria-hidden="true" /></span>}
                 </button>
               </li>
             ))}

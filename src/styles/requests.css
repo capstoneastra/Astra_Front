@@ -28,11 +28,28 @@ button.requests-row:hover .requests-row__cta svg { color: var(--blue); transform
 .requests-row__date { color: var(--text-secondary); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 .requests-row__cta { display: flex; justify-content: flex-end; color: var(--text-muted); }
 .requests-row__cta svg { transition: transform .15s, color .15s; }
+.requests-table--received { container-type: inline-size; }
+.requests-table--received .requests-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, clamp(8ch, 16cqi, 22ch)) repeat(2, 12ch) 11.5em;
+  gap: 10px;
+  padding-inline: 10px;
+  font-size: var(--fs-sm);
+}
+.requests-table--received .requests-row--head { font-size: var(--fs-sm); }
+.requests-row__date-label { display: none; }
+.requests-row__status { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.requests-row__status .requests-row__cta { align-items: center; gap: 4px; white-space: nowrap; font-size: var(--fs-xs); }
+
+@container (max-width: 600px) {
+  .requests-table--received .requests-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; }
+  .requests-table--received .requests-row--head { display: none; }
+  .requests-table--received :is(.requests-row__title, .requests-row__org, .requests-row__status) { grid-column: 1 / -1; }
+  .requests-row__date-label { display: block; color: var(--text-muted); font-size: var(--fs-xs); }
+}
+
 @media (max-width: 900px) {
-  .requests-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .requests-row--head { display: none; }
-  .requests-row__org, .requests-row__date { display: none; }
-  .requests-row__cta { display: none; }
+  .requests-table:not(.requests-table--received) .requests-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .requests-table:not(.requests-table--received) :is(.requests-row--head, .requests-row__org, .requests-row__date, .requests-row__cta) { display: none; }
 }
 
 /* v17: 휴대폰 폭에서 상태 칩이 한 줄에 하나씩 세로로 쌓이던 문제 — 칩은 한 줄 전체를 쓰고 검색칸은 아래 줄 */
