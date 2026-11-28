@@ -204,9 +204,11 @@
 /* 상담이 많아져도 목록은 3줄 높이까지만 — 넷째 줄부터는 목록 안에서 스크롤 (줄 높이 38px 고정 + 줄 사이 1px) */
 .ai-history__menu { --history-row: 38px; }
 .ai-history__menu ul {
-  display: grid; grid-auto-rows: var(--history-row); gap: 1px; max-height: calc(var(--history-row) * 3 + 2px);
-  margin: 0; padding: 0; overflow-y: auto; list-style: none; overscroll-behavior: contain; scrollbar-width: thin;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: var(--history-row); gap: 1px; max-height: calc(var(--history-row) * 3 + 2px);
+  margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; list-style: none; overscroll-behavior: contain; scrollbar-width: thin;
 }
+/* 줄이 긴 제목에 밀려 넓어지지 않게(가로 스크롤 방지) — 제목은 .ai-history__title 에서 … 로 줄임 */
+.ai-history__menu li { min-width: 0; }
 .ai-history__menu li button {
   display: flex; align-items: center; gap: 10px; width: 100%; height: 100%; min-width: 0; padding: 0 10px; border: 0; border-radius: 8px;
   background: transparent; color: var(--text); font-size: var(--fs-sm); text-align: left; cursor: pointer;
