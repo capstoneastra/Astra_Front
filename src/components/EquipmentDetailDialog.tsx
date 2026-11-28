@@ -5,26 +5,9 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { canAccessMenu } from "../auth/permissions";
 import { Badge, Button } from "./ui";
 import ApiState from "./ui/ApiState";
+import { specValue } from "../domain/specValue";
 import type { ReactNode } from "react";
-import type { EquipmentSpec } from "../services/contracts";
 import type { Equipment } from "../services/equipmentService";
-
-function specValue(spec: EquipmentSpec) {
-  if (spec.value !== null && spec.value !== undefined)
-    return `${spec.value} ${spec.unit ?? ""}`;
-  if (
-    spec.min !== null &&
-    spec.min !== undefined &&
-    spec.max !== null &&
-    spec.max !== undefined
-  )
-    return `${spec.min} ~ ${spec.max} ${spec.unit ?? ""}`;
-  if (spec.min !== null && spec.min !== undefined)
-    return `${spec.min} ${spec.unit ?? ""} 이상`;
-  if (spec.max !== null && spec.max !== undefined)
-    return `${spec.max} ${spec.unit ?? ""} 이하`;
-  return spec.valueText || "확인 필요";
-}
 
 export default function EquipmentDetailDialog({
   item,
@@ -178,7 +161,7 @@ export default function EquipmentDetailDialog({
               disabled={!data.testTypes.length}
               onClick={() => {
                 dialog.current.close();
-                openTestInfo(data.testTypes[0]);
+                openTestInfo(data.testTypes[0], data);
               }}
             >
               시험 정보 안내

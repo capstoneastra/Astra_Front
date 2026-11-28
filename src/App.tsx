@@ -41,6 +41,7 @@ import { useSidebarCollapse } from "./hooks/useSidebarCollapse";
 import "./styles/v6.css";
 import "./styles/v9.css";
 import "./styles/v10.css";
+import "./styles/test-info.css";
 import "./styles/palette.css";
 
 /** 처음 화면(홈·장비 검색) 밖의 화면은 들어갈 때 받는다. 로그인 직후 여유 시간에 미리 받아 두어 이동은 바로 열림 */
@@ -270,7 +271,7 @@ function Workspace() {
       case "compare":
         return <EquipmentCompare setActiveMenu={navigate} />;
       case "testInfo":
-        return <TestInformation setActiveMenu={navigate} />;
+        return <TestInformation key={workspaceNavigation.route.index} scope={workspaceNavigation.route.testInfo} />;
       case "simulation":
         return <Simulation setActiveMenu={navigate} />;
       case "quickRequest":
@@ -300,7 +301,8 @@ function Workspace() {
 
   // 전역 상태 — 값이 바뀔 때만 새 객체를 만들어, 이 값을 쓰는 화면들이 쓸데없이 다시 그려지지 않게
   const navigateRef = useRef(navigate);
-  useEffect(() => { navigateRef.current = navigate; });
+  const goRef = useRef(workspaceNavigation.go);
+  useEffect(() => { navigateRef.current = navigate; goRef.current = workspaceNavigation.go; });
   const contextValue = useMemo(() => ({
         testCondition,
         setTestCondition,
@@ -332,9 +334,14 @@ function Workspace() {
           setSimulationEquipmentId(id);
           navigateRef.current("simulation");
         },
-        openTestInfo: (code) => {
+        openTestInfo: (code, equipment) => {
           setTestTypeCode(code);
-          navigateRef.current("testInfo");
+          goRef.current("testInfo", null, {
+            testInfo: equipment
+              ? { code, equipmentId: equipment.id, equipmentName: equipment.name, institutionId: equipment.institutionId ?? null, testTypes: equipment.testTypes }
+              : { code },
+          });
+          setMenuOpen(false);
         },
       }), [
     testCondition, selectedEquipment, equipmentList, catalogQuery, user, requirementId, chatSessionId, matchRun,

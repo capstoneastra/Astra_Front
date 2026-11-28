@@ -1,0 +1,51 @@
+/* ── 시험 정보 안내 (장비 상세 → [시험 정보 안내]) ─────────────────────────
+   다른 화면과 같은 폭(content-page 전체), 카드끼리는 --stack 간격으로 띄움 */
+.test-info-page { display: grid; gap: var(--stack, 16px); align-content: start; }
+.test-info-page > .page-header { margin-bottom: 0; }
+
+/* ① 시험 종류 고르기 */
+.test-info__pick { display: grid; gap: 14px; padding: 16px 18px; }
+.test-info__pick-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.test-info__pick-head strong { display: block; font-size: var(--fs-md, 14px); font-weight: 650; overflow-wrap: anywhere; }
+.test-info__pick-head p { margin-top: 2px; color: var(--text-muted); font-size: var(--fs-sm); }
+.test-info__glyph {
+  display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 11px;
+  background: var(--accent-background); border: 1px solid var(--accent-border); color: var(--cyan);
+}
+.test-info__types { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; }
+.test-info__types button {
+  position: relative; display: grid; gap: 3px; min-width: 0; padding: 11px 14px; border-radius: 12px;
+  border: 1px solid var(--border-strong); background: var(--surface-sunken); color: inherit; text-align: left; cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s, transform .2s;
+}
+.test-info__types button:hover { border-color: var(--accent-border); transform: translateY(-1px); }
+.test-info__types button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.test-info__types button[aria-checked="true"] {
+  border-color: var(--cyan); background: var(--accent-background);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent);
+}
+.test-info__type-name { padding-right: 22px; font-size: var(--fs-sm); font-weight: 650; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+.test-info__types small { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.test-info__type-check {
+  position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 18px; height: 18px;
+  border-radius: 99px; background: var(--cyan); color: var(--primary-ink);
+}
+
+/* ② 조건 · ③ 기관 카드 */
+.test-info__card .panel__header { padding-bottom: 12px; }
+.test-info__card .panel__header h2 svg { color: var(--cyan); flex: none; }
+.test-info__desc { padding: 0 18px 12px; color: var(--text-secondary); font-size: var(--fs-sm); line-height: 1.55; }
+.test-info__table { width: 100%; border-collapse: collapse; }
+.test-info__table :is(th, td) { padding: 11px 18px; text-align: left; vertical-align: middle; }
+.test-info__table th { color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+.test-info__table td { border-top: 1px solid var(--border); color: var(--text-secondary); }
+.test-info__table td b { color: var(--text); font-weight: 600; }
+.test-info__table td .badge { vertical-align: 1px; }
+.test-info__table tr.is-own td { background: color-mix(in srgb, var(--cyan) 6%, transparent); }
+.test-info__unknown { color: var(--text-muted); }
+.test-info__empty { padding: 16px 18px 18px; color: var(--text-muted); font-size: var(--fs-sm); }
+
+@media (max-width: 480px) {
+  .test-info__types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .test-info__table :is(th, td) { padding-inline: 12px; }
+}

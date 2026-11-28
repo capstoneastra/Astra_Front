@@ -37,7 +37,8 @@ interface WorkspaceContext {
   autoRunId: number | null;
   setAutoRunId: Setter<number | null>;
   openSimulation: (id: number) => void;
-  openTestInfo: (code: string) => void;
+  /** 시험 정보 안내 열기 — 장비에서 열면 그 장비의 시험 종류만 고를 수 있음 */
+  openTestInfo: (code: string, equipment?: Pick<Equipment, "id" | "name" | "testTypes" | "institutionId">) => void;
 }
 
 export const AppContext = createContext<WorkspaceContext | null>(null);

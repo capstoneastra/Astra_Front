@@ -101,13 +101,13 @@ React Router와 기존 `useWorkspaceNavigation`을 유지한다. 업무 페이�
 
 ## 4. 시험 정보 안내
 
-- **목적·흐름:** 시험유형 선택 → 필수 조건/비교 규칙/수행기관/예상 비용·기간 확인 → 조건 분석.
-- **화면·컴포넌트:** `TestInformation`, 시험유형 select, 조건 규칙 표, 기관별 예상 정보 표, 조건 분석 이동 버튼.
+- **목적·흐름:** 장비 상세 [시험 정보 안내] → 그 장비의 시험 종류 선택 → 필수 조건/비교 규칙/이 장비 사양/수행기관/예상 비용·기간 확인.
+- **화면·컴포넌트:** `TestInformation`, 시험 종류 카드(장비에서 열면 그 장비의 시험만), 조건 규칙 표(+이 장비 사양 열), 기관별 예상 정보 표.
 - **API·요청:** `GET /test-types`, `GET /test-types/{code}`. 명세에 없는 별도 비용 산정 API를 추가하지 않는다.
 - **응답:** `{code,nameKo,description,conditionRules:[{conditionKey,label,valueType,unit,isRequired,specKey,comparator}],institutions:[{id,name,region,equipmentCount,estCostMin,estCostMax,estDurationDays,accessScope}]}`.
-- **권한:** 모두 조회. 조건 분석으로 이어지는 버튼은 최신 의뢰자 권한과 현재 메뉴 제한 차이 확인 필요.
+- **권한:** 모두 조회.
 - **상태 처리:** 로딩/404/서버 오류; null 비용·기간·외부 이용 여부는 미확인. 기관이 없거나 시험 목록이 비었을 때 별도 안내 강화는 후속 작업이다.
-- **버튼·이동:** 유형 변경 → 상세 재조회, 조건 분석 → 기존 `/#/matching`.
+- **버튼·이동:** 유형 변경 → 상세 재조회. 연 장비·시험은 화면 이동 상태(`route.testInfo`)에 담겨 뒤로 가기에도 유지. 조건 분석 이동 버튼은 삭제.
 - **현재 구현:** 조회 서비스·유형/조건/기관 표 존재. 정적 클라이언트 시험 규칙 및 비용 데이터 제거. 화면의 고정 시험유형 기본 선택은 입력 기본값이며 분석 결과가 아니다.
 - **후속 연동:** estCostMax 등 DTO 누락 필드·정렬·미확인 상태 검증, 기관별 예상 정보와 확정 견적 구분. **백엔드 미배포로 테스트 불가**.
 

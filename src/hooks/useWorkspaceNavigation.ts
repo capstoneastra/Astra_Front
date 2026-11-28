@@ -13,9 +13,19 @@ interface SearchView {
 
 export type ApprovalFocus = "members" | "organizations";
 
+/** 시험 정보 안내를 연 장비 — 그 장비가 할 수 있는 시험만 고르게 하고, 뒤로 가기로 돌아와도 같은 시험을 보여 줌 */
+export interface TestInfoScope {
+  code: string;
+  equipmentId?: number;
+  equipmentName?: string;
+  institutionId?: number | null;
+  testTypes?: string[];
+}
+
 interface WorkspaceDestination {
   requestStatus?: string;
   approvalFocus?: ApprovalFocus;
+  testInfo?: TestInfoScope;
 }
 
 interface WorkspaceRoute extends WorkspaceDestination {
@@ -54,7 +64,8 @@ export function useWorkspaceNavigation(scope: string) {
   const go = useCallback((nextMenu: string, search: SearchView | null = null, destination: WorkspaceDestination = {}) => {
     if (!isPage(nextMenu)) return;
     if (route.menu === nextMenu && JSON.stringify(route.search) === JSON.stringify(search) &&
-      route.requestStatus === destination.requestStatus && route.approvalFocus === destination.approvalFocus) return;
+      route.requestStatus === destination.requestStatus && route.approvalFocus === destination.approvalFocus &&
+      JSON.stringify(route.testInfo) === JSON.stringify(destination.testInfo)) return;
     persist({ scope, menu: nextMenu, search, index: route.index + 1, ...destination }, false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [persist, route, scope]);
