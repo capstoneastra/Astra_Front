@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useAuth } from "../../auth/context";
 import { ownsOrganization } from "../../auth/permissions";
 import { useApiQuery } from "../../hooks/useApiQuery";
@@ -423,30 +423,33 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
               "RESUBMITTED",
               "SCHEDULING",
             ].includes(r.status) && (
-              <details>
-                <summary>의뢰 취소</summary>
-                <FormField id="request-cancel-reason" label="취소 사유">
-                  <input
-                    id="request-cancel-reason"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  />
-                </FormField>
-                <Button
-                  variant="danger"
-                  disabled={!message.trim() || action.busy}
-                  onClick={() =>
-                    action.run(
-                      () =>
-                        requestService.action(r.id, "cancel", r.version, {
-                          reason: message,
-                        }),
-                      "의뢰를 취소했습니다.",
-                    )
-                  }
-                >
-                  의뢰 취소 확인
-                </Button>
+              <details className="request-cancel">
+                <summary><ChevronRight size={15} className="request-detail__chev" aria-hidden="true" />의뢰 취소</summary>
+                <div className="request-cancel__row">
+                  <FormField id="request-cancel-reason" label="취소 사유" hint="사유를 적어야 취소할 수 있습니다.">
+                    <input
+                      id="request-cancel-reason"
+                      value={message}
+                      placeholder="예: 내부 일정 변경으로 시험을 미룹니다"
+                      onChange={(e) => setMessage(e.target.value)}
+                    />
+                  </FormField>
+                  <Button
+                    variant="danger"
+                    disabled={!message.trim() || action.busy}
+                    onClick={() =>
+                      action.run(
+                        () =>
+                          requestService.action(r.id, "cancel", r.version, {
+                            reason: message,
+                          }),
+                        "의뢰를 취소했습니다.",
+                      )
+                    }
+                  >
+                    의뢰 취소 확인
+                  </Button>
+                </div>
               </details>
             )}
           <Feedback action={action} onRetry={query.reload} />

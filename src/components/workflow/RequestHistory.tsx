@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { ArrowRight, FileStack, History, UserRound } from "lucide-react";
+import { ArrowRight, ChevronRight, FileStack, History, UserRound } from "lucide-react";
 import { Badge } from "../ui/index";
 import ApiState from "../ui/ApiState";
 import { requestStatusLabels, requestStatusTones, formatDate, valueText } from "../../domain/constants";
@@ -32,6 +32,7 @@ export default function RequestHistory({ history, revisions }: { history: Query<
   return (
     <details className="request-history">
       <summary>
+        <ChevronRight size={15} className="request-detail__chev" aria-hidden="true" />
         제출본·상태 변경 이력
         {!error && history.data && revisions.data && (
           <span className="request-history__count">상태 변경 {entries.length} · 제출본 {revs.length}</span>

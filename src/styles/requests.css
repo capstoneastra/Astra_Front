@@ -205,3 +205,17 @@ button.requests-row:hover .requests-row__cta svg { color: var(--blue); transform
 }
 .request-revision__facts dt { color: var(--text-muted); font-size: var(--fs-xs); }
 .request-revision__facts dd { margin: 1px 0 0; color: var(--text); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* 접는 칸(의뢰 취소 · 제출본·상태 변경 이력) 제목: 브라우저 기본 ▸ 대신 같은 화살표 아이콘 — 펼치면 아래로 회전 */
+.request-detail__body > details > summary { display: flex; align-items: center; gap: 6px; list-style: none; }
+.request-detail__body > details > summary::-webkit-details-marker { display: none; }
+.request-detail__chev { flex: none; color: var(--text-muted); transition: transform .18s ease; }
+.request-detail__body > details[open] > summary .request-detail__chev { transform: rotate(90deg); }
+.request-detail__body > details > summary:hover .request-detail__chev { color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .request-detail__chev { transition: none; } }
+
+/* 의뢰 취소: 사유 칸과 버튼이 붙어 겹쳐 보이던 것 → 한 줄(좁으면 두 줄)로, 버튼은 입력칸 높이에 맞춤 */
+.request-cancel__row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 10px; }
+.request-cancel__row > .form-field { flex: 1 1 240px; margin: 0; }
+.request-cancel__row > .button { flex: none; margin-top: calc(var(--fs-sm, 13px) * 1.4 + 8px); }
+@media (max-width: 480px) { .request-cancel__row > .button { width: 100%; margin-top: 0; } }
