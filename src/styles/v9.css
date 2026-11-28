@@ -30,7 +30,7 @@
 
 /* ── 대시보드 아래 줄 ──────────────────────────────────────────────── */
 .dash-grid--company { grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); }
-.dash-grid--provider { display: grid; gap: var(--stack); grid-template-columns: minmax(0, 1fr) minmax(360px, 1.2fr); grid-template-rows: none; }
+.dash-grid--provider { display: grid; align-items: stretch; gap: var(--stack); grid-template-columns: minmax(0, 1fr) minmax(360px, 1.2fr); grid-template-rows: none; }
 .dash-grid--provider > * { grid-column: auto !important; grid-row: auto !important; }
 @media (max-width: 1023px) { .dash-grid--company, .dash-grid--provider { grid-template-columns: minmax(0, 1fr); } }
 .dash-toast {
