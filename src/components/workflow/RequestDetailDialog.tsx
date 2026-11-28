@@ -89,26 +89,33 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
   return (
     <dialog
       ref={dialog}
-      className="dialog equipment-dialog"
+      className="dialog request-detail"
       aria-labelledby="request-detail-title"
       onClose={onClose}
       onClick={(e) => {
         if (e.target === dialog.current) dialog.current.close();
       }}
     >
-      <div className="dialog__heading">
-        <Badge tone="cyan">
-          {r ? requestStatusLabels[r.status] : "시험 의뢰"}
-        </Badge>
+      <header className="request-detail__header">
+        <div>
+          <h2 id="request-detail-title">{r?.title ?? "의뢰 상세"}</h2>
+          {r && (
+            <div className="request-detail__meta">
+              <Badge tone="cyan" dot>{requestStatusLabels[r.status] ?? r.status}</Badge>
+              <span>{r.requestNo} · 제출본 {r.revision.revisionNo} · {r.revision.isAiGenerated ? "AI 초안 기반" : "사용자 작성"}</span>
+            </div>
+          )}
+        </div>
         <button
+          type="button"
           className="icon-button"
           aria-label="의뢰 상세 닫기"
           onClick={() => dialog.current.close()}
         >
           <X size={20} />
         </button>
-      </div>
-      <h2 id="request-detail-title">{r?.title ?? "의뢰 상세"}</h2>
+      </header>
+      <div className="request-detail__body">
       {(query.loading || query.error) && (
         <ApiState
           loading={query.loading}
@@ -118,68 +125,77 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
       )}
       {r && (
         <>
-          <p className="field-hint">
-            {r.requestNo} · 제출본 {r.revision.revisionNo} ·{" "}
-            {r.revision.isAiGenerated ? "AI 초안 기반" : "사용자 작성"} ·{" "}
-            {r.institution.name}
-          </p>
-          <dl className="detail-list">
-            <div>
-              <dt>장비</dt>
-              <dd>
-                {r.equipment.name} · {r.equipment.externalId}
-              </dd>
-            </div>
-            <div>
-              <dt>시험 목적</dt>
-              <dd>{content.test.purpose || "확인 필요"}</dd>
-            </div>
-            <div>
-              <dt>시료</dt>
-              <dd>
-                {content.sample.name || "확인 필요"} ·{" "}
-                {content.sample.quantity ?? "미확인"}개
-              </dd>
-            </div>
-            <div>
-              <dt>준비 완료일</dt>
-              <dd>{content.sample.readyDate || "확인 필요"}</dd>
-            </div>
-            <div>
-              <dt>신청 기업</dt>
-              <dd>
-                {content.applicant.companyName} ·{" "}
-                {content.applicant.contactName}
-              </dd>
-            </div>
-            <div>
-              <dt>규격·기타 정보</dt>
-              <dd>
-                {content.test.standard || "확인 필요"} ·{" "}
-                {content.notes || "기타 정보 없음"}
-              </dd>
-            </div>
-          </dl>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>시험조건</th>
-                  <th>값</th>
-                  <th>확인 상태</th>
-                </tr>
-              </thead>
-              <tbody>
-                {content.conditions.map((c) => (
-                  <tr key={c.key}>
-                    <td>{c.label ?? c.key}</td>
-                    <td>{valueText(c)}</td>
-                    <td>{c.status === "CONFIRMED" ? "확인" : "미확인"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <section>
+            <h3>의뢰 요약</h3>
+            <dl className="request-detail__facts">
+              <div>
+                <dt>신청 기업</dt>
+                <dd>
+                  {content.applicant.companyName} ·{" "}
+                  {content.applicant.contactName}
+                </dd>
+              </div>
+              <div>
+                <dt>희망 시험일</dt>
+                <dd>
+                  {content.schedule?.desiredStartDate || "협의"}
+                  {content.schedule?.desiredEndDate && content.schedule.desiredEndDate !== content.schedule.desiredStartDate
+                    ? ` ~ ${content.schedule.desiredEndDate}` : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>보유기관</dt>
+                <dd>{r.institution.name}</dd>
+              </div>
+              <div>
+                <dt>장비</dt>
+                <dd>
+                  {r.equipment.name} · {r.equipment.externalId}
+                </dd>
+              </div>
+              <div>
+                <dt>시료</dt>
+                <dd>
+                  {content.sample.name || "확인 필요"} ·{" "}
+                  {content.sample.quantity ?? "미확인"}개
+                </dd>
+              </div>
+              <div>
+                <dt>준비 완료일</dt>
+                <dd>{content.sample.readyDate || "확인 필요"}</dd>
+              </div>
+            </dl>
+          </section>
+          <section>
+            <h3>시험 내용 및 조건</h3>
+            <dl className="request-detail__facts">
+              <div><dt>시험 목적</dt><dd>{content.test.purpose || "확인 필요"}</dd></div>
+              <div><dt>시험 규격</dt><dd>{content.test.standard || "확인 필요"}</dd></div>
+              {content.notes && <div className="request-detail__fact--wide"><dt>기타 정보</dt><dd>{content.notes}</dd></div>}
+            </dl>
+            {content.conditions.length ? (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">시험 조건</th>
+                      <th scope="col">값</th>
+                      <th scope="col">확인 상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {content.conditions.map((c) => (
+                      <tr key={c.key}>
+                        <td>{c.label ?? c.key}</td>
+                        <td>{valueText(c)}</td>
+                        <td>{c.status === "CONFIRMED" ? "확인" : "미확인"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="request-detail__empty">입력된 시험 조건이 없습니다.</p>}
+          </section>
           {institution && ["SUBMITTED", "RESUBMITTED"].includes(r.status) && (
             <div className="form-actions">
               <Button
@@ -198,7 +214,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
           )}
           {institution && r.status === "UNDER_REVIEW" && (
             <section>
-              <h3>검토 의견·보완 요청</h3>
+              <h3>의뢰 검토</h3>
               <FormField id="review-message" label="보완 요청 또는 반려 사유">
                 <textarea
                   id="review-message"
@@ -207,12 +223,12 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
                   onChange={(e) => setMessage(e.target.value)}
                 />
               </FormField>
-              <div className="form-grid">
+              <fieldset className="request-detail__fields">
+                <legend>보완할 항목</legend>
                 {fields.map((field) => (
                   <label key={field.fieldKey}>
                     <input
                       type="checkbox"
-                      style={{ width: "auto" }}
                       checked={selected.includes(field.fieldKey)}
                       onChange={(e) =>
                         setSelectedFields(
@@ -225,7 +241,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
                     {field.label}
                   </label>
                 ))}
-              </div>
+              </fieldset>
               <FormField id="supplement-due" label="보완 기한 (선택)">
                 <input
                   id="supplement-due"
@@ -236,6 +252,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
               </FormField>
               <div className="form-actions">
                 <Button
+                  variant="secondary"
                   disabled={action.busy || !message.trim() || !selected.length}
                   onClick={() =>
                     action.run(
@@ -254,18 +271,6 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
                   보완 요청 보내기
                 </Button>
                 <Button
-                  variant="secondary"
-                  disabled={action.busy}
-                  onClick={() =>
-                    action.run(
-                      () => requestService.action(r.id, "accept", r.version),
-                      "기술 검토를 통과했습니다. 일정을 협의해주세요.",
-                    )
-                  }
-                >
-                  검토 승인·일정 협의
-                </Button>
-                <Button
                   variant="danger"
                   disabled={action.busy || !message.trim()}
                   onClick={() =>
@@ -279,6 +284,17 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
                   }
                 >
                   의뢰 반려
+                </Button>
+                <Button
+                  disabled={action.busy}
+                  onClick={() =>
+                    action.run(
+                      () => requestService.action(r.id, "accept", r.version),
+                      "기술 검토를 통과했습니다. 일정을 협의해주세요.",
+                    )
+                  }
+                >
+                  검토 승인·일정 협의
                 </Button>
               </div>
             </section>
@@ -484,6 +500,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
           </details>
         </>
       )}
+      </div>
     </dialog>
   );
 }

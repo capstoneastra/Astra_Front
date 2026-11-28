@@ -52,6 +52,76 @@ button.requests-row:hover .requests-row__cta svg { color: var(--blue); transform
   .requests-table:not(.requests-table--received) :is(.requests-row--head, .requests-row__org, .requests-row__date, .requests-row__cta) { display: none; }
 }
 
+.dialog.request-detail {
+  --detail-padding: clamp(14px, 3vw, 24px);
+  width: min(760px, calc(var(--vw-full) - 24px));
+  max-height: calc(var(--vh-full) - 24px);
+  padding: 0;
+  overflow: hidden;
+}
+.request-detail[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.request-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px var(--detail-padding);
+  border-bottom: 1px solid var(--border);
+}
+.request-detail__header h2 { margin: 0; overflow-wrap: anywhere; }
+.request-detail__header > .icon-button { flex-shrink: 0; }
+.request-detail__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; color: var(--text-muted); font-size: var(--fs-xs); }
+.request-detail__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px var(--detail-padding) 20px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.request-detail__body > :is(section, details) {
+  min-width: 0;
+  padding: clamp(10px, 2vw, 16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.request-detail__body h3 { margin: 0 0 12px; font-size: var(--fs-md); font-weight: 650; }
+.request-detail__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+.request-detail__facts dt { margin-bottom: 2px; color: var(--text-muted); font-size: var(--fs-xs); }
+.request-detail__facts dd { margin: 0; font-size: var(--fs-sm); overflow-wrap: anywhere; white-space: pre-wrap; }
+.request-detail__fact--wide { grid-column: 1 / -1; }
+.request-detail .table-scroll { margin-top: 14px; border: 1px solid var(--border); border-radius: 8px; }
+.request-detail .table-scroll > table { min-width: 0; width: 100%; }
+.request-detail .table-scroll :is(th, td) { min-width: 0; padding: 8px clamp(6px, 1.5vw, 12px); overflow-wrap: anywhere; }
+.request-detail .table-scroll :is(th, td):last-child { width: 1%; white-space: nowrap; }
+.request-detail p.request-detail__empty { margin: 12px 0 0; }
+.request-detail__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+  gap: 8px 12px;
+  min-width: 0;
+  margin: 12px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: var(--fs-sm);
+}
+.request-detail__fields label { display: flex; align-items: flex-start; gap: 6px; overflow-wrap: anywhere; }
+.request-detail__fields input { width: auto; flex-shrink: 0; }
+.request-detail .form-actions { flex-flow: row wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; padding-top: 12px; }
+.request-detail .form-actions > .button { width: auto; min-width: 0; max-width: 100%; }
+.request-detail__body > .form-actions { margin-top: 0; }
+.request-detail__body > details > summary { cursor: pointer; font-size: var(--fs-sm); font-weight: 600; }
+.request-detail__body > details[open] > summary { margin-bottom: 12px; }
+
 /* v17: 휴대폰 폭에서 상태 칩이 한 줄에 하나씩 세로로 쌓이던 문제 — 칩은 한 줄 전체를 쓰고 검색칸은 아래 줄 */
 @media (max-width: 760px) {
   .requests-chips { flex-basis: 100%; }
