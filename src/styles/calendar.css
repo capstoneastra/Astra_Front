@@ -179,3 +179,34 @@
 
 .calendar-day__notes.has-stack::before { left: 10px; right: -2px; top: 10px; height: 36px; opacity: .85; transform: rotate(3deg); background: color-mix(in srgb, var(--surface-raised) 55%, #cfc7a8); }
 .calendar-day__select small.is-many { padding: 1px 7px; border-radius: 99px; background: var(--blue-soft); color: var(--blue); font-weight: 700; }
+
+/* ── 2026-11: 데스크탑(1650px 이상, '다가오는 시험'이 오른쪽에 붙는 배치) 전용 ─────────────
+   전에는 오른쪽 칸이 카드 4장(장당 약 170px)으로 달력보다 길어져, 달력 아래가 비고 페이지가 스크롤됨.
+   - 오른쪽 칸은 달력 높이에 맞춤(contain: size → 칸 높이가 줄 높이를 늘리지 않음), 넘치면 목록만 안에서 스크롤
+   - 카드는 4줄(시험·상태 / 날짜·시간 / 장비 / 기관)로 줄여 4건이 한 화면에 보이게
+   - 달력 칸은 화면 높이를 더 채우도록 최대 높이만 올림 (1650px 미만 화면은 손대지 않음) */
+@media (min-width: 1650px) {
+  .reservation-calendar { --cal-cell: clamp(92px, calc((var(--vh-full) - 340px) / 6), 164px); }
+  .schedule-workspace { grid-template-columns: minmax(0, 1fr) 300px; align-items: stretch; }
+  .schedule-upcoming { contain: size; display: flex; flex-direction: column; min-height: 0; padding: 18px; }
+  .schedule-upcoming header { flex: none; }
+  .schedule-upcoming h2 { margin-top: 0; font-size: 17px; }
+  .schedule-upcoming header > p { margin-bottom: 14px; }
+  .schedule-upcoming__list {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    grid-template-columns: minmax(0, 1fr); align-content: start; gap: 8px; margin: -3px; padding: 3px;
+  }
+  .schedule-upcoming__note { flex: none; margin-top: 14px; padding-top: 14px; }
+  .schedule-upcoming .schedule-card {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; padding: 10px 12px;
+    grid-template-areas: "title title status" "date time time" "equipment equipment equipment" "institution institution institution";
+  }
+  .schedule-upcoming .schedule-card:hover { transform: translateY(-1px); }
+  .schedule-upcoming .schedule-card__title { grid-area: title; font-size: 13.5px; }
+  .schedule-upcoming .schedule-card .schedule-status { grid-area: status; align-self: center; margin: 0; font-size: 11.5px; white-space: nowrap; }
+  .schedule-upcoming .schedule-card__date { grid-area: date; margin: 0; color: var(--text-secondary); white-space: nowrap; }
+  .schedule-upcoming .schedule-card__time { grid-area: time; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .schedule-upcoming .schedule-card__equipment { grid-area: equipment; }
+  .schedule-upcoming .schedule-card__institution { grid-area: institution; }
+  .schedule-upcoming .empty-state { padding-block: 24px; }
+}
