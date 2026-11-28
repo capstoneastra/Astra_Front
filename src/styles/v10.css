@@ -249,6 +249,18 @@
   .work-dashboard .dash-fill .dash-tasks__foot { padding-top: 8px; }
 }
 
+/* ── 스크롤 배치(세로 720 미만 노트북 1366×768·1280×720 등, 좁은 화면) ──
+ * 이때는 카드 높이가 화면에 고정되지 않아, 일정 목록이 일정 수만큼 끝없이 늘어나 카드(와 옆 카드)가 밑으로 뻗었음.
+ * - 달력|목록 좌우 배치: 목록은 높이 계산에서 빠지고(contain: size) 달력 높이에 맞춘 뒤 안에서 스크롤
+ * - 위아래 배치: 목록 높이를 제한하고 안에서 스크롤 */
+@media (max-width: 1023.98px), (max-height: 719.98px) {
+  .sched-agenda__list { max-height: 280px; }
+  @container (min-width: 520px) {
+    .sched-agenda { contain: size; }
+    .sched-agenda__list { max-height: none; }
+  }
+}
+
 /* ── 장비 검색: '조건으로 추천받기'를 결과 줄 오른쪽 끝 작은 링크로 ── */
 .results-heading .eq-recommend {
   margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px;
