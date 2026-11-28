@@ -2,12 +2,20 @@ import { useEffect, useState } from "react";
 import { useAction } from "../../hooks/useAction";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { requestService } from "../../services/requestService";
-import { Button, FormField } from "../ui/index";
+import { Badge, Button, FormField } from "../ui/index";
 import { Feedback } from "./Feedback";
 import ApiState from "../ui/ApiState";
 import { formatDate } from "../../domain/constants";
 import { invalidateData } from "../../api/cache";
 import { overlaps } from "../../domain/calendar";
+
+const reservationStatus = {
+  PROPOSED: { label: "제안", tone: "cyan" },
+  COUNTER_PROPOSED: { label: "대안 제안", tone: "violet" },
+  CONFIRMED: { label: "확정", tone: "green" },
+  CANCELED: { label: "취소", tone: "neutral" },
+};
+
 export default function ReservationControls({ request, initialDate, canConfirm }) {
   const [startAt, setStart] = useState(initialDate ? `${initialDate}T09:00` : ""),
     [endAt, setEnd] = useState(initialDate ? `${initialDate}T18:00` : ""),
@@ -37,11 +45,10 @@ export default function ReservationControls({ request, initialDate, canConfirm }
     note,
   });
   return (
-    <section>
+    <section className="reservation-controls">
       <h3>예약 일정 협의</h3>
       <p className="field-hint">
-        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 장비 보유 조직에서 할 수
-        있습니다.
+        한국 시간 기준 · 장비 보유 기관에서 최종 확정
       </p>
       {(busy.loading || busy.error) && (
         <ApiState
@@ -51,20 +58,20 @@ export default function ReservationControls({ request, initialDate, canConfirm }
         />
       )}
       {busy.data?.length > 0 && (
-        <div className="content-note">
-          <div>
-            <strong>이 장비의 확정된 구간</strong>
+        <details className="reservation-controls__availability">
+          <summary>장비의 확정 일정 ({busy.data.length}건)</summary>
+          <ul>
             {busy.data.map((r, i) => (
-              <p key={i}>
+              <li key={i}>
                 {formatDate(r.startAt)} ~ {formatDate(r.endAt)}
-              </p>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </details>
       )}
       {scheduling && (
-        <>
-          <div className="form-grid">
+        <div className="reservation-controls__proposal">
+          <div className="reservation-controls__fields">
             <FormField id="reservation-start" label="시작 시간">
               <input
                 id="reservation-start"
@@ -108,9 +115,7 @@ export default function ReservationControls({ request, initialDate, canConfirm }
               disabled={
                 !valid ||
                 overlap ||
-                busy.loading ||
-                busy.refreshing ||
-                Boolean(busy.error) ||
+                availabilityBlocked ||
                 action.busy
               }
               onClick={() =>
@@ -124,100 +129,98 @@ export default function ReservationControls({ request, initialDate, canConfirm }
               일정 제안
             </Button>
           </div>
-        </>
+        </div>
       )}
-      <div className="request-list">
-        {request.reservations.map((r) => {
-          const conflicting = busy.data?.some((interval) => overlaps(r, interval));
-          return (
-          <div className="content-note" key={r.id}>
-            <div>
-              <strong>
-                {formatDate(r.startAt)} ~ {formatDate(r.endAt)}
-              </strong>
-              <p>
-                {
-                  {
-                    PROPOSED: "제안",
-                    COUNTER_PROPOSED: "대안 제안",
-                    CONFIRMED: "확정",
-                    CANCELED: "취소",
-                  }[r.status]
-                }{" "}
-                · {r.note}
-              </p>
-              <div className="form-actions">
-                {scheduling &&
-                  ["PROPOSED", "COUNTER_PROPOSED"].includes(r.status) && (
-                    <>
-                      <Button
-                        variant="secondary"
-                        disabled={!valid || overlap || availabilityBlocked || action.busy}
-                        onClick={() =>
-                          action.run(
-                            (signal) =>
-                              requestService.reservationAction(
-                                r.id,
-                                "counter",
-                                request.version,
-                                body(),
-                                signal,
-                              ),
-                            "대안 일정을 제안했습니다.",
-                          )
-                        }
-                      >
-                        입력한 시간으로 대안 제안
-                      </Button>
-                      {canConfirm && (
+      {request.reservations.length > 0 && (
+        <ul className="reservation-controls__list" aria-label="의뢰의 예약 일정">
+          {request.reservations.map((r) => {
+            const conflicting = busy.data?.some((interval) => overlaps(r, interval));
+            const canRespond = scheduling && ["PROPOSED", "COUNTER_PROPOSED"].includes(r.status);
+            const canCancel = r.status !== "CANCELED" && request.status !== "COMPLETED";
+            const status = reservationStatus[r.status];
+            return (
+              <li className="reservation-controls__item" key={r.id}>
+                <div className="reservation-controls__item-heading">
+                  <strong>
+                    {formatDate(r.startAt)} ~ {formatDate(r.endAt)}
+                  </strong>
+                  <Badge tone={status?.tone}>{status?.label ?? r.status}</Badge>
+                </div>
+                {r.note && <p className="reservation-controls__note">{r.note}</p>}
+                {canRespond && conflicting && <p className="reservation-controls__note" role="status">장비의 확정 예약과 겹칩니다. 다른 시간으로 대안을 제안해주세요.</p>}
+                {(canRespond || canCancel) && (
+                  <div className="form-actions">
+                    {canRespond && (
+                      <>
                         <Button
-                          disabled={action.busy || availabilityBlocked || conflicting}
+                          variant="secondary"
+                          disabled={!valid || overlap || availabilityBlocked || action.busy}
                           onClick={() =>
                             action.run(
                               (signal) =>
                                 requestService.reservationAction(
                                   r.id,
-                                  "confirm",
+                                  "counter",
                                   request.version,
-                                  {},
+                                  body(),
                                   signal,
                                 ),
-                              "예약을 확정했습니다.",
+                              "대안 일정을 제안했습니다.",
                             )
                           }
                         >
-                          예약 확정
+                          입력한 시간으로 대안 제안
                         </Button>
-                      )}
-                      {conflicting && <p role="status">이 제안은 장비의 확정 예약과 겹쳐 확정할 수 없습니다. 다른 시간으로 대안을 제안해주세요.</p>}
-                    </>
-                  )}
-                {r.status !== "CANCELED" && request.status !== "COMPLETED" && (
-                  <Button
-                    variant="danger"
-                    disabled={action.busy}
-                    onClick={() =>
-                      action.run(
-                        (signal) =>
-                          requestService.reservationAction(
-                            r.id,
-                            "cancel",
-                            request.version,
-                            {},
-                            signal,
-                          ),
-                        "예약 일정을 취소했습니다.",
-                      )
-                    }
-                  >
-                    일정 취소
-                  </Button>
+                        {canConfirm && (
+                          <Button
+                            disabled={action.busy || availabilityBlocked || conflicting}
+                            onClick={() =>
+                              action.run(
+                                (signal) =>
+                                  requestService.reservationAction(
+                                    r.id,
+                                    "confirm",
+                                    request.version,
+                                    {},
+                                    signal,
+                                  ),
+                                "예약을 확정했습니다.",
+                              )
+                            }
+                          >
+                            예약 확정
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {canCancel && (
+                      <Button
+                        variant="danger"
+                        disabled={action.busy}
+                        onClick={() =>
+                          action.run(
+                            (signal) =>
+                              requestService.reservationAction(
+                                r.id,
+                                "cancel",
+                                request.version,
+                                {},
+                                signal,
+                              ),
+                            "예약 일정을 취소했습니다.",
+                          )
+                        }
+                      >
+                        일정 취소
+                      </Button>
+                    )}
+                  </div>
                 )}
-              </div>
-            </div>
-          </div>
-        );})}
-      </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <Feedback action={action} />
     </section>
   );
